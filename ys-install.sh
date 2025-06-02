@@ -1028,6 +1028,9 @@ gitlabsub() {
     readp "请选择【0-1】：" menu
     if [ "$menu" = "1" ]; then
         cd /etc/ys-ygy
+        cat /etc/ys-ygy/hy2.txt 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
+        cat /etc/ys-ygy/anytls 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
+        cat /etc/ys-ygy/ys-vless-reality-vision.txt 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
         readp "输入登录邮箱: " email
         readp "输入访问令牌: " token
         readp "输入用户名: " userid
