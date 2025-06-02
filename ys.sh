@@ -2497,6 +2497,9 @@ EOF
 }
 
 sb-config(){   #sing-box客户端配置文件
+hy2_ports="8888-9999"
+new_ports="${hy2_ports/-/:}"
+hy2_ports="$new_ports"
 cat > /etc/ys-ygy/sb-client.json <<EOF
 {
   "log": {
@@ -2757,6 +2760,8 @@ cat > /etc/ys-ygy/sb-client.json <<EOF
     "detour": "direct"
   }
 }
+new_ports="${hy2_ports/:/-}"
+hy2_ports="$new_ports"
 EOF
 }
 ################################### 开机自动启动 配置文件的写入 ################################
