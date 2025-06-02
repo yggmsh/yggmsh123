@@ -316,6 +316,136 @@ jianche-openvz() { # 检查并尝试为 OpenVZ 虚拟化环境启用 TUN/TAP 支
     fi
 }
 
+warpwg() {  #获取wireguard 的信息
+  warpcode() {
+    reg() {
+      keypair=$(openssl genpkey -algorithm X25519 | openssl pkey -text -noout)
+      private_key=$(echo "$keypair" | awk '/priv:/{flag=1; next} /pub:/{flag=0} flag' | tr -d '[:space:]' | xxd -r -p | base64)
+      public_key=$(echo "$keypair" | awk '/pub:/{flag=1} flag' | tr -d '[:space:]' | xxd -r -p | base64)
+      curl -X POST 'https://api.cloudflareclient.com/v0a2158/reg' -sL --tlsv1.3 \
+        -H 'CF-Client-Version: a-7.21-0721' -H 'Content-Type: application/json' \
+        -d \
+        '{
+"key":"'${public_key}'",
+"tos":"'$(date +"%Y-%m-%dT%H:%M:%S.000Z")'"
+}' |
+        python3 -m json.tool | sed "/\"account_type\"/i\         \"private_key\": \"$private_key\","
+    }
+    reserved() {
+      reserved_str=$(echo "$warp_info" | grep 'client_id' | cut -d\" -f4)
+      reserved_hex=$(echo "$reserved_str" | base64 -d | xxd -p)
+      reserved_dec=$(echo "$reserved_hex" | fold -w2 | while read HEX; do printf '%d ' "0x${HEX}"; done | awk '{print "["$1", "$2", "$3"]"}')
+      echo -e "{\n    \"reserved_dec\": $reserved_dec,"
+      echo -e "    \"reserved_hex\": \"0x$reserved_hex\","
+      echo -e "    \"reserved_str\": \"$reserved_str\"\n}"
+    }
+    result() {
+      echo "$warp_reserved" | grep -P "reserved" | sed "s/ //g" | sed 's/:"/: "/g' | sed 's/:\[/: \[/g' | sed 's/\([0-9]\+\),\([0-9]\+\),\([0-9]\+\)/\1, \2, \3/' | sed 's/^"/    "/g' | sed 's/"$/",/g'
+      echo "$warp_info" | grep -P "(private_key|public_key|\"v4\": \"172.16.0.2\"|\"v6\": \"2)" | sed "s/ //g" | sed 's/:"/: "/g' | sed 's/^"/    "/g'
+      echo "}"
+    }
+    warp_info=$(reg)
+    warp_reserved=$(reserved)
+    result
+  }
+  output=$(warpcode)
+  if ! echo "$output" 2>/dev/null | grep -w "private_key" >/dev/null; then
+    v6=2606:4700:110:860e:738f:b37:f15:d38d
+    pvk=g9I2sgUH6OCbIBTehkEfVEnuvInHYZvPOFhWchMLSc4=
+    res=[33,217,129]
+  else
+    pvk=$(echo "$output" | sed -n 4p | awk '{print $2}' | tr -d ' "' | sed 's/.$//')
+    v6=$(echo "$output" | sed -n 7p | awk '{print $2}' | tr -d ' "')
+    res=$(echo "$output" | sed -n 1p | awk -F":" '{print $NF}' | tr -d ' ' | sed 's/.$//')
+  fi
+  blue "Private_key私钥：$pvk"
+  blue "IPV6地址：$v6"
+  blue "reserved值：$res"
+}
+
+changewg() {     #带修改
+  [[ "$sbnh" == "1.10" ]] && num=10 || num=11
+  if [[ "$sbnh" == "1.10" ]]; then
+    wgipv6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .local_address[1] | split("/")[0]')
+    wgprkey=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .private_key')
+    wgres=$(sed -n '165s/.*\[\(.*\)\].*/\1/p' /etc/s-box/sb.json)
+    wgip=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .server')
+    wgpo=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "wireguard") | .server_port')
+  else
+    wgipv6=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | .address[1] | split("/")[0]')
+    wgprkey=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | .private_key')
+    wgres=$(sed -n '125s/.*\[\(.*\)\].*/\1/p' /etc/s-box/sb.json)
+    wgip=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | .peers[].address')
+    wgpo=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.endpoints[] | .peers[].port')
+  fi
+  echo
+  green "当前warp-wireguard可更换的参数如下："
+  green "Private_key私钥：$wgprkey"
+  green "IPV6地址：$wgipv6"
+  green "Reserved值：$wgres"
+  green "对端IP：$wgip:$wgpo"
+  echo
+  yellow "1：更换warp-wireguard账户"
+  yellow "2：自动优选warp-wireguard对端IP"
+  yellow "0：返回上层"
+  readp "请选择【0-2】：" menu
+  if [ "$menu" = "1" ]; then
+    green "最新随机生成普通warp-wireguard账户如下"
+    warpwg
+    echo
+    readp "输入自定义Private_key：" menu
+    sed -i "163s#$wgprkey#$menu#g" /etc/s-box/sb10.json
+    sed -i "115s#$wgprkey#$menu#g" /etc/s-box/sb11.json
+    readp "输入自定义IPV6地址：" menu
+    sed -i "161s/$wgipv6/$menu/g" /etc/s-box/sb10.json
+    sed -i "113s/$wgipv6/$menu/g" /etc/s-box/sb11.json
+    readp "输入自定义Reserved值 (格式：数字,数字,数字)，如无值则回车跳过：" menu
+    if [ -z "$menu" ]; then
+      menu=0,0,0
+    fi
+    sed -i "165s/$wgres/$menu/g" /etc/s-box/sb10.json
+    sed -i "125s/$wgres/$menu/g" /etc/s-box/sb11.json
+    rm -rf /etc/s-box/sb.json
+    cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
+    restartsb
+    green "设置结束"
+    green "可以先在选项5-1或5-2使用完整域名分流：cloudflare.com"
+    green "然后使用任意节点打开网页https://cloudflare.com/cdn-cgi/trace，查看当前WARP账户类型"
+  elif [ "$menu" = "2" ]; then
+    green "请稍等……更新中……"
+    if [ -z $(curl -s4m5 icanhazip.com -k) ]; then
+      curl -sSL https://gitlab.com/rwkgyg/CFwarp/raw/main/point/endip.sh -o endip.sh && chmod +x endip.sh && (echo -e "1\n2\n") | bash endip.sh >/dev/null 2>&1
+      nwgip=$(awk -F, 'NR==2 {print $1}' /root/result.csv 2>/dev/null | grep -o '\[.*\]' | tr -d '[]')
+      nwgpo=$(awk -F, 'NR==2 {print $1}' /root/result.csv 2>/dev/null | awk -F "]" '{print $2}' | tr -d ':')
+    else
+      curl -sSL https://gitlab.com/rwkgyg/CFwarp/raw/main/point/endip.sh -o endip.sh && chmod +x endip.sh && (echo -e "1\n1\n") | bash endip.sh >/dev/null 2>&1
+      nwgip=$(awk -F, 'NR==2 {print $1}' /root/result.csv 2>/dev/null | awk -F: '{print $1}')
+      nwgpo=$(awk -F, 'NR==2 {print $1}' /root/result.csv 2>/dev/null | awk -F: '{print $2}')
+    fi
+    a=$(cat /root/result.csv 2>/dev/null | awk -F, '$3!="timeout ms" {print} ' | sed -n '2p' | awk -F ',' '{print $2}')
+    if [[ -z $a || $a = "100.00%" ]]; then
+      if [[ -z $(curl -s4m5 icanhazip.com -k) ]]; then
+        nwgip=2606:4700:d0::a29f:c001
+        nwgpo=2408
+      else
+        nwgip=162.159.192.1
+        nwgpo=2408
+      fi
+    fi
+    sed -i "157s#$wgip#$nwgip#g" /etc/s-box/sb10.json
+    sed -i "158s#$wgpo#$nwgpo#g" /etc/s-box/sb10.json
+    sed -i "118s#$wgip#$nwgip#g" /etc/s-box/sb11.json
+    sed -i "119s#$wgpo#$nwgpo#g" /etc/s-box/sb11.json
+    rm -rf /etc/s-box/sb.json
+    cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
+    restartsb
+    rm -rf /root/result.csv /root/endip.sh
+    echo
+    green "优选完毕，当前使用的对端IP：$nwgip:$nwgpo"
+  else
+    changeserv
+  fi
+}
 select_network_ip() { # 检测vps的所有ip,并确认vps的主IP 变量为*** address_ip  ***
     local v4=""
     local v6=""
@@ -802,6 +932,14 @@ ys-link-quan() { # 安装程序运行完显示的导入链接和二维码
     qrencode -o - -t ANSIUTF8 "$(cat /etc/ys-ygy/txt/ys-vless-reality-vision.txt)"
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
+    if [ -f "/etc/ys-ygy/jhdy.txt" ]; then
+    rm "/etc/ys-ygy/jhdy.txt"
+    fi
+    cat /etc/ys-ygy/txt/hy2.txt 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
+    cat /etc/ys-ygy/txt/anytls.txt 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
+    cat /etc/ys-ygy/txt/ys-vless-reality-vision.txt 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
+    cat /etc/ys-ygy/txt/mieru-exclave.txt 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
+
 }
 
 ################################### 菜单选择显示配置的函数 ################################
@@ -849,6 +987,7 @@ ys-check() {
     echo "用户名:$(cat /etc/ys-ygy/txt/mita_name.txt)"
     echo "密码:$(cat /etc/ys-ygy/txt/mita_password.txt)"
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    gitlabsubgo
     
 }
 ################################### 菜单选择显示配置的函数 ################################
@@ -910,84 +1049,74 @@ telegram_id=$userid
 echo '#!/bin/bash
 export LANG=en_US.UTF-8
 
-total_lines=$(wc -l < /etc/ys-ygy/ys-client.yaml.yaml)
+total_lines=$(wc -l < /etc/ys-ygy/ys-client.yaml)
 half=$((total_lines / 2))
-head -n $half /etc/ys-ygy/ys-client.yaml.yaml > /etc/ys-ygy/ys-client.yaml1.txt
-tail -n +$((half + 1)) /etc/ys-ygy/ys-client.yaml.yaml > /etc/ys-ygy/ys-client.yaml2.txt
+head -n $half /etc/ys-ygy/ys-client.yaml > /etc/ys-ygy/ys-client.yaml1.txt
+tail -n +$((half + 1)) /etc/ys-ygy/ys-client.yaml > /etc/ys-ygy/ys-client.yaml2.txt
 
-total_lines=$(wc -l < /etc/ys-ygy/sb-client.json.json)
+total_lines=$(wc -l < /etc/ys-ygy/sb-client.json)
 quarter=$((total_lines / 4))
-head -n $quarter /etc/ys-ygy/sb-client.json.json > /etc/ys-ygy/sb-client.json1.txt
-tail -n +$((quarter + 1)) /etc/ys-ygy/sb-client.json.json | head -n $quarter > /etc/ys-ygy/sb-client.json2.txt
-tail -n +$((2 * quarter + 1)) /etc/ys-ygy/sb-client.json.json | head -n $quarter > /etc/ys-ygy/sb-client.json3.txt
-tail -n +$((3 * quarter + 1)) /etc/ys-ygy/sb-client.json.json > /etc/ys-ygy/sb-client.json4.txt
+head -n $quarter /etc/ys-ygy/sb-client.json > /etc/ys-ygy/sb-client.json1.txt
+tail -n +$((quarter + 1)) /etc/ys-ygy/sb-client.json | head -n $quarter > /etc/ys-ygy/sb-client.json2.txt
+tail -n +$((2 * quarter + 1)) /etc/ys-ygy/sb-client.json | head -n $quarter > /etc/ys-ygy/sb-client.json3.txt
+tail -n +$((3 * quarter + 1)) /etc/ys-ygy/sb-client.json > /etc/ys-ygy/sb-client.json4.txt
 
-m1=$(cat /etc/ys-ygy/vl_reality.txt 2>/dev/null)
-m2=$(cat /etc/ys-ygy/vm_ws.txt 2>/dev/null)
-m3=$(cat /etc/ys-ygy/vm_ws_argols.txt 2>/dev/null)
-m3_5=$(cat /etc/ys-ygy/vm_ws_argogd.txt 2>/dev/null)
-m4=$(cat /etc/ys-ygy/vm_ws_tls.txt 2>/dev/null)
-m5=$(cat /etc/ys-ygy/hy2.txt 2>/dev/null)
-m6=$(cat /etc/ys-ygy/tuic5.txt 2>/dev/null)
-m7=$(cat /etc/ys-ygy/sb-client.json1.txt 2>/dev/null)
-m7_5=$(cat /etc/ys-ygy/sb-client.json2.txt 2>/dev/null)
-m7_5_5=$(cat /etc/ys-ygy/sb-client.json3.txt 2>/dev/null)
-m7_5_5_5=$(cat /etc/ys-ygy/sb-client.json4.txt 2>/dev/null)
-m8=$(cat /etc/ys-ygy/ys-client.yaml1.txt 2>/dev/null)
-m8_5=$(cat /etc/ys-ygy/ys-client.yaml2.txt 2>/dev/null)
-m9=$(cat /etc/ys-ygy/sb-client_gitlab.txt 2>/dev/null)
-m10=$(cat /etc/ys-ygy/ys-client_gitlab.txt 2>/dev/null)
-m11=$(cat /etc/ys-ygy/jh_sub.txt 2>/dev/null)
+m1=$(cat /etc/ys-ygy/hy2.txt 2>/dev/null)
+m2=$(cat /etc/ys-ygy/anytls.txt 2>/dev/null)
+m3=$(cat /etc/ys-ygy/ys-vless-reality-vision.txt 2>/dev/null)
+m4=$(cat /etc/ys-ygy/mieru-exclave.txt 2>/dev/null)
+m5=$(cat /etc/ys-ygy/sb-client.json1.txt 2>/dev/null)
+m5_5=$(cat /etc/ys-ygy/sb-client.json2.txt 2>/dev/null)
+m5_5_5=$(cat /etc/ys-ygy/sb-client.json3.txt 2>/dev/null)
+m5_5_5_5=$(cat /etc/ys-ygy/sb-client.json4.txt 2>/dev/null)
+m6=$(cat /etc/ys-ygy/ys-client.yaml1.txt 2>/dev/null)
+m6_5=$(cat /etc/ys-ygy/ys-client.yaml2.txt 2>/dev/null)
+m7=$(cat /etc/ys-ygy/sb-client_gitlab.txt 2>/dev/null)
+m8=$(cat /etc/ys-ygy/ys-client_gitlab.txt 2>/dev/null)
+m9=$(cat /etc/ys-ygy/jh_sub.txt 2>/dev/null)
 message_text_m1=$(echo "$m1")
 message_text_m2=$(echo "$m2")
 message_text_m3=$(echo "$m3")
-message_text_m3_5=$(echo "$m3_5")
 message_text_m4=$(echo "$m4")
 message_text_m5=$(echo "$m5")
+message_text_m5_5=$(echo "$m5_5")
+message_text_m5_5_5=$(echo "$m5_5_5")
+message_text_m5_5_5_5=$(echo "$m5_5_5_5")
 message_text_m6=$(echo "$m6")
+message_text_m6_5=$(echo "$m6_5")
 message_text_m7=$(echo "$m7")
-message_text_m7_5=$(echo "$m7_5")
-message_text_m7_5_5=$(echo "$m7_5_5")
-message_text_m7_5_5_5=$(echo "$m7_5_5_5")
 message_text_m8=$(echo "$m8")
-message_text_m8_5=$(echo "$m8_5")
 message_text_m9=$(echo "$m9")
-message_text_m10=$(echo "$m10")
-message_text_m11=$(echo "$m11")
 MODE=HTML
 URL="https://api.telegram.org/bottelegram_token/sendMessage"
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Vless-reality-vision 分享链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m1}")
-if [[ -f /etc/ys-ygy/vm_ws.txt ]]; then
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Vmess-ws 分享链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m2}")
+if [[ -f /etc/ys-ygy/hy2.txt ]]; then
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 hy2 分享链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m1}")
 fi
-if [[ -f /etc/ys-ygy/vm_ws_argols.txt ]]; then
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Vmess-ws(tls)+Argo临时域名分享链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m3}")
+if [[ -f /etc/ys-ygy/anytls.txt ]]; then
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 anytls 分享链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m2}")
 fi
-if [[ -f /etc/ys-ygy/vm_ws_argogd.txt ]]; then
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Vmess-ws(tls)+Argo固定域名分享链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m3_5}")
+if [[ -f /etc/ys-ygy/ys-vless-reality-vision.txt ]]; then
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 vless-reality-vision 分享链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m3}")
 fi
-if [[ -f /etc/ys-ygy/vm_ws_tls.txt ]]; then
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Vmess-ws-tls 分享链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m4}")
+if [[ -f /etc/ys-ygy/mieru-exclave.txt ]]; then
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 mieru 分享链接 】：支持nekobox "$'"'"'\n\n'"'"'"${message_text_m4}")
 fi
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Hysteria-2 分享链接 】：支持nekobox "$'"'"'\n\n'"'"'"${message_text_m5}")
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Tuic-v5 分享链接 】：支持nekobox "$'"'"'\n\n'"'"'"${message_text_m6}")
 
 if [[ -f /etc/ys-ygy/sb-client_gitlab.txt ]]; then
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Sing-box 订阅链接 】：支持SFA、SFW、SFI "$'"'"'\n\n'"'"'"${message_text_m9}")
-else
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Sing-box 配置文件(4段) 】：支持SFA、SFW、SFI "$'"'"'\n\n'"'"'"${message_text_m7}")
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=${message_text_m7_5}")
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=${message_text_m7_5_5}")
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=${message_text_m7_5_5_5}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Sing-box 订阅链接 】：支持SFA、SFW、SFI "$'"'"'\n\n'"'"'"${message_text_m7}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Sing-box 配置文件(4段) 】：支持SFA、SFW、SFI "$'"'"'\n\n'"'"'"${message_text_m5}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=${message_text_m5_5}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=${message_text_m5_5_5}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=${message_text_m5_5_5_5}")
 fi
 
 if [[ -f /etc/ys-ygy/ys-client_gitlab.txt ]]; then
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Clash-meta 订阅链接 】：支持Clash-meta相关客户端 "$'"'"'\n\n'"'"'"${message_text_m10}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Clash-meta 订阅链接 】：支持Clash-meta相关客户端 "$'"'"'\n\n'"'"'"${message_text_m8}")
 else
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Clash-meta 配置文件(2段) 】：支持Clash-meta相关客户端 "$'"'"'\n\n'"'"'"${message_text_m8}")
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=${message_text_m8_5}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 Clash-meta 配置文件(2段) 】：支持Clash-meta相关客户端 "$'"'"'\n\n'"'"'"${message_text_m6}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=${message_text_m6_5}")
 fi
-res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 四合一协议聚合订阅链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m11}")
+res=$(timeout 20s curl -s -X POST $URL -d chat_id=telegram_id  -d parse_mode=${MODE} --data-urlencode "text=🚀【 四合一协议聚合订阅链接 】：支持v2rayng、nekobox "$'"'"'\n\n'"'"'"${message_text_m9}")
 
 if [ $? == 124 ];then
 echo TG_api请求超时,请检查网络是否重启完成并是否能够访问TG
@@ -1004,7 +1133,7 @@ sed -i "s/telegram_id/$telegram_id/g" /etc/ys-ygy/sbtg.sh
 green "设置完成！请确保TG机器人已处于激活状态！"
 tgnotice
 else
-changeserv
+setup_gitlab
 fi
 }
 
@@ -1028,9 +1157,6 @@ gitlabsub() {
     readp "请选择【0-1】：" menu
     if [ "$menu" = "1" ]; then
         cd /etc/ys-ygy
-        cat /etc/ys-ygy/hy2.txt 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
-        cat /etc/ys-ygy/anytls 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
-        cat /etc/ys-ygy/ys-vless-reality-vision.txt 2>/dev/null >>/etc/ys-ygy/jh_sub.txt
         readp "输入登录邮箱: " email
         readp "输入访问令牌: " token
         readp "输入用户名: " userid
@@ -1069,18 +1195,18 @@ expect "Password for 'https://$(cat /etc/ys-ygy/gitlabtoken.txt 2>/dev/null)@git
 send "$(cat /etc/ys-ygy/gitlabtoken.txt 2>/dev/null)\r"
 interact
 EOF
-            chmod +x gitpush.sh
-            ./gitpush.sh "git push -f origin main${gitlab_ml}" cat /etc/ys-ygy/gitlabtoken.txt >/dev/null 2>&1
-            echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/sb-client.json/raw?ref=${git_sk}&private_token=${token}" >/etc/ys-ygy/sb-client_gitlab.txt
-            echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/ys-client.yaml/raw?ref=${git_sk}&private_token=${token}" >/etc/ys-ygy/ys-client_gitlab.txt
-            echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/jh_sub.txt/raw?ref=${git_sk}&private_token=${token}" >/etc/ys-ygy/jh_sub_gitlab.txt
-            clsbshow
+chmod +x gitpush.sh
+./gitpush.sh "git push -f origin main${gitlab_ml}" cat /etc/ys-ygy/gitlabtoken.txt >/dev/null 2>&1
+echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/sb-client.json/raw?ref=${git_sk}&private_token=${token}" >/etc/ys-ygy/sb-client_gitlab.txt
+echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/ys-client.yaml/raw?ref=${git_sk}&private_token=${token}" >/etc/ys-ygy/ys-client_gitlab.txt
+echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/jh_sub.txt/raw?ref=${git_sk}&private_token=${token}" >/etc/ys-ygy/jh_sub_gitlab.txt
+clsbshow
         else
             yellow "设置Gitlab订阅链接失败，请反馈"
         fi
         cd
         else
-        changeserv
+        setup_gitlab
         fi
 }
 
@@ -1834,7 +1960,7 @@ install_mieru_client_interactive() {
     return 0 # 函数成功完成
 }
 #####################################################安装Mieru客户端#########################################################################
-zhiqian_zhengshu(){
+zhiqian_zhengshu(){     #设置自签证书
     $(mkdir -p /etc/ys-ygy/shiyou-miyao/)
     $(chmod +x /etc/ys-ygy/shiyou-miyao/)
     $(cd /root)
@@ -1911,6 +2037,7 @@ ys-parameter() { #  mihomo的配置参数
     echo "$socks_port" > /etc/ys-ygy/txt/socks_port.txt
     echo "$socks_name" > /etc/ys-ygy/txt/socks_name.txt
     echo "$socks_password" > /etc/ys-ygy/txt/socks_password.txt
+
 }
 ##############################输入函数###################################################
 mita-parameter() {
@@ -2752,12 +2879,14 @@ setup_gitlab() {
     green " 1. gitlab建立订阅链接"
     green " 2. 检查是否设置了gitlab订阅链接"
     green " 3. 打印当前gitlab订阅链接"
+    green " 4. 同步到telegram"
     green " 0. 返回上级菜单"
     readp "请输入数字【0-3】:" Input
     case "$Input" in
     1) gitlabsub ;;   #菜单选项,gitlab建立订阅链接
     2) gitlabsubgo ;; #检查是否设置了gitlab订阅链接
     3) clsbshow ;;    #打印当前gitlab订阅链接
+    4) tgsbshow ;;    #同步到telegram
     0) menu_zhu ;;
     esac
 }
@@ -2790,7 +2919,7 @@ menu_zhu() {
     1) setup_install ;; # 一键安装mihomo与mieru服务端脚本
     2) ys-check ;;      # 查看客户端配置
     3) peizi_ys ;;     # 查看服务是否正常运行
-    4) setup_gitlab ;;  # 同步到GitLab
+    4) setup_gitlab ;;  # 同步到GitLab和telegram
     5) bbr;;     # 一键原版BBR+FQ加速
     6) acme;;
     7) cfwarp;;
