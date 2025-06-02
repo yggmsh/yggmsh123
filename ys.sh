@@ -1115,11 +1115,11 @@ clsbshow() {
     echo
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
-    green "当前Clash-meta节点配置已更新并推送"
-    green "Clash-meta订阅链接如下："
+    green "当前mihomo节点配置已更新并推送"
+    green "mihomo订阅链接如下："
     blue "$(cat /etc/ys-ygy/ys-client_gitlab.txt 2>/dev/null)"
     echo
-    green "Clash-meta订阅链接二维码如下："
+    green "mihomo订阅链接二维码如下："
     qrencode -o - -t ANSIUTF8 "$(cat /etc/ys-ygy/ys-client_gitlab.txt 2>/dev/null)"
     echo
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
