@@ -2497,7 +2497,6 @@ EOF
 }
 
 sb-config(){   #sing-box客户端配置文件
-hy2_ports="8888-9999"
 new_ports="${hy2_ports/-/:}"
 hy2_ports="$new_ports"
 cat > /etc/ys-ygy/sb-client.json <<EOF
@@ -2631,7 +2630,7 @@ cat > /etc/ys-ygy/sb-client.json <<EOF
         "type": "hysteria2",
         "tag": "$ys_hy2_name",
         "server": "$address_ip",
-        "server_ports": $hy2_ports,
+        "server_port": $hy2_port,
         "password": "$hy2_password",
         "up_mbps": 1000,
         "down_mbps": 1000,
@@ -2799,6 +2798,13 @@ stop_mita(){
     peizi_ys
 }
 
+hy_auto() {
+  rm -rf /usr/bin/ys
+  curl -L -o /usr/bin/ys -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/ys.sh
+  chmod +x /usr/bin/ys
+  cd /root/
+}
+
 ipv4_ipv6_switch(){
     select_network_ip
     ys_hy2_name=$(cat /etc/ys-ygy/txt/ys_hy2_name.txt)
@@ -2853,7 +2859,7 @@ setup_install() {
     mieru-client-config # 写入/etc/mieru/config.json mieru客户端配置文件,用来创建配置链接
     ys-system-auto      # 写入开机mihomo自动启动配置文件/etc/systemd/system/ys-ygy.service
     open_ports_net      # 多端口配置
-    run_ys_mita              # 运行ys配置
+    run_ys_mita         # 运行ys配置
     detection           #检测mihomo与mita程序是否运行成功,通过调用check_service_status
     ys-link-quan        #快捷链接
 }
@@ -2937,6 +2943,7 @@ menu_zhu() {
 jianche-system       #检测root模式与linux发行版系统是否支持
 jianche-system-gujia #这行命令检测系统构架,看是不是支持
 gongju-install       #检测安装脚本所需要的工具,并安装各种工具
+hy_auto
 jianche-openvz
 jianche-bbr  
 menu_zhu             #主菜单
