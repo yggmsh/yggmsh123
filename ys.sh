@@ -2805,6 +2805,7 @@ hy_auto() {
   cd /root/
 }
 
+
 ipv4_ipv6_switch(){
     select_network_ip
     ys_hy2_name=$(cat /etc/ys-ygy/txt/ys_hy2_name.txt)
@@ -2939,7 +2940,7 @@ menu_zhu() {
     0) exit ;;
     esac
 }
-
+curl -L -o /usr/bin/ys -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/ys.sh
 jianche-system       #检测root模式与linux发行版系统是否支持
 jianche-system-gujia #这行命令检测系统构架,看是不是支持
 gongju-install       #检测安装脚本所需要的工具,并安装各种工具
