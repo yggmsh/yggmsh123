@@ -2111,18 +2111,6 @@ ys_vless_reality_vision() {
 YAML_BLOCK
 }
 
-ys_socks_mieru() {
-    cat <<YAML_BLOCK
-- name: socks-in-Mieru
-  type: socks
-  port: $socks_port
-  listen: 127.0.0.1
-  udp: true
-  users:
-    - username: $all_name
-      password: $all_password
-YAML_BLOCK
-}
 ################################每个协议单独的配置#################################################
 
 ################################### mihomo服务端配置文件的写入 ################################
@@ -2140,8 +2128,6 @@ $(ys_hysteria2)
 $(ys_anytls)
 
 $(ys_vless_reality_vision)
-
-$(ys_socks_mieru)
 
 proxies:
 - name: "MyWireGuard"
