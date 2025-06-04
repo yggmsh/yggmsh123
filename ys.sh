@@ -2131,7 +2131,9 @@ ys-config() {
     cat >/etc/ys-ygy/config.yaml <<EOF
 mixed-port: $socks_port    # 混合代理端口 (同时支持 HTTP 和 SOCKS5)
 authentication:   # 认证设置，仅作用于 HTTP/SOCKS 代理端口
-  - "$all_name: $all_password"
+  - "$all_name:$all_password"
+allow-lan: false    # 如果你只允许本机访问，这里通常设置为 false，虽然 bind-address 已经做了限制
+bind-address: "127.0.0.1" # **修改为 127.0.0.1**
 listeners:
 $(ys_hysteria2)
 
