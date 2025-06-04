@@ -874,7 +874,7 @@ detection() {                             # 检测mihomo与mita程序是否运�
 ys-link-quan() { # 安装程序运行完显示的导入链接和二维码
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
-    hy2_link="hysteria2://$hy2_password@$address_ip:$hy2_port/?mport=$hy2_port%2C$hy2_ports&insecure=1&sni=wwww.bing.com&alpn=h3#$ys_hy2_name"
+    hy2_link="hysteria2://$all_password@$address_ip:$hy2_port/?mport=$hy2_port%2C$hy2_ports&insecure=1&sni=wwww.bing.com&alpn=h3#$ys_hy2_name"
     echo "$hy2_link" >/etc/ys-ygy/txt/hy2.txt
     red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
     echo
@@ -886,7 +886,7 @@ ys-link-quan() { # 安装程序运行完显示的导入链接和二维码
     echo
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
-    anytls_link="anytls://$anytls_password@$address_ip:$anytls_port/?insecure=1#$ys_anytls_name"
+    anytls_link="anytls://$all_password@$address_ip:$anytls_port/?insecure=1#$ys_anytls_name"
     echo "$anytls_link" >/etc/ys-ygy/txt/anytls.txt
     red "🚀【 anytls 】节点信息如下：" && sleep 2
     echo
@@ -903,16 +903,16 @@ ys-link-quan() { # 安装程序运行完显示的导入链接和二维码
     echo "服务器:$address_ip"
     echo "服务器端口:$mita_port"
     echo "协议:TCP"
-    echo "用户名:$mita_name"
-    echo "密码:$mita_password"
+    echo "用户名:$all_name"
+    echo "密码:$all_password"
     echo "$address_ip" > /etc/ys-ygy/txt/address_ip.txt
     echo "$mita_port" > /etc/ys-ygy/txt/mita_port.txt
-    echo "$mita_name" > /etc/ys-ygy/txt/mita_name.txt
-    echo "$mita_password" > /etc/ys-ygy/txt/mita_password.txt
+    echo "$all_name" > /etc/ys-ygy/txt/all_name.txt
+    echo "$all_password" > /etc/ys-ygy/txt/all_password.txt
     echo
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
-    mieru_link2="mierus://$mita_name:$mita_password@$address_ip:$mita_port?mtu=1400&profile=$mieru_name&protocol=TCP"
+    mieru_link2="mierus://$all_name:$all_password@$address_ip:$mita_port?mtu=1400&profile=$mieru_name&protocol=TCP"
     echo "$mieru_link2" >/etc/ys-ygy/txt/mieru-exclave.txt
     red "🚀【 mieru 】节点信息如下：" && sleep 2
     echo
@@ -984,8 +984,8 @@ ys-check() {
     echo "服务器:$(cat /etc/ys-ygy/txt/address_ip.txt)"
     echo "服务器端口:$(cat /etc/ys-ygy/txt/mita_port.txt)"
     echo "协议:TCP"
-    echo "用户名:$(cat /etc/ys-ygy/txt/mita_name.txt)"
-    echo "密码:$(cat /etc/ys-ygy/txt/mita_password.txt)"
+    echo "用户名:$(cat /etc/ys-ygy/txt/all_name.txt)"
+    echo "密码:$(cat /etc/ys-ygy/txt/all_password.txt)"
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     gitlabsubgo
     
@@ -1978,26 +1978,23 @@ ys-parameter() { #  mihomo的配置参数
     yellow " mihomo安装 hysteria2, anytls, vless_reality_vision 三个协议"
     yellow " 并安装 socks5 用于 mieru的mita服务器端通过 socks5 来给mieru节点分流ChatGPT"
     vps_name=$(hostname)
+    readp "请设置用户名" all_name "hy2_name_1"
+    readp "请设置密码" all_password "password001"
     green "--- 正在配置 Hysteria2 ---"
     readp "请输入 Hysteria2 协议的节点名称" ys_hy2_name "ys_hy2_$vps_name"
     hy2_type=hysteria2
     readp "请输入 Hysteria2 端口" hy2_port "20000"
     readp "请输入 Hysteria2 多端口 " hy2_ports "31000-32000"
-    readp "请为 Hysteria2 设置用户名" hy2_name "hy2_name_1"
-    readp "请为 Hysteria2 设置密码" hy2_password "password001"
 
     green "--- 正在配置 Anytls ---"
     readp "请输入 Anytls 协议的节点名称" ys_anytls_name "ys_anytls_$vps_name"
     anytls_type=anytls
     readp "请输入 Anytls 端口" anytls_port "8443"
-    readp "请为 Anytls 设置用户名" anytls_name "anytls_name_1"
-    readp "请为 Anytls 设置密码" anytls_password "password001"
 
     green "--- 正在配置 VLESS Reality Vision ---"
     readp "请输入 VLESS Reality Vision 协议的节点名称" ys_vless_reality_vision_name "ys_vless_reality_vision_$vps_name"
     vless_reality_vision_type=vless
     readp "请输入 VLESS Reality Vision 端口" vless_reality_vision_port "26000"
-    readp "请输入 vless_reality_vision 的用户名" vless_reality_vision_name "vless_reality_vision_name_1"
     vless_reality_vision_uuid=$(uuidgen)
     green "自动获取 VLESS Reality Vision 的 UUID "
     green "您获取的 uuid 是:$vless_reality_vision_uuid"
@@ -2012,31 +2009,24 @@ ys-parameter() { #  mihomo的配置参数
 
     green "--- 正在配置 socks5 节点,目的用来给mieru的节点通过socks5链接mihomo的socks5,利用mihomo的分流来ChatGPT分流 ---"
     readp "请输入 socks5 的端口" socks_port "9369"
-    readp "请输入 socks5 的用户名" socks_name "socks_name_1"
-    readp "请输入 socks5 的密码" socks_password "password001"
     echo "-------"
     $(mkdir -p /etc/ys-ygy/txt/)
     $(chmod +x /etc/ys-ygy/txt/)
     echo "$ys_hy2_name" > /etc/ys-ygy/txt/ys_hy2_name.txt
     echo "$hy2_port" > /etc/ys-ygy/txt/hy2_port.txt
     echo "$hy2_ports" > /etc/ys-ygy/txt/hy2_ports.txt
-    echo "$hy2_name" > /etc/ys-ygy/txt/hy2_name.txt
-    echo "$hy2_password" > /etc/ys-ygy/txt/hy2_password.txt
+    echo "$all_name" > /etc/ys-ygy/txt/all_name.txt
+    echo "$all_password" > /etc/ys-ygy/txt/all_password.txt
     echo "$ys_anytls_name" > /etc/ys-ygy/txt/ys_anytls_name.txt
     echo "$anytls_port" > /etc/ys-ygy/txt/anytls_port.txt
-    echo "$anytls_name" > /etc/ys-ygy/txt/anytls_name.txt
-    echo "$anytls_password" > /etc/ys-ygy/txt/anytls_password.txt
     echo "$ys_vless_reality_vision_name" > /etc/ys-ygy/txt/ys_vless_reality_vision_name.txt
     echo "$vless_reality_vision_port" > /etc/ys-ygy/txt/vless_reality_vision_port.txt
-    echo "$vless_reality_vision_name" > /etc/ys-ygy/txt/vless_reality_vision_name.txt
     echo "$vless_reality_vision_uuid" > /etc/ys-ygy/txt/vless_reality_vision_uuid.txt
     echo "$vless_reality_vision_url" > /etc/ys-ygy/txt/vless_reality_vision_url.txt
     echo "$vless_reality_vision_private_key" > /etc/ys-ygy/txt/vless_reality_vision_private_key.txt
     echo "$vless_reality_vision_Public_Key" > /etc/ys-ygy/txt/vless_reality_vision_Public_Key.txt
     echo "$ys_short_id" > /etc/ys-ygy/txt/ys_short_id.txt
     echo "$socks_port" > /etc/ys-ygy/txt/socks_port.txt
-    echo "$socks_name" > /etc/ys-ygy/txt/socks_name.txt
-    echo "$socks_password" > /etc/ys-ygy/txt/socks_password.txt
 
 }
 ##############################输入函数###################################################
@@ -2047,16 +2037,13 @@ mita-parameter() {
     readp "请输入多端口传输模式 模式为 TCP 或 UDP " mita_protocols "TCP"
     readp "请输入单端口 范围在20000-65534 格式为xxxxx" mita_port "37999"
     readp "请输入单端口传输模式 模式为 TCP 或 UDP " mita_protocol "TCP"
-    readp "请输入用户名 " mita_name "mita_$vps_name"
-    readp "请输入密码" mita_password "password001"
+    readp "请输入用户名 " mieru_name "mita_$vps_name"
     mieru_name="mieru_$vps_name"
     echo "$mieru_name" > /etc/ys-ygy/txt/mieru_name.txt
     echo "$mita_ports" > /etc/ys-ygy/txt/mita_ports.txt
     echo "$mita_protocols" > /etc/ys-ygy/txt/mita_protocols.txt
     echo "$mita_port" > /etc/ys-ygy/txt/mita_port.txt
     echo "$mita_protocol" > /etc/ys-ygy/txt/mita_protocol.txt
-    echo "$mita_name" > /etc/ys-ygy/txt/mita_name.txt
-    echo "$mita_password" > /etc/ys-ygy/txt/mita_password.txt
 }
 ##############################输入函数###################################################
 
@@ -2068,7 +2055,7 @@ ys_hysteria2() {
   port: $hy2_port
   listen: 0.0.0.0
   users:
-    $hy2_name: $hy2_password
+    $all_name: $all_password
   up: 1000
   down: 1000
   ignore-client-bandwidth: false
@@ -2111,7 +2098,7 @@ ys_vless_reality_vision() {
   port: $vless_reality_vision_port
   listen: 0.0.0.0
   users:
-    - username: $vless_reality_vision_name
+    - username: $all_name
       uuid: $vless_reality_vision_uuid
       flow: xtls-rprx-vision
   reality-config:
@@ -2132,8 +2119,8 @@ ys_socks_mieru() {
   listen: 127.0.0.1
   udp: true
   users:
-    - username: $socks_name
-      password: $socks_password
+    - username: $all_name
+      password: $all_password
 YAML_BLOCK
 }
 ################################每个协议单独的配置#################################################
@@ -2142,6 +2129,9 @@ YAML_BLOCK
 # insx 函数：生成最终的 config.yaml
 ys-config() {
     cat >/etc/ys-ygy/config.yaml <<EOF
+mixed-port: $socks_port    # 混合代理端口 (同时支持 HTTP 和 SOCKS5)
+authentication:   # 认证设置，仅作用于 HTTP/SOCKS 代理端口
+  - "$all_name: $all_password"
 listeners:
 $(ys_hysteria2)
 
@@ -2211,8 +2201,8 @@ mita-config() {
 	],
 	"users": [
 		{
-			"name": "$mita_name",
-			"password": "$mita_password"
+			"name": "$all_name",
+			"password": "$all_password"
 		}
 	],
 	"loggingLevel": "INFO",
@@ -2225,8 +2215,8 @@ mita-config() {
 				"host": "127.0.0.1",
 				"port": $socks_port,
 				"socks5Authentication": {
-					"user": "$socks_name",
-					"password": "$socks_password"
+					"user": "$all_name",
+					"password": "$all_password"
 				}
 			}
 		],
@@ -2301,7 +2291,7 @@ proxies:
   server: $address_ip
   #port: $hy2_port
   ports: $hy2_ports,$hy2_port
-  password: $hy2_password
+  password: $all_password
   up: "1000 Mbps"
   down: "1000 Mbps"
   sni: www.bing.com
@@ -2344,7 +2334,7 @@ proxies:
   type: anytls
   server: $address_ip
   port: $anytls_port
-  password: "$anytls_password"
+  password: "$all_password"
   client-fingerprint: edge
   udp: true
   idle-session-check-interval: 30
@@ -2362,8 +2352,8 @@ proxies:
   #port: $mita_port
   port-range: $mita_ports
   transport: TCP
-  username: $mita_name
-  password: $mita_password
+  username: $all_name
+  password: $all_password
   multiplexing: MULTIPLEXING_OFF
 
 proxy-groups:
@@ -2432,8 +2422,8 @@ mieru-client-config() {
         {
             "profileName": "default",
             "user": {
-                "name": "$mita_name",
-                "password": "$mita_password"
+                "name": "$all_name",
+                "password": "$all_password"
             },
             "servers": [
                 {
@@ -2631,7 +2621,7 @@ cat > /etc/ys-ygy/sb-client.json <<EOF
         "tag": "$ys_hy2_name",
         "server": "$address_ip",
         "server_port": $hy2_port,
-        "password": "$hy2_password",
+        "password": "$all_password",
         "up_mbps": 1000,
         "down_mbps": 1000,
         "tls": {
@@ -2649,7 +2639,7 @@ cat > /etc/ys-ygy/sb-client.json <<EOF
 
         "server": "$address_ip",
         "server_port": $anytls_port,
-        "password": "$anytls_password",
+        "password": "$all_password",
         "idle_session_check_interval": "30s",
         "idle_session_timeout": "30s",
         "min_idle_session": 5,
@@ -2809,30 +2799,23 @@ ipv4_ipv6_switch(){
     ys_hy2_name=$(cat /etc/ys-ygy/txt/ys_hy2_name.txt)
     hy2_port=$(cat /etc/ys-ygy/txt/hy2_port.txt)
     hy2_ports=$(cat /etc/ys-ygy/txt/hy2_ports.txt)
-    hy2_name=$(cat /etc/ys-ygy/txt/hy2_name.txt)
-    hy2_password=$(cat /etc/ys-ygy/txt/hy2_password.txt)
+    all_name=$(cat /etc/ys-ygy/txt/all_name.txt)
+    all_password=$(cat /etc/ys-ygy/txt/all_password.txt)
     ys_anytls_name=$(cat /etc/ys-ygy/txt/ys_anytls_name.txt)
     anytls_port=$(cat /etc/ys-ygy/txt/anytls_port.txt)
-    anytls_name=$(cat /etc/ys-ygy/txt/anytls_name.txt)
-    anytls_password=$(cat /etc/ys-ygy/txt/anytls_password.txt)
     ys_vless_reality_vision_name=$(cat /etc/ys-ygy/txt/ys_vless_reality_vision_name.txt)
     vless_reality_vision_port=$(cat /etc/ys-ygy/txt/vless_reality_vision_port.txt)
-    vless_reality_vision_name=$(cat /etc/ys-ygy/txt/vless_reality_vision_name.txt)
     vless_reality_vision_uuid=$(cat /etc/ys-ygy/txt/vless_reality_vision_uuid.txt)
     vless_reality_vision_url=$(cat /etc/ys-ygy/txt/vless_reality_vision_url.txt)
     vless_reality_vision_private_key=$(cat /etc/ys-ygy/txt/vless_reality_vision_private_key.txt)
     vless_reality_vision_Public_Key=$(cat /etc/ys-ygy/txt/vless_reality_vision_Public_Key.txt)
     ys_short_id=$(cat /etc/ys-ygy/txt/ys_short_id.txt)
     socks_port=$(cat /etc/ys-ygy/txt/socks_port.txt)
-    socks_name=$(cat /etc/ys-ygy/txt/socks_name.txt)
-    socks_password=$(cat /etc/ys-ygy/txt/socks_password.txt)
     mieru_name=$(cat /etc/ys-ygy/txt/mieru_name.txt)
     mita_ports=$(cat /etc/ys-ygy/txt/mita_ports.txt)
     mita_protocols=$(cat /etc/ys-ygy/txt/mita_protocols.txt)
     mita_port=$(cat /etc/ys-ygy/txt/mita_port.txt)
     mita_protocol=$(cat /etc/ys-ygy/txt/mita_protocol.txt)
-    mita_name=$(cat /etc/ys-ygy/txt/mita_name.txt)
-    mita_password=$(cat /etc/ys-ygy/txt/mita_password.txt)
     ys-config           # 写入/etc/ys-ygy/config.yaml主文件
     mita-config         # 写入/etc/mita/config.json主文件
     ys-client           # 写入/etc/ys-ygy/ys-client.yaml mihomo客户端配置文件,里面包括mieru客户端配置
