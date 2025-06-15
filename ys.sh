@@ -208,7 +208,7 @@ warpcheck() {
 }
 
 ###############################################################################################################
-vps_ip() { # 获取本地vps的真实ip
+vps_ip() {    # 获取本地vps的真实ip
     warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。  wgcfv6 变量 wgcfv4 变量  两个变量里是否存储 on 或 plus
     if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
         v4v6
@@ -313,12 +313,12 @@ openyn() {
 ###############################################################################################################
 # 获取版本号函数,在进入菜单时候,显示    修改完了
 lapre() {
-# 获取 mihomo 测试版 版本号
-precore=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | grep '"name":' | sed -n '5p' | sed 's/\.gz",//' | awk -F'-' '{print $NF}')
-# 获取 mihomo 正式版 版本号
-latcore=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | grep '"tag_name":' | sed -n '2p' | awk -F'"' '{print $(NF-1)}')
-# 获取当前安装的版本号
-inscore=$(/etc/ys/ys -v 2>/dev/null | awk '/Mihomo Meta/{print $1, $2, $3}')
+    # 获取 mihomo 测试版 版本号
+    precore=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | grep '"name":' | sed -n '5p' | sed 's/\.gz",//' | awk -F'-' '{print $NF}')
+    # 获取 mihomo 正式版 版本号
+    latcore=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | grep '"tag_name":' | sed -n '2p' | awk -F'"' '{print $(NF-1)}')
+    # 获取当前安装的版本号
+    inscore=$(/etc/ys/ys -v 2>/dev/null | awk '/Mihomo Meta/{print $1, $2, $3}')
 }
 ###############################################################################################################
 # 获取 mihomo 测试版版本号
@@ -528,7 +528,7 @@ insport() {
     else
         vlport && vmport && hy2port && hy2ports && tu5port && anytlsport && socks5port
         mihomo_array=("$port_vl_re" "$port_vm_ws" "$port_hy2" "$port_tu" "$port_any" "$port_socks5" "$hy2_array")
-        if [ -f "/etc/mita/config.json" ] && [ -f "/etc/ys/mieru" ] && [ -f "/root/mieru_array.txt" ]; then
+        if [ -f "/etc/mita/config.json" ] && [ -f "/etc/ys/mieru/mieru.txt" ] && [ -f "/root/mieru_array.txt" ]; then
             READ_ARRAY_FILE="/root/mieru_array.txt"
             read_array_mihomo # 读取 mieru 的端口信息
             for item1 in "${mieru_array[@]}"; do
@@ -662,7 +662,7 @@ anytlsport() {
 socks5port() {
     readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
-    port_socks5=$port
+    portsocks5=$port
 }
 
 mihomo_name_password() {
@@ -714,29 +714,127 @@ write_array_mihomo() {                  # 写入变量 WRITE_ARRAY_FILT="/root/m
 }
 
 ###############################################################################################################
-
-# mieru 函数开始
-mieruport() { #配置mieru主端口与协议
-    readp "\n设置mieru主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
-    chooseport
-    port_mieru=$port
-    # 增加写入txt数据,#还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-    mieru_array=()
-    mieru_array+=$port_mieru
-    WRITE_ARRAY_FILT="/root/mieru_array.txt"
-    write_array_mieru
-    for item1 in "${mihomo_array[@]}"; do
-        # 遍历第二个数组的每个元素
-        for item2 in "${mieru_array[@]}"; do
-            # 比较元素是否相同
-            if [[ "$item1" == "$item2" ]]; then
-                mieruport
-            fi
-        done
-    done
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   mieru   $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$#
+# 检查是否安装了mita
+mieru_jiance() {
+    if [ -f "/etc/mita/config.json" ] && [ -f "/etc/ys/mieru/mieru.txt" ] && [ -f "/root/mieru_array.txt" ]; then
+        echo "已经安装mieru,无需再安装"
+    fi
 }
 
-# 检查tcp端口是否被占用
+mieru_version() {
+    mieru_zhengshi=$(curl -s https://api.github.com/repos/enfein/mieru/releases | grep '"tag_name":' | sed -n '1p' | awk -F'"' '{print $(NF-1)}')
+    mieru_zhengshi_v=$(curl -s https://api.github.com/repos/enfein/mieru/releases | grep '"tag_name":' | sed -n '1p' | awk -F'"' '{print $(NF-1)}' | sed 's/^v//')
+}
+mieru_bbr() {
+    curl -fSsLO https://raw.githubusercontent.com/enfein/mieru/refs/heads/main/tools/enable_tcp_bbr.py
+    chmod +x enable_tcp_bbr.py
+    sudo python3 enable_tcp_bbr.py
+}
+# 安装
+mieru_setup() {
+    mieru_jiance
+    mieru_version
+    if command -v dpkg &>/dev/null; then
+        red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        yellow "是否安装 mieru$mieru_zhengshi 正式版内核 (回车默认 1 )"
+        yellow "输入 1 或 回车 安装 mieru "
+        readp "输入 2 或其他退出程序返回上级菜单 " menu
+        if [ -z "$menu" ] || [ "$menu" = "1" ]; then
+            case $(uname -m) in
+            aarch64) curl -L -o /root/mita.deb -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita_${mieru_zhengshi_v}_${cpu}.deb ;;
+            x86_64) curl -L -o /root/mita.deb -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita_${mieru_zhengshi_v}_${cpu}.deb ;;
+            *) red "目前脚本不支持$(uname -m)架构" && exit ;;
+            esac
+            cd /root/
+            sudo dpkg -i mita.deb
+            echo "deb 包安装完成"
+        else
+            sb
+        fi
+    elif command -v rpm &>/dev/null; then
+        red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        yellow "是否安装 mieru$mieru_zhengshi 正式版内核 (回车默认 1 )"
+        yellow "输入 1 或 回车 安装 mieru "
+        readp "输入 2 或其他退出程序返回上级菜单 " menu
+        if [ -z "$menu" ] || [ "$menu" = "1" ]; then
+            case $(uname -m) in
+            aarch64) curl -L -o /root/mita.rpm -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita-${mieru_zhengshi-v}-1.${cpu}.rpm ;;
+            x86_64) curl -L -o /root/mita.rpm -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita-${mieru_zhengshi-v}-1.${cpu}.rpm ;;
+            *) red "目前脚本不支持$(uname -m)架构" && exit ;;
+            esac
+            cd /root/
+            sudo dnf install mita.rpm
+            echo "rpm 包安装完成"
+        else
+            sb
+        fi
+    else
+        echo "不支持该系统"
+    fi
+}
+
+mita-config() {
+    cat >/etc/mita/config.json <<EOF
+{
+	"portBindings": [
+		{
+			"portRange": "$ports_mieru",
+			"protocol": "$xieyi_duo"
+		},
+		{
+			"port": $port_mieru,
+			"protocol": "$xieyi_one"
+		}
+	],
+	"users": [
+		{
+			"name": "$all_name",
+			"password": "$all_password",
+            "allowPrivateIP": false,
+            "allowLoopbackIP": true
+		}
+	],
+	"loggingLevel": "INFO",
+	"mtu": 1400,
+    "dns": {
+        "dualStack": "PREFER_IPv4"
+    },
+	"egress": {
+		"proxies": [
+			{
+				"name": "cloudflare",
+				"protocol": "SOCKS5_PROXY_PROTOCOL",
+				"host": "127.0.0.1",
+				"port": $socks5port,
+				"socks5Authentication": {
+					"user": "$all_name",
+					"password": "$all_password"
+				}
+			}
+		],
+		"rules": [
+			{
+				"ipRanges": [
+					"*"
+				],
+				"domainNames": [
+					"*"
+				],
+				"action": "PROXY",
+				"proxyName": "cloudflare"
+			}
+		]
+	}
+}
+EOF
+    green "mieru的mita服务器脚本执行完毕。"
+
+}
+
+########################################## mieru 常用函数模块 #############################################################
+
+# 检查tcp端口是否被占用                 编写完了
 tcp_port() {
     [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
 }
@@ -782,6 +880,30 @@ write_array_mieru() {                  # 写入变量 WRITE_ARRAY_FILT="/root/mi
         echo "错误：数组 '${arr_name}' 不存在或不是有效的数组名。"
         return 1
     fi
+}           #编写完了
+############################################## mieru 常用函数模块 ##############################################################
+############################################## mieru 端口与协议配置 ############################################################
+# mieru 函数开始  配置                      配置完了
+mieruport() { #配置mieru主端口与协议
+    readp "\n设置mieru主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
+    chooseport
+    # 增加写入txt数据,#还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
+    mieru_array=()
+    mieru_array+=$port
+    WRITE_ARRAY_FILT="/root/mieru_array.txt"
+    # 检查文件是否存在
+    read_array_mieru
+    for item1 in "${mihomo_array[@]}"; do
+        # 遍历第二个数组的每个元素
+        for item2 in "${mieru_array[@]}"; do
+            # 比较元素是否相同
+            if [[ "$item1" == "$item2" ]]; then
+                mieruport
+            fi
+        done
+    done
+    write_array_mieru   # 写入端口信息
+    port_mieru=$prot
 }
 
 mieruports() { # mieru多端口配置端口与协议
@@ -807,7 +929,7 @@ mieruports() { # mieru多端口配置端口与协议
             mieru_array+=($xport)
             #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
             READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru
+            read_array_mieru        # 读取 mihomo 占用的端口
             for item1 in "${mihomo_array[@]}"; do
                 # 遍历第二个数组的每个元素
                 for item2 in "${mieru_array[@]}"; do
@@ -818,7 +940,7 @@ mieruports() { # mieru多端口配置端口与协议
                 done
             done
             WRITE_ARRAY_FILT="/root/mieru_array.txt"
-            write_array_mieru
+            write_array_mieru       #写入 mieru 端口文件
         done
         ports_mieru="$num1-$num2"
     # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
@@ -834,7 +956,7 @@ mieruports() { # mieru多端口配置端口与协议
             mieru_array+=($xport)
             #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
             READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru
+            read_array_mieru         # 读取 mihomo 占用的端口
             for item1 in "${mihomo_array[@]}"; do
                 # 遍历第二个数组的每个元素
                 for item2 in "${mieru_array[@]}"; do
@@ -844,6 +966,7 @@ mieruports() { # mieru多端口配置端口与协议
                     fi
                 done
             done
+            write_array_mieru       #写入 mieru 端口文件
         done
         ports_mieru=$ports_x
     # 其他情况
@@ -859,7 +982,7 @@ mieru_xieyi_zhu() {
         xieyi_one="UDP"
     else
         echo "输入错误,请从新输入"
-        mieruport
+        mieru_xieyi_zhu
     fi
 }
 mieru_xieyi_duo() {
@@ -870,10 +993,9 @@ mieru_xieyi_duo() {
         xieyi_duo="UDP"
     else
         echo "输入错误,请从新输入"
-        mieru_xieyi
+        mieru_xieyi_duo
     fi
 }
-
 # 设置 mieru 端口函数入口
 mieru_port_auto() { # 还有问题,在考虑
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -896,11 +1018,33 @@ mieru_port_auto() { # 还有问题,在考虑
         done
         num1=${ports[1]}
         num2=$((num1 + 10))
+        mieru_array=()
+        mieru_array+=($num1)
+        for xport in $(seq "$num1" "$num2"); do
+            if ! tcp_port "$xport" || ! udp_port "$xport"; then
+                mieru_port_auto
+            fi
+            mieru_array+=($xport)
+            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
+            READ_ARRAY_FILE="/root/mihomo_array.txt"
+            read_array_mieru         # 读取 mihomo 占用的端口
+            for item1 in "${mihomo_array[@]}"; do
+                # 遍历第二个数组的每个元素
+                for item2 in "${mieru_array[@]}"; do
+                    # 比较元素是否相同
+                    if [[ "$item1" == "$item2" ]]; then
+                        mieru_port_auto
+                    fi
+                done
+            done
+            write_array_mieru       #写入 mieru 端口文件
+        done
+        write_array_mieru   # 写入端口信息
         # 如果生成的数组 与 mihomo 重复,则从执行函数mieru_port_auto
-        port_vm_ws=${ports[0]}
-        port_vl_re=${ports[1]}
+        port_mieru=${ports[0]}
+        ports_mieru="$num1-$num2"
     else
-        mieruport && mieruports
+        mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo
     fi
     echo
     blue "各协议端口确认如下"
@@ -908,20 +1052,48 @@ mieru_port_auto() { # 还有问题,在考虑
     blue "Mieru主端口协议：$xieyi_one"
     blue "Mieru多端口：$ports_mieru"
     blue "Mieru多端口协议：$xieyi_duo"
-    # ((num_x++))
-    # num1=${ports[6]}
-    # num2=$((num1 + 10))
-    # for xport in $(seq "$num1" "$num2"); do
-    #     if [ "$num_x" -eq 6 ] &&
-    #     [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$xport") ]] &&
-    #     [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$xport") ]]; then
-    #         break
-    #     fi
-    # done
+    echo "$port_mieru" >/etc/ys/mieru/port_mieru.txt
+    echo "$xieyi_one" >/etc/ys/mieru/xieyi_one.txt
+    echo "$ports_mieru" >/etc/ys/mieru/ports_mieru.txt
+    echo "$xieyi_duo" >/etc/ys/mieru/xieyi_duo.txt
+    # 加入写入/etc/ys/mieru 各个信息
+}
+read_xuyao_xinxi(){
+    port_mieru=$(cat /etc/ys/mieru/port_mieru.txt)
+    xieyi_one=$(cat /etc/ys/mieru/xieyi_one.txt)
+    ports_mieru=$(cat /etc/ys/mieru/ports_mieru.txt)
+    xieyi_duo=$(cat /etc/ys/mieru/xieyi_duo.txt)
+    all_name=$(cat /etc/ys/info/all_name.txt)
+    all_password=$(cat /etc/ys/info/all_password.txt)
+    if [[ ! -f '/etc/systemd/system/ys.service' ]]; then
+        socks5port
+        echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+        socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
+    else
+        socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
+    fi
 
-    #         if [ -d "/etc/mita" ]; then
+}
+############################################## mieru 端口与协议配置 ############################################################
+# 一键安装菜单
+mieru_caidai(){
+    mkdir -p /etc/ys/mieru
+    chmod 777 /etc/ys/mieru
+    openyn               # 询问是否开放防火墙
+    mieru_setup
+    mieru_port_auto
+    if [[ ! -f '/etc/systemd/system/ys.service' ]]; then
+        mihomo_name_password
+    fi
+    read_xuyao_xinxi
+    mita-config
+    $(mita apply config /etc/mita/config.json)
+    sleep 2
+    echo
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo
 
-    #
 }
 
 ###############################################################################################################
@@ -1542,13 +1714,13 @@ sbshare() {
     echo -e "${yellow}$baseurl${plain}"
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
-    sb_client       # 创建 sing-box 客户端与 mihomo 客户端配置文件 
+    sb_client # 创建 sing-box 客户端与 mihomo 客户端配置文件
 }
 # 显示节点信息  修改完了
 ###############################################################################################################
 # 创建 sing-box 客户端与 mihomo 客户端配置文件      修改完了
 sb_client() {
-    argopid     # 检查 arogid 信息
+    argopid # 检查 arogid 信息
     cat >/etc/ys/sing_box_client.json <<EOF
 {
   "log": {
@@ -2104,7 +2276,7 @@ unins() {
     kill -15 $(cat /etc/ys/info/sbargoympid.log 2>/dev/null) >/dev/null 2>&1
     kill -15 $(cat /etc/ys/info/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
     rm -rf /etc/ys sbyg_update /usr/bin/mihomo /root/geoip.db /root/geosite.db /root/warpapi /root/warpip
-    uncronsb        # 删除 mihomo 定时任务
+    uncronsb # 删除 mihomo 定时任务
     iptables -t nat -F PREROUTING >/dev/null 2>&1
     netfilter-persistent save >/dev/null 2>&1
     service iptables save >/dev/null 2>&1
@@ -2116,7 +2288,7 @@ unins() {
 # 主菜单3项  变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 3菜单第1项  更换Reality域名伪装地址,修改服务端服务端,修改客户端配置,快捷链接  修改完了
-changeym() { 
+changeym() {
     CONFIG_FILE="/etc/ys/config.yaml"
     OLD_DOMAIN="cat /etc/ys/vless/server-name.txt 2>/dev/null"
     # 定义你想要设置的新域名
@@ -2144,17 +2316,18 @@ changeym() {
     allports
     sbshare
     # 返回菜单3
-    readp "输入1返回菜单:/ns输入2退出脚本:" numm 
-    if[$numm == 1]
+    readp "输入1返回菜单:/ns输入2退出脚本:" numm
+    if [ "$numm" == "1" ]; then
         changeserv
     fi
-    if[$numm == 2]
-        exit
+
+    if [ "$numm" != "1" ]; then
+        exit 0 # 0 表示成功退出
     fi
 }
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 3菜单第2项    修改uuid与path路径  修改完了
-changeuuid() { 
+changeuuid() {
     echo
     olduuid=$(cat /etc/ys/vless/uuid.txt)
     oldvmpath=$(cat /etc/ys/vmess/path.txt)
@@ -2174,7 +2347,7 @@ changeuuid() {
         fi
         echo $sbfiles | xargs -n1 sed -i "s/$olduuid/$uuid/g" # 路径sbfiles 里的文件把原uuid 替换新uuid
         echo "$uuid" >/etc/ys/vless/uuid.txt
-        restartsb   # 重启mihomo
+        restartsb # 重启mihomo
         blue "已确认uuid (密码)：${uuid}"
         blue "已确认Vmess的path路径：$oldvmpath"
     elif [ "$menu" = "2" ]; then
@@ -2183,11 +2356,11 @@ changeuuid() {
             echo
         else
             vmpath=$menu
-            echo $sbfiles | xargs -n1 sed -i "50s#$oldvmpath#$vmpath#g"     # 需要修改行数
-            restartsb   # 重启mihomo
+            echo $sbfiles | xargs -n1 sed -i "50s#$oldvmpath#$vmpath#g" # 需要修改行数
+            restartsb                                                   # 重启mihomo
         fi
         blue "已确认Vmess的path路径：$(cat /etc/ys/vmess/path.txt)"
-        sbshare         # 显示节点信息
+        sbshare # 显示节点信息
     else
         changeserv
     fi
@@ -2196,127 +2369,127 @@ changeuuid() {
 # 3菜单第3项                    修改完了
 # argo 临时隧道与固定隧道
 cfargo_ym() {
-  tls=$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].tls.enabled')
-  if [[ "$tls" = "false" ]]; then
-    echo
-    yellow "1：Argo临时隧道"
-    yellow "2：Argo固定隧道"
-    yellow "0：返回上层"
-    readp "请选择【0-2】：" menu
-    if [ "$menu" = "1" ]; then
-      cfargo
-    elif [ "$menu" = "2" ]; then
-      cfargoym
+    tls=$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].tls.enabled')
+    if [[ "$tls" = "false" ]]; then
+        echo
+        yellow "1：Argo临时隧道"
+        yellow "2：Argo固定隧道"
+        yellow "0：返回上层"
+        readp "请选择【0-2】：" menu
+        if [ "$menu" = "1" ]; then
+            cfargo
+        elif [ "$menu" = "2" ]; then
+            cfargoym
+        else
+            changeserv
+        fi
     else
-      changeserv
+        yellow "因vmess开启了tls，Argo隧道功能不可用" && sleep 2
     fi
-  else
-    yellow "因vmess开启了tls，Argo隧道功能不可用" && sleep 2
-  fi
 }
-# 安装 argo 函数 
+# 安装 argo 函数
 cloudflaredargo() {
-  if [ ! -e /etc/ys/cloudflared ]; then
-    case $(uname -m) in
-    aarch64) cpu=arm64 ;;
-    x86_64) cpu=amd64 ;;
-    esac
-    curl -L -o /etc/ys/cloudflared -# --retry 2 https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$cpu
-    chmod +x /etc/ys/cloudflared
-  fi
+    if [ ! -e /etc/ys/cloudflared ]; then
+        case $(uname -m) in
+        aarch64) cpu=arm64 ;;
+        x86_64) cpu=amd64 ;;
+        esac
+        curl -L -o /etc/ys/cloudflared -# --retry 2 https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$cpu
+        chmod +x /etc/ys/cloudflared
+    fi
 }
 # 配置 argo 固定隧道
 cfargoym() {
-  echo
-  if [[ -f /etc/ys/sbargotoken.log && -f /etc/ys/sbargoym.log ]]; then
-    green "当前Argo固定隧道域名：$(cat /etc/ys/sbargoym.log 2>/dev/null)"
-    green "当前Argo固定隧道Token：$(cat /etc/ys/sbargotoken.log 2>/dev/null)"
-  fi
-  echo
-  green "请确保Cloudflare官网 --- Zero Trust --- Networks --- Tunnels已设置完成"
-  yellow "1：重置/设置Argo固定隧道域名"
-  yellow "2：停止Argo固定隧道"
-  yellow "0：返回上层"
-  readp "请选择【0-2】：" menu
-  if [ "$menu" = "1" ]; then
-    cloudflaredargo     # 安装argo
-    readp "输入Argo固定隧道Token: " argotoken
-    readp "输入Argo固定隧道域名: " argoym
-    if [[ -n $(ps -e | grep cloudflared) ]]; then
-      kill -15 $(cat /etc/ys/sbargoympid.log 2>/dev/null) >/dev/null 2>&1
+    echo
+    if [[ -f /etc/ys/sbargotoken.log && -f /etc/ys/sbargoym.log ]]; then
+        green "当前Argo固定隧道域名：$(cat /etc/ys/sbargoym.log 2>/dev/null)"
+        green "当前Argo固定隧道Token：$(cat /etc/ys/sbargotoken.log 2>/dev/null)"
     fi
     echo
-    if [[ -n "${argotoken}" && -n "${argoym}" ]]; then
-      nohup setsid /etc/ys/cloudflared tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token ${argotoken} >/dev/null 2>&1 &
-      echo "$!" >/etc/ys/sbargoympid.log
-      sleep 20
+    green "请确保Cloudflare官网 --- Zero Trust --- Networks --- Tunnels已设置完成"
+    yellow "1：重置/设置Argo固定隧道域名"
+    yellow "2：停止Argo固定隧道"
+    yellow "0：返回上层"
+    readp "请选择【0-2】：" menu
+    if [ "$menu" = "1" ]; then
+        cloudflaredargo # 安装argo
+        readp "输入Argo固定隧道Token: " argotoken
+        readp "输入Argo固定隧道域名: " argoym
+        if [[ -n $(ps -e | grep cloudflared) ]]; then
+            kill -15 $(cat /etc/ys/sbargoympid.log 2>/dev/null) >/dev/null 2>&1
+        fi
+        echo
+        if [[ -n "${argotoken}" && -n "${argoym}" ]]; then
+            nohup setsid /etc/ys/cloudflared tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token ${argotoken} >/dev/null 2>&1 &
+            echo "$!" >/etc/ys/sbargoympid.log
+            sleep 20
+        fi
+        echo ${argoym} >/etc/ys/sbargoym.log
+        echo ${argotoken} >/etc/ys/sbargotoken.log
+        crontab -l >/tmp/crontab.tmp
+        sed -i '/sbargoympid/d' /tmp/crontab.tmp
+        echo '@reboot /bin/bash -c "nohup setsid /etc/ys/cloudflared tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token $(cat /etc/ys/sbargotoken.log 2>/dev/null) >/dev/null 2>&1 & pid=\$! && echo \$pid > /etc/ys/sbargoympid.log"' >>/tmp/crontab.tmp
+        crontab /tmp/crontab.tmp
+        rm /tmp/crontab.tmp
+        argo=$(cat /etc/ys/sbargoym.log 2>/dev/null)
+        blue "Argo固定隧道设置完成，固定域名：$argo"
+    elif [ "$menu" = "2" ]; then
+        kill -15 $(cat /etc/ys/sbargoympid.log 2>/dev/null) >/dev/null 2>&1
+        crontab -l >/tmp/crontab.tmp
+        sed -i '/sbargoympid/d' /tmp/crontab.tmp
+        crontab /tmp/crontab.tmp
+        rm /tmp/crontab.tmp
+        rm -rf /etc/ys/vm_ws_argogd.txt
+        green "Argo固定隧道已停止"
+    else
+        cfargo_ym
     fi
-    echo ${argoym} >/etc/ys/sbargoym.log
-    echo ${argotoken} >/etc/ys/sbargotoken.log
-    crontab -l >/tmp/crontab.tmp
-    sed -i '/sbargoympid/d' /tmp/crontab.tmp
-    echo '@reboot /bin/bash -c "nohup setsid /etc/ys/cloudflared tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token $(cat /etc/ys/sbargotoken.log 2>/dev/null) >/dev/null 2>&1 & pid=\$! && echo \$pid > /etc/ys/sbargoympid.log"' >>/tmp/crontab.tmp
-    crontab /tmp/crontab.tmp
-    rm /tmp/crontab.tmp
-    argo=$(cat /etc/ys/sbargoym.log 2>/dev/null)
-    blue "Argo固定隧道设置完成，固定域名：$argo"
-  elif [ "$menu" = "2" ]; then
-    kill -15 $(cat /etc/ys/sbargoympid.log 2>/dev/null) >/dev/null 2>&1
-    crontab -l >/tmp/crontab.tmp
-    sed -i '/sbargoympid/d' /tmp/crontab.tmp
-    crontab /tmp/crontab.tmp
-    rm /tmp/crontab.tmp
-    rm -rf /etc/ys/vm_ws_argogd.txt
-    green "Argo固定隧道已停止"
-  else
-    cfargo_ym
-  fi
 }
 # 配置 argo 临时隧道
 cfargo() {
-  echo
-  yellow "1：重置Argo临时隧道域名"
-  yellow "2：停止Argo临时隧道"
-  yellow "0：返回上层"
-  readp "请选择【0-2】：" menu
-  if [ "$menu" = "1" ]; then
-    cloudflaredargo
-    i=0
-    while [ $i -le 4 ]; do
-      let i++
-      yellow "第$i次刷新验证Cloudflared Argo临时隧道域名有效性，请稍等……"
-      if [[ -n $(ps -e | grep cloudflared) ]]; then
+    echo
+    yellow "1：重置Argo临时隧道域名"
+    yellow "2：停止Argo临时隧道"
+    yellow "0：返回上层"
+    readp "请选择【0-2】：" menu
+    if [ "$menu" = "1" ]; then
+        cloudflaredargo
+        i=0
+        while [ $i -le 4 ]; do
+            let i++
+            yellow "第$i次刷新验证Cloudflared Argo临时隧道域名有效性，请稍等……"
+            if [[ -n $(ps -e | grep cloudflared) ]]; then
+                kill -15 $(cat /etc/ys/sbargopid.log 2>/dev/null) >/dev/null 2>&1
+            fi
+            nohup setsid /etc/ys/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 >/etc/ys/argo.log 2>&1 &
+            echo "$!" >/etc/ys/sbargopid.log
+            sleep 20
+            if [[ -n $(curl -sL https://$(cat /etc/ys/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')/ -I | awk 'NR==1 && /404|400|503/') ]]; then
+                argo=$(cat /etc/ys/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
+                blue "Argo临时隧道申请成功，域名验证有效：$argo" && sleep 2
+                break
+            fi
+            if [ $i -eq 5 ]; then
+                echo
+                yellow "Argo临时域名验证暂不可用，稍后可能会自动恢复，或者申请重置" && sleep 3
+            fi
+        done
+        crontab -l >/tmp/crontab.tmp
+        sed -i '/sbargopid/d' /tmp/crontab.tmp
+        echo '@reboot /bin/bash -c "nohup setsid /etc/ys/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 > /etc/ys/argo.log 2>&1 & pid=\$! && echo \$pid > /etc/ys/sbargopid.log"' >>/tmp/crontab.tmp
+        crontab /tmp/crontab.tmp
+        rm /tmp/crontab.tmp
+    elif [ "$menu" = "2" ]; then
         kill -15 $(cat /etc/ys/sbargopid.log 2>/dev/null) >/dev/null 2>&1
-      fi
-      nohup setsid /etc/ys/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 >/etc/ys/argo.log 2>&1 &
-      echo "$!" >/etc/ys/sbargopid.log
-      sleep 20
-      if [[ -n $(curl -sL https://$(cat /etc/ys/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')/ -I | awk 'NR==1 && /404|400|503/') ]]; then
-        argo=$(cat /etc/ys/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-        blue "Argo临时隧道申请成功，域名验证有效：$argo" && sleep 2
-        break
-      fi
-      if [ $i -eq 5 ]; then
-        echo
-        yellow "Argo临时域名验证暂不可用，稍后可能会自动恢复，或者申请重置" && sleep 3
-      fi
-    done
-    crontab -l >/tmp/crontab.tmp
-    sed -i '/sbargopid/d' /tmp/crontab.tmp
-    echo '@reboot /bin/bash -c "nohup setsid /etc/ys/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 > /etc/ys/argo.log 2>&1 & pid=\$! && echo \$pid > /etc/ys/sbargopid.log"' >>/tmp/crontab.tmp
-    crontab /tmp/crontab.tmp
-    rm /tmp/crontab.tmp
-  elif [ "$menu" = "2" ]; then
-    kill -15 $(cat /etc/ys/sbargopid.log 2>/dev/null) >/dev/null 2>&1
-    crontab -l >/tmp/crontab.tmp
-    sed -i '/sbargopid/d' /tmp/crontab.tmp
-    crontab /tmp/crontab.tmp
-    rm /tmp/crontab.tmp
-    rm -rf /etc/ys/vm_ws_argols.txt
-    green "Argo临时隧道已停止"
-  else
-    cfargo_ym
-  fi
+        crontab -l >/tmp/crontab.tmp
+        sed -i '/sbargopid/d' /tmp/crontab.tmp
+        crontab /tmp/crontab.tmp
+        rm /tmp/crontab.tmp
+        rm -rf /etc/ys/vm_ws_argols.txt
+        green "Argo临时隧道已停止"
+    else
+        cfargo_ym
+    fi
 }
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 3菜单第4项
@@ -2325,7 +2498,7 @@ changeip() { #
 }
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 3菜单第5项  设置Telegram推送节点通知    修改完了,没加入mieru ,等编写完成在加入
-tgsbshow() {        # telegram 推送设置
+tgsbshow() { # telegram 推送设置
     echo
     yellow "1：重置/设置Telegram机器人的Token、用户ID"
     yellow "0：返回上层"
@@ -2433,7 +2606,7 @@ fi
         sed -i "s/telegram_token/$telegram_token/g" /etc/ys/sbtg.sh
         sed -i "s/telegram_id/$telegram_id/g" /etc/ys/sbtg.sh
         green "设置完成！请确保TG机器人已处于激活状态！"
-        tgnotice    # telegram 推送文件
+        tgnotice # telegram 推送文件
     else
         changeserv # 返回菜单3
     fi
@@ -2506,44 +2679,44 @@ EOF
             echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/sing_box_client.json/raw?ref=${git_sk}&private_token=${token}" >/etc/ys/sing_box_gitlab.txt
             echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/clash_meta_client.yaml/raw?ref=${git_sk}&private_token=${token}" >/etc/ys/clash_meta_gitlab.txt
             echo "https://gitlab.com/api/v4/projects/${userid}%2F${project}/repository/files/jh_sub.txt/raw?ref=${git_sk}&private_token=${token}" >/etc/ys/jh_sub_gitlab.txt
-            clsbshow    # gitlab更新节点显示
+            clsbshow # gitlab更新节点显示
         else
             yellow "设置Gitlab订阅链接失败，请反馈"
         fi
         cd
     else
-        changeserv      # 返回3菜单
+        changeserv # 返回3菜单
     fi
 }
 # gitlab更新节点显示        修改完了
-clsbshow(){
-green "当前Sing-box节点已更新并推送"
-green "Sing-box订阅链接如下："
-blue "$(cat /etc/ys/sing_box_gitlab.txt 2>/dev/null)"
-echo
-green "Sing-box订阅链接二维码如下："
-qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/sing_box_gitlab.txt 2>/dev/null)"
-echo
-echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo
-green "当前mihomo节点配置已更新并推送"
-green "mihomo订阅链接如下："
-blue "$(cat /etc/ys/clash_meta_gitlab.txt 2>/dev/null)"
-echo
-green "mihomo订阅链接二维码如下："
-qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/clash_meta_gitlab.txt 2>/dev/null)"
-echo
-echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo
-green "当前聚合订阅节点配置已更新并推送"
-green "订阅链接如下："
-blue "$(cat /etc/ys/jh_sub_gitlab.txt 2>/dev/null)"
-echo
-yellow "可以在网页上输入订阅链接查看配置内容，如果无配置内容，请自检Gitlab相关设置并重置"
-echo
+clsbshow() {
+    green "当前Sing-box节点已更新并推送"
+    green "Sing-box订阅链接如下："
+    blue "$(cat /etc/ys/sing_box_gitlab.txt 2>/dev/null)"
+    echo
+    green "Sing-box订阅链接二维码如下："
+    qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/sing_box_gitlab.txt 2>/dev/null)"
+    echo
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo
+    green "当前mihomo节点配置已更新并推送"
+    green "mihomo订阅链接如下："
+    blue "$(cat /etc/ys/clash_meta_gitlab.txt 2>/dev/null)"
+    echo
+    green "mihomo订阅链接二维码如下："
+    qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/clash_meta_gitlab.txt 2>/dev/null)"
+    echo
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo
+    green "当前聚合订阅节点配置已更新并推送"
+    green "订阅链接如下："
+    blue "$(cat /etc/ys/jh_sub_gitlab.txt 2>/dev/null)"
+    echo
+    yellow "可以在网页上输入订阅链接查看配置内容，如果无配置内容，请自检Gitlab相关设置并重置"
+    echo
 }
 # 推送gitlab 订阅函数  用在了菜单9里
-gitlabsubgo() {     
+gitlabsubgo() {
     cd /etc/ys
     if [[ $(ls -a | grep '^\.git$') ]]; then
         if [ -f /etc/ys/gitlab_ml_ml ]; then
@@ -2555,7 +2728,7 @@ gitlabsubgo() {
         git commit -m "commit_add_$(date +"%F %T")" >/dev/null 2>&1
         chmod +x gitpush.sh
         ./gitpush.sh "git push -f origin main${gitlab_ml}" cat /etc/ys/gitlabtoken.txt >/dev/null 2>&1
-        clsbshow    # gitlab更新节点显示
+        clsbshow # gitlab更新节点显示
     else
         yellow "未设置Gitlab订阅链接"
     fi
@@ -2597,27 +2770,27 @@ changeserv() {
 ###############################################################################################################
 # 所有端口信息函数          修改完了
 allports() {
-  vl_port=$(cat /etc/ys/vless/port_vl_re.txt)
-  vm_port=$(cat /etc/ys/vmess/port_vm_ws_vps.txt)
-  hy2_port=$(cat /etc/ys/hysteria2/port_hy2.txt)
-  tu5_port=$(cat /etc/ys/tuic5/port_tu.txt)
-  port_any=$(cat /etc/ys/anytls/port_any.txt)
-  socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
-  hy2_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$hy2_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
-  tu5_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$tu5_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
-  [[ -n $hy2_ports ]] && hy2zfport="$hy2_ports" || hy2zfport="未添加"
-  [[ -n $tu5_ports ]] && tu5zfport="$tu5_ports" || tu5zfport="未添加"
+    vl_port=$(cat /etc/ys/vless/port_vl_re.txt)
+    vm_port=$(cat /etc/ys/vmess/port_vm_ws_vps.txt)
+    hy2_port=$(cat /etc/ys/hysteria2/port_hy2.txt)
+    tu5_port=$(cat /etc/ys/tuic5/port_tu.txt)
+    port_any=$(cat /etc/ys/anytls/port_any.txt)
+    socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
+    hy2_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$hy2_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
+    tu5_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$tu5_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
+    [[ -n $hy2_ports ]] && hy2zfport="$hy2_ports" || hy2zfport="未添加"
+    [[ -n $tu5_ports ]] && tu5zfport="$tu5_ports" || tu5zfport="未添加"
 }
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 主菜单4项  更改主端口/添加多端口跳跃复用   待修改
 changeport() {
-    sbactive        # 检查/etc/ys/config.yaml配置文件
-    allports        # 检查所有端口
-    fports() {      # 输入多端口
+    sbactive   # 检查/etc/ys/config.yaml配置文件
+    allports   # 检查所有端口
+    fports() { # 输入多端口
         readp "\n请输入转发的端口范围 (1000-65535范围内，格式为 小数字:大数字)：" rangeport
-        if [[ $rangeport =~ ^([1-9][0-9]{3,4}:[1-9][0-9]{3,4})$ ]]; then    # 判断输入的端口范围是否合规
-            b=${rangeport%%:*}  # 提取:之前的内容
-            c=${rangeport##*:}  # 提取:之后的内容
+        if [[ $rangeport =~ ^([1-9][0-9]{3,4}:[1-9][0-9]{3,4})$ ]]; then # 判断输入的端口范围是否合规
+            b=${rangeport%%:*}                                           # 提取:之前的内容
+            c=${rangeport##*:}                                           # 提取:之后的内容
             if [[ $b -ge 1000 && $b -le 65535 && $c -ge 1000 && $c -le 65535 && $b -lt $c ]]; then
                 iptables -t nat -A PREROUTING -p udp --dport $rangeport -j DNAT --to-destination :$port
                 ip6tables -t nat -A PREROUTING -p udp --dport $rangeport -j DNAT --to-destination :$port
@@ -2632,7 +2805,7 @@ changeport() {
         fi
         echo
     }
-    fport() {           # 输入关联端口
+    fport() { # 输入关联端口
         readp "\n请输入一个转发的端口 (1000-65535范围内)：" onlyport
         if [[ $onlyport -ge 1000 && $onlyport -le 65535 ]]; then
             iptables -t nat -A PREROUTING -p udp --dport $onlyport -j DNAT --to-destination :$port
@@ -2647,7 +2820,7 @@ changeport() {
     }
 
     hy2deports() {
-        allports        # 检查/etc/ys/config.yaml配置文件
+        allports # 检查/etc/ys/config.yaml配置文件
         hy2_ports=$(echo "$hy2_ports" | sed 's/,/,/g')
         IFS=',' read -ra ports <<<"$hy2_ports"
         for port in "${ports[@]}"; do
@@ -2669,7 +2842,7 @@ changeport() {
         service iptables save >/dev/null 2>&1
     }
 
-    allports        # 检查/etc/ys/config.yaml配置文件
+    allports # 检查/etc/ys/config.yaml配置文件
     green "Vless-reality与Vmess-ws仅能更改唯一的端口，vmess-ws注意Argo端口重置"
     green "Hysteria2与Tuic5支持更改主端口，也支持增删多个转发端口"
     green "Hysteria2支持端口跳跃，且与Tuic5都支持多端口复用"
@@ -2682,14 +2855,14 @@ changeport() {
     readp "请选择要变更端口的协议【0-4】：" menu
     if [ "$menu" = "1" ]; then
         vlport
-        echo $sbfiles | xargs -n1 sed -i "14s/$vl_port/$port_vl_re/"    # 需要修改行数
-        restartsb       # 重启mihomo
+        echo $sbfiles | xargs -n1 sed -i "14s/$vl_port/$port_vl_re/" # 需要修改行数
+        restartsb                                                    # 重启mihomo
         blue "Vless-reality端口更改完成，可选择9输出配置信息"
         echo
     elif [ "$menu" = "2" ]; then
         vmport
-        echo $sbfiles | xargs -n1 sed -i "41s/$vm_port/$port_vm_ws/"        # 需要修改行数
-        restartsb       # 重启mihomo
+        echo $sbfiles | xargs -n1 sed -i "41s/$vm_port/$port_vm_ws/" # 需要修改行数
+        restartsb                                                    # 重启mihomo
         blue "Vmess-ws端口更改完成，可选择9输出配置信息"
         echo
     elif [ "$menu" = "3" ]; then
@@ -2702,13 +2875,13 @@ changeport() {
             if [ -n $hy2_ports ]; then
                 hy2deports
                 hy2port
-                echo $sbfiles | xargs -n1 sed -i "67s/$hy2_port/$port_hy2/"     # 需要修改行数
-                restartsb       # 重启mihomo
+                echo $sbfiles | xargs -n1 sed -i "67s/$hy2_port/$port_hy2/" # 需要修改行数
+                restartsb                                                   # 重启mihomo
                 result_vl_vm_hy_tu && reshy2 && sb_client
             else
                 hy2port
-                echo $sbfiles | xargs -n1 sed -i "67s/$hy2_port/$port_hy2/"     # 需要修改行数
-                restartsb       # 重启mihomo
+                echo $sbfiles | xargs -n1 sed -i "67s/$hy2_port/$port_hy2/" # 需要修改行数
+                restartsb                                                   # 重启mihomo
                 result_vl_vm_hy_tu && reshy2 && sb_client
             fi
         elif [ "$menu" = "2" ]; then
@@ -2717,10 +2890,10 @@ changeport() {
             green "0：返回上层"
             readp "请选择【0-2】：" menu
             if [ "$menu" = "1" ]; then
-                port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[2].listen_port')   # 修改过//,改成了#
+                port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[2].listen_port') # 修改过//,改成了#
                 fports && result_vl_vm_hy_tu && sb_client && changeport
             elif [ "$menu" = "2" ]; then
-                port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[2].listen_port')   # 修改过//,改成了#   
+                port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[2].listen_port') # 修改过//,改成了#
                 fport && result_vl_vm_hy_tu && sb_client && changeport
             else
                 changeport
@@ -2745,13 +2918,13 @@ changeport() {
             if [ -n $tu5_ports ]; then
                 tu5deports
                 tu5port
-                echo $sbfiles | xargs -n1 sed -i "89s/$tu5_port/$port_tu/"      # 需要修改行数
-                restartsb       # 重启mihomo
+                echo $sbfiles | xargs -n1 sed -i "89s/$tu5_port/$port_tu/" # 需要修改行数
+                restartsb                                                  # 重启mihomo
                 result_vl_vm_hy_tu && restu5 && sb_client
             else
                 tu5port
-                echo $sbfiles | xargs -n1 sed -i "89s/$tu5_port/$port_tu/"      #需要修改行数
-                restartsb       # 重启mihomo
+                echo $sbfiles | xargs -n1 sed -i "89s/$tu5_port/$port_tu/" #需要修改行数
+                restartsb                                                  # 重启mihomo
                 result_vl_vm_hy_tu && restu5 && sb_client
             fi
         elif [ "$menu" = "2" ]; then
@@ -2760,10 +2933,10 @@ changeport() {
             green "0：返回上层"
             readp "请选择【0-2】：" menu
             if [ "$menu" = "1" ]; then
-                port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[3].listen_port')   # 修改过//,改成了#
+                port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[3].listen_port') # 修改过//,改成了#
                 fports && result_vl_vm_hy_tu && sb_client && changeport
             elif [ "$menu" = "2" ]; then
-                port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[3].listen_port')   # 修改过//,改成了#
+                port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[3].listen_port') # 修改过//,改成了#
                 fport && result_vl_vm_hy_tu && sb_client && changeport
             else
                 changeport
@@ -2782,207 +2955,206 @@ changeport() {
     fi
 }
 ###############################################################################################################
-# 主菜单5项 
-
+# 主菜单5项
 
 ###############################################################################################################
-# 主菜单6项  关闭/重启 mihomo       修改完了  
-stclre() {           # 重启mihomo  关闭mihomo
-  if [[ ! -f '/etc/ys/config.yaml' ]]; then
-    red "未正常安装mihomo" && exit
-  fi
-  readp "1：重启\n2：关闭\n请选择：" menu
-  if [ "$menu" = "1" ]; then
-    restartsb       # 重启mihomo 函数
-    sbactive        # 检查 mihomo 配置文件是否存在的 函数 
-    green "mihomo服务已重启\n" && sleep 3 && sb
-  elif [ "$menu" = "2" ]; then
-    if [[ x"${release}" == x"alpine" ]]; then
-      rc-service ys stop
-    else
-      systemctl stop ys
-      systemctl disable ys
+# 主菜单6项  关闭/重启 mihomo       修改完了
+stclre() { # 重启mihomo  关闭mihomo
+    if [[ ! -f '/etc/ys/config.yaml' ]]; then
+        red "未正常安装mihomo" && exit
     fi
-    green "mihomo服务已关闭\n" && sleep 3 && sb
-  else
-    stclre          # 返回本函数
-  fi
+    readp "1：重启\n2：关闭\n请选择：" menu
+    if [ "$menu" = "1" ]; then
+        restartsb # 重启mihomo 函数
+        sbactive  # 检查 mihomo 配置文件是否存在的 函数
+        green "mihomo服务已重启\n" && sleep 3 && sb
+    elif [ "$menu" = "2" ]; then
+        if [[ x"${release}" == x"alpine" ]]; then
+            rc-service ys stop
+        else
+            systemctl stop ys
+            systemctl disable ys
+        fi
+        green "mihomo服务已关闭\n" && sleep 3 && sb
+    else
+        stclre # 返回本函数
+    fi
 }
-# 主菜单6项  关闭/重启 mihomo       修改完了 
+# 主菜单6项  关闭/重启 mihomo       修改完了
 ###############################################################################################################
 # 主菜单7项  更新 mihomo 脚本   修改完了
 upsbyg() {
-  if [[ ! -f '/usr/bin/mihomo' ]]; then
-    red "未正常安装mihomo" && exit
-  fi
-  lnsb  # 更新菜单
-  curl -sL https://github.com/yggmsh/yggmsh123/blob/main/vys | awk -F "更新内容" '{print $1}' | head -n 1 >/etc/ys/v
-  green " mihomo 安装脚本升级成功" && sleep 5 && sb
+    if [[ ! -f '/usr/bin/mihomo' ]]; then
+        red "未正常安装mihomo" && exit
+    fi
+    lnsb # 更新菜单
+    curl -sL https://github.com/yggmsh/yggmsh123/blob/main/vys | awk -F "更新内容" '{print $1}' | head -n 1 >/etc/ys/v
+    green " mihomo 安装脚本升级成功" && sleep 5 && sb
 }
 ###############################################################################################################
 # 主菜单8 更新/切换/指定 mihomo 内核版本  修改完了
 upsbcroe() {
-    inssb   # 安装linux内核  
+    inssb # 安装linux内核
 }
 ###############################################################################################################
 # 主菜单9 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】  修改完了
 clash_sb_share() {
-  sbactive          # 检查 mihomo 配置文件是否存在的 函数 
-  echo
-  yellow "1：刷新并查看各协议分享链接、二维码、四合一聚合订阅"
-  yellow "2：刷新并查看mihomo、Sing-box客户端SFA/SFI/SFW三合一配置、Gitlab私有订阅链接"
-  yellow "3：目前无用,就放了一个sbshare函数"
-  yellow "4：推送最新节点配置信息(选项1+选项2)到Telegram通知"
-  yellow "0：返回上层"
-  readp "请选择【0-4】：" menu
-  if [ "$menu" = "1" ]; then
-    sbshare                         # 显示节点信息
-  elif [ "$menu" = "2" ]; then
-    green "请稍等……"
-    sbshare >/dev/null 2>&1         # 显示节点信息
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    red "Gitlab订阅链接如下："
-    gitlabsubgo                     # 推送gitlab 订阅函数
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    red "🚀【 vless-reality、vmess-ws、Hysteria2、Tuic5 】Clash-Meta配置文件显示如下："
-    red "文件目录 /etc/ys/clash_meta_client.yaml ，复制自建以yaml文件格式为准" && sleep 2
+    sbactive # 检查 mihomo 配置文件是否存在的 函数
     echo
-    cat /etc/ys/clash_meta_client.yaml
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    red "🚀【 vless-reality、vmess-ws、Hysteria2、Tuic5 】SFA/SFI/SFW配置文件显示如下："
-    red "安卓SFA、苹果SFI，win电脑官方文件包SFW请到甬哥Github项目自行下载，"
-    red "文件目录 /etc/ys/sing_box_client.json ，复制自建以json文件格式为准" && sleep 2
-    echo
-    cat /etc/ys/sing_box_client.json
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-  elif [ "$menu" = "3" ]; then
-    green "请稍等……"
-    sbshare >/dev/null 2>&1     # 显示节点信息
-  elif [ "$menu" = "4" ]; then
-    tgnotice                # telegram 推送文件
-  else
-    sb          # 返回主菜单
-  fi
+    yellow "1：刷新并查看各协议分享链接、二维码、四合一聚合订阅"
+    yellow "2：刷新并查看mihomo、Sing-box客户端SFA/SFI/SFW三合一配置、Gitlab私有订阅链接"
+    yellow "3：目前无用,就放了一个sbshare函数"
+    yellow "4：推送最新节点配置信息(选项1+选项2)到Telegram通知"
+    yellow "0：返回上层"
+    readp "请选择【0-4】：" menu
+    if [ "$menu" = "1" ]; then
+        sbshare # 显示节点信息
+    elif [ "$menu" = "2" ]; then
+        green "请稍等……"
+        sbshare >/dev/null 2>&1 # 显示节点信息
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        red "Gitlab订阅链接如下："
+        gitlabsubgo # 推送gitlab 订阅函数
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        red "🚀【 vless-reality、vmess-ws、Hysteria2、Tuic5 】Clash-Meta配置文件显示如下："
+        red "文件目录 /etc/ys/clash_meta_client.yaml ，复制自建以yaml文件格式为准" && sleep 2
+        echo
+        cat /etc/ys/clash_meta_client.yaml
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        red "🚀【 vless-reality、vmess-ws、Hysteria2、Tuic5 】SFA/SFI/SFW配置文件显示如下："
+        red "安卓SFA、苹果SFI，win电脑官方文件包SFW请到甬哥Github项目自行下载，"
+        red "文件目录 /etc/ys/sing_box_client.json ，复制自建以json文件格式为准" && sleep 2
+        echo
+        cat /etc/ys/sing_box_client.json
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        echo
+    elif [ "$menu" = "3" ]; then
+        green "请稍等……"
+        sbshare >/dev/null 2>&1 # 显示节点信息
+    elif [ "$menu" = "4" ]; then
+        tgnotice # telegram 推送文件
+    else
+        sb # 返回主菜单
+    fi
 }
 # 主菜单9 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】  修改完了
 ###############################################################################################################
 # 主菜单10 查看 mihomo 运行日志  修改完了
 sblog() {
-  red "退出日志 Ctrl+c"
-  if [[ x"${release}" == x"alpine" ]]; then
-    yellow "暂不支持alpine查看日志"
-  else
-    #systemctl status ys
-    journalctl -u ys.service -o cat -f
-  fi
+    red "退出日志 Ctrl+c"
+    if [[ x"${release}" == x"alpine" ]]; then
+        yellow "暂不支持alpine查看日志"
+    else
+        #systemctl status ys
+        journalctl -u ys.service -o cat -f
+    fi
 }
 # 主菜单10 查看 mihomo 运行日志  修改完了
 ###############################################################################################################
-# 主菜单11 一键原版BBR+FQ加速   不需要修改  
+# 主菜单11 一键原版BBR+FQ加速   不需要修改
 bbr() {
-  if [[ $vi =~ lxc|openvz ]]; then
-    yellow "当前VPS的架构为 $vi，不支持开启原版BBR加速" && sleep 2 && exit
-  else
-    green "点击任意键，即可开启BBR加速，ctrl+c退出"
-    bash <(curl -Ls https://raw.githubusercontent.com/teddysun/across/master/bbr.sh)
-  fi
+    if [[ $vi =~ lxc|openvz ]]; then
+        yellow "当前VPS的架构为 $vi，不支持开启原版BBR加速" && sleep 2 && exit
+    else
+        green "点击任意键，即可开启BBR加速，ctrl+c退出"
+        bash <(curl -Ls https://raw.githubusercontent.com/teddysun/across/master/bbr.sh)
+    fi
 }
 # 主菜单11 一键原版BBR+FQ加速   不需要修改   ^^^^^
 ###############################################################################################################
 # 主菜单12 管理 Acme 申请域名证书   不需要修改
 acme() {
-  bash <(curl -Ls https://gitlab.com/rwkgyg/acme-script/raw/main/acme.sh)
+    bash <(curl -Ls https://gitlab.com/rwkgyg/acme-script/raw/main/acme.sh)
 }
 # 主菜单12 管理 Acme 申请域名证书   不需要修改
 ###############################################################################################################
 # 主菜单13 管理 Warp 查看Netflix/ChatGPT解锁情况    不需要修改
 cfwarp() {
-  #bash <(curl -Ls https://gitlab.com/rwkgyg/CFwarp/raw/main/CFwarp.sh)
-  bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/warp-yg/main/CFwarp.sh)
+    #bash <(curl -Ls https://gitlab.com/rwkgyg/CFwarp/raw/main/CFwarp.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/warp-yg/main/CFwarp.sh)
 }
 # 主菜单13 管理 Warp 查看Netflix/ChatGPT解锁情况    不需要修改
 ###############################################################################################################
 
 # 主菜单14 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】 待修改
 inssbwpph() {
-  sbactive      # 检查 mihomo 配置文件是否存在的 函数 
-  ins() {
-    if [ ! -e /etc/ys/sbwpph ]; then
-      case $(uname -m) in
-      aarch64) cpu=arm64 ;;
-      x86_64) cpu=amd64 ;;
-      esac
-      curl -L -o /etc/ys/sbwpph -# --retry 2 --insecure https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sbwpph_$cpu
-      chmod +x /etc/ys/sbwpph
-    fi
-    if [[ -n $(ps -e | grep sbwpph) ]]; then
-      kill -15 $(cat /etc/ys/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
-    fi
-    v4v6
-    if [[ -n $v4 ]]; then
-      sw46=4
-    else
-      red "IPV4不存在，确保安装过WARP-IPV4模式"
-      sw46=6
-    fi
+    sbactive # 检查 mihomo 配置文件是否存在的 函数
+    ins() {
+        if [ ! -e /etc/ys/sbwpph ]; then
+            case $(uname -m) in
+            aarch64) cpu=arm64 ;;
+            x86_64) cpu=amd64 ;;
+            esac
+            curl -L -o /etc/ys/sbwpph -# --retry 2 --insecure https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sbwpph_$cpu
+            chmod +x /etc/ys/sbwpph
+        fi
+        if [[ -n $(ps -e | grep sbwpph) ]]; then
+            kill -15 $(cat /etc/ys/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
+        fi
+        v4v6
+        if [[ -n $v4 ]]; then
+            sw46=4
+        else
+            red "IPV4不存在，确保安装过WARP-IPV4模式"
+            sw46=6
+        fi
+        echo
+        readp "设置WARP-plus-Socks5端口（回车跳过端口默认40000）：" port
+        if [[ -z $port ]]; then
+            port=40000
+            until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") && -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
+                [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
+            done
+        else
+            until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") && -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
+                [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
+            done
+        fi
+        s5port=$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.outbounds[] | select(.type == "socks") | .server_port')
+        sed -i "127s/$s5port/$port/g" /etc/ys/config.yaml #需要修改行数 ,端口
+        sed -i "150s/$s5port/$port/g" /etc/ys/config.yaml #需要修改行数 ,端口
+        rm -rf /etc/ys/config.yaml
+        restartsb
+    }
+    unins() {
+        kill -15 $(cat /etc/ys/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
+        rm -rf /etc/ys/sbwpph.log /etc/ys/sbwpphid.log
+        crontab -l >/tmp/crontab.tmp
+        sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
+        crontab /tmp/crontab.tmp
+        rm /tmp/crontab.tmp
+    }
     echo
-    readp "设置WARP-plus-Socks5端口（回车跳过端口默认40000）：" port
-    if [[ -z $port ]]; then
-      port=40000
-      until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") && -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
-        [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
-      done
-    else
-      until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") && -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
-        [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
-      done
-    fi
-    s5port=$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.outbounds[] | select(.type == "socks") | .server_port')
-    sed -i "127s/$s5port/$port/g" /etc/ys/config.yaml #需要修改行数 ,端口
-    sed -i "150s/$s5port/$port/g" /etc/ys/config.yaml #需要修改行数 ,端口
-    rm -rf /etc/ys/config.yaml
-    restartsb
-  }
-  unins() {
-    kill -15 $(cat /etc/ys/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
-    rm -rf /etc/ys/sbwpph.log /etc/ys/sbwpphid.log
-    crontab -l >/tmp/crontab.tmp
-    sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
-    crontab /tmp/crontab.tmp
-    rm /tmp/crontab.tmp
-  }
-  echo
-  yellow "1：重置启用WARP-plus-Socks5本地Warp代理模式"
-  yellow "2：重置启用WARP-plus-Socks5多地区Psiphon代理模式"
-  yellow "3：停止WARP-plus-Socks5代理模式"
-  yellow "0：返回上层"
-  readp "请选择【0-3】：" menu
-  if [ "$menu" = "1" ]; then
-    ins
-    nohup setsid /etc/ys/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1 &
-    echo "$!" >/etc/ys/sbwpphid.log
-    green "申请IP中……请稍等……" && sleep 20
-    resv1=$(curl -s --socks5 localhost:$port icanhazip.com)
-    resv2=$(curl -sx socks5h://localhost:$port icanhazip.com)
-    if [[ -z $resv1 && -z $resv2 ]]; then
-      red "WARP-plus-Socks5的IP获取失败" && unins && exit
-    else
-      echo "/etc/ys/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1" >/etc/ys/sbwpph.log
-      crontab -l >/tmp/crontab.tmp
-      sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
-      echo '@reboot /bin/bash -c "nohup setsid $(cat /etc/ys/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /etc/ys/sbwpphid.log"' >>/tmp/crontab.tmp
-      crontab /tmp/crontab.tmp
-      rm /tmp/crontab.tmp
-      green "WARP-plus-Socks5的IP获取成功，可进行Socks5代理分流"
-    fi
-  elif [ "$menu" = "2" ]; then
-    ins
-    echo '
+    yellow "1：重置启用WARP-plus-Socks5本地Warp代理模式"
+    yellow "2：重置启用WARP-plus-Socks5多地区Psiphon代理模式"
+    yellow "3：停止WARP-plus-Socks5代理模式"
+    yellow "0：返回上层"
+    readp "请选择【0-3】：" menu
+    if [ "$menu" = "1" ]; then
+        ins
+        nohup setsid /etc/ys/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1 &
+        echo "$!" >/etc/ys/sbwpphid.log
+        green "申请IP中……请稍等……" && sleep 20
+        resv1=$(curl -s --socks5 localhost:$port icanhazip.com)
+        resv2=$(curl -sx socks5h://localhost:$port icanhazip.com)
+        if [[ -z $resv1 && -z $resv2 ]]; then
+            red "WARP-plus-Socks5的IP获取失败" && unins && exit
+        else
+            echo "/etc/ys/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1" >/etc/ys/sbwpph.log
+            crontab -l >/tmp/crontab.tmp
+            sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
+            echo '@reboot /bin/bash -c "nohup setsid $(cat /etc/ys/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /etc/ys/sbwpphid.log"' >>/tmp/crontab.tmp
+            crontab /tmp/crontab.tmp
+            rm /tmp/crontab.tmp
+            green "WARP-plus-Socks5的IP获取成功，可进行Socks5代理分流"
+        fi
+    elif [ "$menu" = "2" ]; then
+        ins
+        echo '
 奥地利（AT）
 澳大利亚（AU）
 比利时（BE）
@@ -3016,87 +3188,87 @@ inssbwpph() {
 斯洛伐克（SK）
 美国（US）
 '
-    readp "可选择国家地区（输入末尾两个大写字母，如美国，则输入US）：" guojia
-    nohup setsid /etc/ys/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1 &
-    echo "$!" >/etc/ys/sbwpphid.log
-    green "申请IP中……请稍等……" && sleep 20
-    resv1=$(curl -s --socks5 localhost:$port icanhazip.com)
-    resv2=$(curl -sx socks5h://localhost:$port icanhazip.com)
-    if [[ -z $resv1 && -z $resv2 ]]; then
-      red "WARP-plus-Socks5的IP获取失败，尝试换个国家地区吧" && unins && exit
+        readp "可选择国家地区（输入末尾两个大写字母，如美国，则输入US）：" guojia
+        nohup setsid /etc/ys/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1 &
+        echo "$!" >/etc/ys/sbwpphid.log
+        green "申请IP中……请稍等……" && sleep 20
+        resv1=$(curl -s --socks5 localhost:$port icanhazip.com)
+        resv2=$(curl -sx socks5h://localhost:$port icanhazip.com)
+        if [[ -z $resv1 && -z $resv2 ]]; then
+            red "WARP-plus-Socks5的IP获取失败，尝试换个国家地区吧" && unins && exit
+        else
+            echo "/etc/ys/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1" >/etc/ys/sbwpph.log
+            crontab -l >/tmp/crontab.tmp
+            sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
+            echo '@reboot /bin/bash -c "nohup setsid $(cat /etc/ys/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /etc/ys/sbwpphid.log"' >>/tmp/crontab.tmp
+            crontab /tmp/crontab.tmp
+            rm /tmp/crontab.tmp
+            green "WARP-plus-Socks5的IP获取成功，可进行Socks5代理分流"
+        fi
+    elif [ "$menu" = "3" ]; then
+        unins && green "已停止WARP-plus-Socks5代理功能"
     else
-      echo "/etc/ys/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1" >/etc/ys/sbwpph.log
-      crontab -l >/tmp/crontab.tmp
-      sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
-      echo '@reboot /bin/bash -c "nohup setsid $(cat /etc/ys/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /etc/ys/sbwpphid.log"' >>/tmp/crontab.tmp
-      crontab /tmp/crontab.tmp
-      rm /tmp/crontab.tmp
-      green "WARP-plus-Socks5的IP获取成功，可进行Socks5代理分流"
+        sb
     fi
-  elif [ "$menu" = "3" ]; then
-    unins && green "已停止WARP-plus-Socks5代理功能"
-  else
-    sb
-  fi
 }
 
 ###############################################################################################################
 
-showprotocol() {      # 主界面显示的 信息函数    修改完了
-  allports
-  echo -e "mihomo 节点关键信息、已分流域名情况如下："
-  echo -e "🚀【 Vless-reality 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}"
-  if [[ ! -f "$certificatec_vmess_ws" && ! -f "$certificatep_vmess_ws" ]]; then
-    echo -e "🚀【   Vmess-ws    】${yellow}端口:$vm_port   证书形式:$vm_zs   Argo状态:$argoym${plain}"
-  else
-    echo -e "🚀【 Vmess-ws-tls  】${yellow}端口:$vm_port   证书形式:$vm_zs   Argo状态:$argoym${plain}"
-  fi
-  echo -e "🚀【  Hysteria-2   】${yellow}端口:$hy2_port  证书形式:$hy2_zs  转发多端口: $hy2zfport${plain}"
-  echo -e "🚀【    Tuic-v5    】${yellow}端口:$tu5_port  证书形式:$tu5_zs  转发多端口: $tu5zfport${plain}"
-  echo "------------------------------------------------------------------------------------"
-  if [[ -n $(ps -e | grep sbwpph) ]]; then
-    s5port=$(cat /etc/ys/sbwpph.log 2>/dev/null | awk '{print $3}' | awk -F":" '{print $NF}')
-    s5gj=$(cat /etc/ys/sbwpph.log 2>/dev/null | awk '{print $6}')
-    case "$s5gj" in
-    AT) showgj="奥地利" ;;
-    AU) showgj="澳大利亚" ;;
-    BE) showgj="比利时" ;;
-    BG) showgj="保加利亚" ;;
-    CA) showgj="加拿大" ;;
-    CH) showgj="瑞士" ;;
-    CZ) showgj="捷克" ;;
-    DE) showgj="德国" ;;
-    DK) showgj="丹麦" ;;
-    EE) showgj="爱沙尼亚" ;;
-    ES) showgj="西班牙" ;;
-    FI) showgj="芬兰" ;;
-    FR) showgj="法国" ;;
-    GB) showgj="英国" ;;
-    HR) showgj="克罗地亚" ;;
-    HU) showgj="匈牙利" ;;
-    IE) showgj="爱尔兰" ;;
-    IN) showgj="印度" ;;
-    IT) showgj="意大利" ;;
-    JP) showgj="日本" ;;
-    LT) showgj="立陶宛" ;;
-    LV) showgj="拉脱维亚" ;;
-    NL) showgj="荷兰" ;;
-    NO) showgj="挪威" ;;
-    PL) showgj="波兰" ;;
-    PT) showgj="葡萄牙" ;;
-    RO) showgj="罗马尼亚" ;;
-    RS) showgj="塞尔维亚" ;;
-    SE) showgj="瑞典" ;;
-    SG) showgj="新加坡" ;;
-    SK) showgj="斯洛伐克" ;;
-    US) showgj="美国" ;;
-    esac
-    grep -q "country" /etc/ys/sbwpph.log 2>/dev/null && s5ms="多地区Psiphon代理模式 (端口:$s5port  国家:$showgj)" || s5ms="本地Warp代理模式 (端口:$s5port)"
-    echo -e "WARP-plus-Socks5状态：$yellow已启动 $s5ms$plain"
-  else
-    echo -e "WARP-plus-Socks5状态：$yellow未启动$plain"
-  fi
-  echo "------------------------------------------------------------------------------------"
+showprotocol() { # 主界面显示的 信息函数    修改完了
+    allports
+    echo -e "mihomo 节点关键信息、已分流域名情况如下："
+    echo -e "🚀【 Vless-reality 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}"
+    if [[ ! -f "$certificatec_vmess_ws" && ! -f "$certificatep_vmess_ws" ]]; then
+        echo -e "🚀【   Vmess-ws    】${yellow}端口:$vm_port   证书形式:$vm_zs   Argo状态:$argoym${plain}"
+    else
+        echo -e "🚀【 Vmess-ws-tls  】${yellow}端口:$vm_port   证书形式:$vm_zs   Argo状态:$argoym${plain}"
+    fi
+    echo -e "🚀【  Hysteria-2   】${yellow}端口:$hy2_port  证书形式:$hy2_zs  转发多端口: $hy2zfport${plain}"
+    echo -e "🚀【    Tuic-v5    】${yellow}端口:$tu5_port  证书形式:$tu5_zs  转发多端口: $tu5zfport${plain}"
+    echo "------------------------------------------------------------------------------------"
+    if [[ -n $(ps -e | grep sbwpph) ]]; then
+        s5port=$(cat /etc/ys/sbwpph.log 2>/dev/null | awk '{print $3}' | awk -F":" '{print $NF}')
+        s5gj=$(cat /etc/ys/sbwpph.log 2>/dev/null | awk '{print $6}')
+        case "$s5gj" in
+        AT) showgj="奥地利" ;;
+        AU) showgj="澳大利亚" ;;
+        BE) showgj="比利时" ;;
+        BG) showgj="保加利亚" ;;
+        CA) showgj="加拿大" ;;
+        CH) showgj="瑞士" ;;
+        CZ) showgj="捷克" ;;
+        DE) showgj="德国" ;;
+        DK) showgj="丹麦" ;;
+        EE) showgj="爱沙尼亚" ;;
+        ES) showgj="西班牙" ;;
+        FI) showgj="芬兰" ;;
+        FR) showgj="法国" ;;
+        GB) showgj="英国" ;;
+        HR) showgj="克罗地亚" ;;
+        HU) showgj="匈牙利" ;;
+        IE) showgj="爱尔兰" ;;
+        IN) showgj="印度" ;;
+        IT) showgj="意大利" ;;
+        JP) showgj="日本" ;;
+        LT) showgj="立陶宛" ;;
+        LV) showgj="拉脱维亚" ;;
+        NL) showgj="荷兰" ;;
+        NO) showgj="挪威" ;;
+        PL) showgj="波兰" ;;
+        PT) showgj="葡萄牙" ;;
+        RO) showgj="罗马尼亚" ;;
+        RS) showgj="塞尔维亚" ;;
+        SE) showgj="瑞典" ;;
+        SG) showgj="新加坡" ;;
+        SK) showgj="斯洛伐克" ;;
+        US) showgj="美国" ;;
+        esac
+        grep -q "country" /etc/ys/sbwpph.log 2>/dev/null && s5ms="多地区Psiphon代理模式 (端口:$s5port  国家:$showgj)" || s5ms="本地Warp代理模式 (端口:$s5port)"
+        echo -e "WARP-plus-Socks5状态：$yellow已启动 $s5ms$plain"
+    else
+        echo -e "WARP-plus-Socks5状态：$yellow未启动$plain"
+    fi
+    echo "------------------------------------------------------------------------------------"
 }
 ###############################################################################################################
 
@@ -3140,7 +3312,7 @@ green "16. xxxxxx"
 white "----------------------------------------------------------------------------------"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-insV=$(cat /etc/ys/v 2>/dev/null)   # insV 脚本内核版本号  latestV 是github上版本 
+insV=$(cat /etc/ys/v 2>/dev/null) # insV 脚本内核版本号  latestV 是github上版本
 latestV=$(curl -sL https://github.com/yggmsh/yggmsh123/blob/main/vys | awk -F "更新内容" '{print $1}' | head -n 1)
 # 检查 mihomo脚本是不是最新版
 if [ -f /etc/ys/v ]; then
@@ -3156,7 +3328,7 @@ else
     yellow "未安装 mihomo 脚本！请先选择 1 安装"
 fi
 
-lapre  # 获取版本号函数,在进入菜单时候,显示
+lapre # 获取版本号函数,在进入菜单时候,显示
 if [ -f '/etc/ys/config.yaml' ]; then
     if [[ $inscore =~ ^[0-9.]+$ ]]; then
         if [ "${inscore}" = "${latcore}" ]; then
@@ -3218,28 +3390,28 @@ fi
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 # 这函数显示tls 开起关闭,多端口显示等信息
 if [ -f '/etc/ys/config.yaml' ]; then
-    showprotocol  # 目前没加入这个函数
+    showprotocol # 目前没加入这个函数
 fi
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
 readp "请输入数字【0-16】:" Input
 case "$Input" in
-1) instsllsingbox ;;        # 一键安装 mihomo 完
-2) unins ;;                 # 删除卸载 mihomo 完
-3) changeserv ;;            # 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】
-4) changeport ;;            # 更改主端口/添加多端口跳跃复用
-5) stclre ;;                # 关闭/重启 mihomo 完
-6) upsbyg ;;                # 更新 mihomo 脚本 完
-7) upsbcroe ;;              # 更新/切换/指定 mihomo 内核版本 完
-8) clash_sb_share ;;        # 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】完
-9) sblog ;;                 # 查看 mihomo 运行日志 完
-10) bbr ;;                  # 勇哥一键原版BBR+FQ加速 完
-11) acme ;;                 # 勇哥管理 Acme 申请域名证书 完
-12) cfwarp ;;               # 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况 完
-13) inssbwpph ;;            # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
-14) xxxxxx ;;               # 一键安装 mieru 
-15) zzzzzz ;;               # mieru 配置菜单
-16) changefl ;;             #
+1) instsllsingbox ;; # 一键安装 mihomo 完
+2) unins ;;          # 删除卸载 mihomo 完
+3) changeserv ;;     # 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】
+4) changeport ;;     # 更改主端口/添加多端口跳跃复用
+5) stclre ;;         # 关闭/重启 mihomo 完
+6) upsbyg ;;         # 更新 mihomo 脚本 完
+7) upsbcroe ;;       # 更新/切换/指定 mihomo 内核版本 完
+8) clash_sb_share ;; # 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】完
+9) sblog ;;          # 查看 mihomo 运行日志 完
+10) bbr ;;           # 勇哥一键原版BBR+FQ加速 完
+11) acme ;;          # 勇哥管理 Acme 申请域名证书 完
+12) cfwarp ;;        # 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况 完
+13) inssbwpph ;;     # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
+14) mieru_caidai ;;  # 一键安装 mieru
+15) zzzzzz ;;        # mieru 配置菜单
+16) mieru_bbr ;;     # mieru bbr菜单
 *) exit ;;
 esac
 
