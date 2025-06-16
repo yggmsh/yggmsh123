@@ -239,6 +239,10 @@ warp_ip() {
             warp_ipv6="$v6"
         fi
     else
+        systemctl start wg-quick@wgcf >/dev/null 2>&1
+        systemctl restart warp-go >/dev/null 2>&1
+        systemctl enable warp-go >/dev/null 2>&1
+        systemctl start warp-go >/dev/null 2>&1
         v4v6
         warp_ipv4="$v4"
         warp_ipv6="$v6"
