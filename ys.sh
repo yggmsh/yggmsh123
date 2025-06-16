@@ -3419,9 +3419,9 @@ else
     echo -e "mihomo状态：$red未安装$plain"
 fi
 if [ -d "/etc/ys/mieru" ] && [ -f "/etc/mita/config.json" ]; then
-    echo "mieru服务端:$red已安装$plain"
+    echo "mieru服务端:${blue}已安装$plain"
 else
-    echo "mieru服务器:$red未安装$plain"
+    echo "mieru服务器:${red}未安装$plain"
 fi
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 # 这函数显示tls 开起关闭,多端口显示等信息
