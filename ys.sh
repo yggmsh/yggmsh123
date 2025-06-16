@@ -226,18 +226,24 @@ vps_ip() {    # 获取本地vps的真实ip
         systemctl start warp-go >/dev/null 2>&1
     fi
 }
-# warp_ip() {
-#     warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。  wgcfv6 变量 wgcfv4 变量  两个变量里是否存储 on 或 plus
-#     if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
-#         v4v6
-#         warp_vipv4="$v4"
-#         warp_ipv6="$v6"
-#     else
-#         v4v6
-#         warp_vipv4="$v4"
-#         warp_ipv6="$v6"
-#     fi
-# }
+warp_ip() {
+    warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。  wgcfv6 变量 wgcfv4 变量  两个变量里是否存储 on 或 plus
+    if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
+        systemctl start wg-quick@wgcf >/dev/null 2>&1
+        systemctl restart warp-go >/dev/null 2>&1
+        systemctl enable warp-go >/dev/null 2>&1
+        systemctl start warp-go >/dev/null 2>&1
+        if [[ $wgcfv4 =~ on|plus && $wgcfv6 =~ on|plus ]]; then
+            v4v6
+            warp_ipv4="$v4"
+            warp_ipv6="$v6"
+        fi
+    else
+        v4v6
+        warp_ipv4="$v4"
+        warp_ipv6="$v6"
+    fi
+}
 ###############################################################################################################
 
 # 核心逻辑部分，根据网络环境（特别是 IPv4 或纯 IPv6）进行配置，并处理 Warp 的状态。
@@ -3378,7 +3384,7 @@ echo -e "BBR算法:$blue$bbr$plain"
 vps_ip  # 获取本地vps的真实ip
 echo -e "本地IPV4地址：${blue}${vps_ipv4}$plain    本地IPV6地址：${blue}${vps_ipv6}$plain"
 v4v6 # 获取warp的ip
-echo -e "WARP IPV4地址：${blue}${v4}$plain    WARP IPV6地址：${blue}${v6}$plain"
+echo -e "WARP IPV4地址：${blue}${warp_ipv4}$plain    WARP IPV6地址：${blue}${warp_ipv6}$plain"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 if [[ x"${release}" == x"alpine" ]]; then
     status_cmd="rc-service ys status"
