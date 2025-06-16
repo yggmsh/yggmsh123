@@ -226,6 +226,24 @@ vps_ip() {    # 获取本地vps的真实ip
         systemctl start warp-go >/dev/null 2>&1
     fi
 }
+warp_ip() {
+    warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。  wgcfv6 变量 wgcfv4 变量  两个变量里是否存储 on 或 plus
+    if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
+        v4v6
+        warp_vipv4="$v4"
+        warp_ipv6="$v6"
+    else
+        systemctl stop wg-quick@wgcf >/dev/null 2>&1
+        kill -15 $(pgrep warp-go) >/dev/null 2>&1 && sleep 2
+        systemctl start wg-quick@wgcf >/dev/null 2>&1
+        systemctl restart warp-go >/dev/null 2>&1
+        systemctl enable warp-go >/dev/null 2>&1
+        systemctl start warp-go >/dev/null 2>&1
+        v4v6
+        warp_vipv4="$v4"
+        warp_ipv6="$v6"
+    fi
+}
 ###############################################################################################################
 
 # 核心逻辑部分，根据网络环境（特别是 IPv4 或纯 IPv6）进行配置，并处理 Warp 的状态。
@@ -880,7 +898,7 @@ write_array_mieru() {                  # 写入变量 WRITE_ARRAY_FILT="/root/mi
         echo "错误：数组 '${arr_name}' 不存在或不是有效的数组名。"
         return 1
     fi
-}           #编写完了
+} #编写完了
 ############################################## mieru 常用函数模块 ##############################################################
 ############################################## mieru 端口与协议配置 ############################################################
 # mieru 函数开始  配置                      配置完了
@@ -902,7 +920,7 @@ mieruport() { #配置mieru主端口与协议
             fi
         done
     done
-    write_array_mieru   # 写入端口信息
+    write_array_mieru # 写入端口信息
     port_mieru=$prot
 }
 
@@ -929,7 +947,7 @@ mieruports() { # mieru多端口配置端口与协议
             mieru_array+=($xport)
             #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
             READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru        # 读取 mihomo 占用的端口
+            read_array_mieru # 读取 mihomo 占用的端口
             for item1 in "${mihomo_array[@]}"; do
                 # 遍历第二个数组的每个元素
                 for item2 in "${mieru_array[@]}"; do
@@ -940,7 +958,7 @@ mieruports() { # mieru多端口配置端口与协议
                 done
             done
             WRITE_ARRAY_FILT="/root/mieru_array.txt"
-            write_array_mieru       #写入 mieru 端口文件
+            write_array_mieru #写入 mieru 端口文件
         done
         ports_mieru="$num1-$num2"
     # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
@@ -956,7 +974,7 @@ mieruports() { # mieru多端口配置端口与协议
             mieru_array+=($xport)
             #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
             READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru         # 读取 mihomo 占用的端口
+            read_array_mieru # 读取 mihomo 占用的端口
             for item1 in "${mihomo_array[@]}"; do
                 # 遍历第二个数组的每个元素
                 for item2 in "${mieru_array[@]}"; do
@@ -966,7 +984,7 @@ mieruports() { # mieru多端口配置端口与协议
                     fi
                 done
             done
-            write_array_mieru       #写入 mieru 端口文件
+            write_array_mieru #写入 mieru 端口文件
         done
         ports_mieru=$ports_x
     # 其他情况
@@ -1027,7 +1045,7 @@ mieru_port_auto() { # 还有问题,在考虑
             mieru_array+=($xport)
             #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
             READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru         # 读取 mihomo 占用的端口
+            read_array_mieru # 读取 mihomo 占用的端口
             for item1 in "${mihomo_array[@]}"; do
                 # 遍历第二个数组的每个元素
                 for item2 in "${mieru_array[@]}"; do
@@ -1037,9 +1055,9 @@ mieru_port_auto() { # 还有问题,在考虑
                     fi
                 done
             done
-            write_array_mieru       #写入 mieru 端口文件
+            write_array_mieru #写入 mieru 端口文件
         done
-        write_array_mieru   # 写入端口信息
+        write_array_mieru # 写入端口信息
         # 如果生成的数组 与 mihomo 重复,则从执行函数mieru_port_auto
         port_mieru=${ports[0]}
         ports_mieru="$num1-$num2"
@@ -1058,7 +1076,7 @@ mieru_port_auto() { # 还有问题,在考虑
     echo "$xieyi_duo" >/etc/ys/mieru/xieyi_duo.txt
     # 加入写入/etc/ys/mieru 各个信息
 }
-read_xuyao_xinxi(){
+read_xuyao_xinxi() {
     port_mieru=$(cat /etc/ys/mieru/port_mieru.txt)
     xieyi_one=$(cat /etc/ys/mieru/xieyi_one.txt)
     ports_mieru=$(cat /etc/ys/mieru/ports_mieru.txt)
@@ -1076,10 +1094,10 @@ read_xuyao_xinxi(){
 }
 ############################################## mieru 端口与协议配置 ############################################################
 # 一键安装菜单
-mieru_caidai(){
+mieru_caidai() {
     mkdir -p /etc/ys/mieru
     chmod 777 /etc/ys/mieru
-    openyn               # 询问是否开放防火墙
+    openyn # 询问是否开放防火墙
     mieru_setup
     mieru_port_auto
     if [[ ! -f '/etc/systemd/system/ys.service' ]]; then
@@ -2114,19 +2132,6 @@ proxies:
   # initial-connection-receive-window： 20971520
   # max-connection-receive-window： 20971520
 
-- name: tuic5-$hostname                            
-  server: $cl_tu5_ip                      
-  port: $tu5_port                                    
-  type: tuic
-  uuid: $uuid       
-  password: $all_password 
-  alpn: [h3]
-  disable-sni: true
-  reduce-rtt: true
-  udp-relay-mode: native
-  congestion-controller: bbr
-  sni: $tu5_name                                
-  skip-cert-verify: $tu5_ins
 
 - name: anytls-$hostname
   type: anytls
@@ -2200,6 +2205,20 @@ EOF
 }
 
 ###############################################################################################################
+
+Vless-reality() {       # vless-reality-key short_id 
+    blue "Vless-reality相关key与id将自动生成……"
+    key_pair=$(/etc/ys/ys generate reality-keypair)                           # 修改完mihomo配置
+    private_key=$(echo "$key_pair" | grep "PrivateKey: " | awk '{print $NF}') # 修改完mihomo配置
+    public_key=$(echo "$key_pair" | grep "PublicKey: " | awk '{print $NF}')   # 修改完mihomo配置
+    echo "$public_key" >/etc/ys/public.key                                    # 修改完mihomo配置
+    short_id=$(openssl rand -hex 8)                                           # 修改完mihomo配置
+    echo "$private_key" >/etc/ys/vless/private_key.txt
+    echo "$public_key" >/etc/ys/vless/public_key.txt
+    echo "$short_id" >/etc/ys/vless/short_id.txt
+
+}
+
 # 主菜单1项 安装 mihomo 一键脚本    修改完了
 instsllsingbox() {
     if [[ -f '/etc/systemd/system/ys.service' ]]; then
@@ -2229,17 +2248,8 @@ instsllsingbox() {
     inscertificate       # 自签证书与各个产生的变量    还在考虑
     insport              # 配置协议端口               还在考虑
     mihomo_name_password # 账户 密码
-    sleep 2
+    Vless-reality        #  vless-reality-key short_id
     echo
-    blue "Vless-reality相关key与id将自动生成……"
-    key_pair=$(/etc/ys-ygy/ys-ygy generate reality-keypair)                   # 修改完mihomo配置
-    private_key=$(echo "$key_pair" | grep "PrivateKey: " | awk '{print $NF}') # 修改完mihomo配置
-    public_key=$(echo "$key_pair" | grep "PublicKey: " | awk '{print $NF}')   # 修改完mihomo配置
-    echo "$public_key" >/etc/ys/public.key                                    # 修改完mihomo配置
-    short_id=$(openssl rand -hex 8)                                           # 修改完mihomo配置
-    echo "$private_key" >/etc/ys/vless/private_key.txt
-    echo "$public_key" >/etc/ys/vless/public_key.txt
-    echo "$short_id" >/etc/ys/vless/short_id.txt
     wget -q -O /root/geoip.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db
     wget -q -O /root/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -2250,7 +2260,7 @@ instsllsingbox() {
     sbactive     # 检查 mihomo 配置文件是否存在
     curl -sL https://github.com/yggmsh/yggmsh123/blob/main/vys | awk -F "更新内容" '{print $1}' | head -n 1 >/etc/ys/v
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    lnsb && blue " mihomo 脚本安装成功，脚本快捷方式：ys-ygy" && cronsb # lnsb 生成 mihomo 快捷方式  cronsb 凌晨1点重启 mihomo 定时任务
+    lnsb && blue " mihomo 脚本安装成功，脚本快捷方式：mihomo" && cronsb # lnsb 生成 mihomo 快捷方式  cronsb 凌晨1点重启 mihomo 定时任务
     echo
     wgcfgo  # 管理并确保 Cloudflare WARP 服务的运行，并在必要时刷新或重新配置其网络参数。 它会根据 WARP 的当前状态来决定执行初始化或重启流程
     sbshare # 显示节点信息
@@ -3216,8 +3226,10 @@ inssbwpph() {
 
 showprotocol() { # 主界面显示的 信息函数    修改完了
     allports
-    echo -e "mihomo 节点关键信息、已分流域名情况如下："
-    echo -e "🚀【 Vless-reality 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}"
+    echo -e "mihomo 与 mieru 节点关键信息："
+    echo -e "🚀【 Vless-reality 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}".
+    echo -e "🚀【 anytls 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}"
+    echo -e "🚀【 mieru 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}"
     if [[ ! -f "$certificatec_vmess_ws" && ! -f "$certificatep_vmess_ws" ]]; then
         echo -e "🚀【   Vmess-ws    】${yellow}端口:$vm_port   证书形式:$vm_zs   Argo状态:$argoym${plain}"
     else
@@ -3308,7 +3320,7 @@ green "13. 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psi
 white "----------------------------------------------------------------------------------"
 green "14. 一键安装 mieru 待修改"
 green "15. mieru 配置菜单 待修改"
-green "16. xxxxxx"
+green "16. mieru bbr菜单"
 white "----------------------------------------------------------------------------------"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
