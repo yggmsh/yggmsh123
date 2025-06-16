@@ -3378,9 +3378,7 @@ echo -e "BBR算法:$blue$bbr$plain"
 vps_ip  # 获取本地vps的真实ip
 echo -e "本地IPV4地址：$blue$vps_ipv4   本地IPV6地址：$blue$vps_ipv6"
 v4v6 # 获取warp的ip
-warp_vipv4="$v4"
-warp_ipv6="$v6"
-echo -e "WARP IPV4地址：$blue$warp_ipv4   WARP IPV6地址：$blue$warp_ipv6"
+echo -e "WARP IPV4地址：$blue$v4   WARP IPV6地址：$blue$v6"
 if [[ x"${release}" == x"alpine" ]]; then
     status_cmd="rc-service ys status"
     status_pattern="started"
