@@ -227,23 +227,37 @@ vps_ip() {    # 获取本地vps的真实ip
     fi
 }
 warp_ip() {
-    warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。  wgcfv6 变量 wgcfv4 变量  两个变量里是否存储 on 或 plus
+    warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。
+
+    # 如果当前没有使用 Warp，则尝试启动它
     if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
+        echo "当前未检测到 Cloudflare Warp 服务，尝试启动..."
         systemctl start wg-quick@wgcf >/dev/null 2>&1
         systemctl restart warp-go >/dev/null 2>&1
         systemctl enable warp-go >/dev/null 2>&1
         systemctl start warp-go >/dev/null 2>&1
-        if [[ $wgcfv4 =~ on|plus && $wgcfv6 =~ on|plus ]]; then
-            v4v6
+        sleep 5 # 等待Warp服务完全启动并生效
+
+        # 启动后再次检查Warp状态，确保变量已更新
+        warpcheck
+        
+        # 只要IPv4或IPv6中有一个Warp服务开启，就认为成功
+        if [[ $wgcfv4 =~ on|plus || $wgcfv6 =~ on|plus ]]; then 
+            echo "Cloudflare Warp 服务已成功启动。"
+            v4v6 # 获取Warp后的IP
             warp_ipv4="$v4"
             warp_ipv6="$v6"
         fi
-    else
+    else # 如果Warp已经在使用中
+        echo "Cloudflare Warp 服务已在运行中。"
+        # 确保Warp服务状态良好，虽然可能多余，但可以作为兜底
         systemctl start wg-quick@wgcf >/dev/null 2>&1
         systemctl restart warp-go >/dev/null 2>&1
         systemctl enable warp-go >/dev/null 2>&1
         systemctl start warp-go >/dev/null 2>&1
-        v4v6
+        sleep 2 # 稍作等待以确保服务稳定
+        
+        v4v6 # 获取Warp后的IP
         warp_ipv4="$v4"
         warp_ipv6="$v6"
     fi
