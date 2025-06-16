@@ -229,12 +229,6 @@ vps_ip() {    # 获取本地vps的真实ip
 warp_ip() {
     warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。  wgcfv6 变量 wgcfv4 变量  两个变量里是否存储 on 或 plus
     if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
-        # systemctl stop wg-quick@wgcf >/dev/null 2>&1
-        # kill -15 $(pgrep warp-go) >/dev/null 2>&1 && sleep 2
-        systemctl start wg-quick@wgcf >/dev/null 2>&1
-        systemctl restart warp-go >/dev/null 2>&1
-        systemctl enable warp-go >/dev/null 2>&1
-        systemctl start warp-go >/dev/null 2>&1
         v4v6
         warp_vipv4="$v4"
         warp_ipv6="$v6"
