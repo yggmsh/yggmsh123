@@ -3382,9 +3382,9 @@ echo -e "处理器:$blue$cpu$plain  \c"
 echo -e "虚拟化:$blue$vi$plain  \c"
 echo -e "BBR算法:$blue$bbr$plain"
 vps_ip  # 获取本地vps的真实ip
-warp_ip # 获取warp的ip
 echo -e "本地IPV4地址：$blue$vps_ipv4   本地IPV6地址：$blue$vps_ipv6"
-echo -e ""$w4"IPV4地址：$blue$warp_ipv4   "$w6"IPV6地址：$blue$warp_ipv6"
+warp_ip # 获取warp的ip
+echo -e "WARP IPV4地址：$blue$warp_ipv4   WARP IPV6地址：$blue$warp_ipv6"
 if [[ x"${release}" == x"alpine" ]]; then
     status_cmd="rc-service ys status"
     status_pattern="started"
