@@ -3376,11 +3376,9 @@ echo -e "处理器:$blue$cpu$plain  \c"
 echo -e "虚拟化:$blue$vi$plain  \c"
 echo -e "BBR算法:$blue$bbr$plain"
 vps_ip  # 获取本地vps的真实ip
-echo -e "本地IPV4地址：${blue}${vps_ipv4}$plain"   
-echo -e "本地IPV6地址：${blue}${vps_ipv6}$plain"
+echo -e "本地IPV4地址：${blue}${vps_ipv4}$plain    本地IPV6地址：${blue}${vps_ipv6}$plain"
 v4v6 # 获取warp的ip
-echo -e "WARP IPV4地址：${blue}${v4}$plain"   
-echo -e "WARP IPV6地址：${blue}${v6}$plain"
+echo -e "WARP IPV4地址：${blue}${v4}$plain    WARP IPV6地址：${blue}${v6}$plain"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 if [[ x"${release}" == x"alpine" ]]; then
     status_cmd="rc-service ys status"
@@ -3417,7 +3415,7 @@ case "$Input" in
 10) bbr ;;           # 勇哥一键原版BBR+FQ加速 完
 11) acme ;;          # 勇哥管理 Acme 申请域名证书 完
 12) cfwarp ;;        # 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况 完
-13) inssbwpph ;;     # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
+13) inssbwpph-x ;;     # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
 14) mieru_caidai ;;  # 一键安装 mieru
 15) zzzzzz ;;        # mieru 配置菜单
 16) mieru_bbr ;;     # mieru bbr菜单
