@@ -3383,7 +3383,7 @@ echo -e "虚拟化:$blue$vi$plain  \c"
 echo -e "BBR算法:$blue$bbr$plain"
 vps_ip  # 获取本地vps的真实ip
 echo -e "本地IPV4地址：${blue}${vps_ipv4}$plain    本地IPV6地址：${blue}${vps_ipv6}$plain"
-v4v6 # 获取warp的ip
+warp_ip # 获取warp的ip
 echo -e "WARP IPV4地址：${blue}${warp_ipv4}$plain    WARP IPV6地址：${blue}${warp_ipv6}$plain"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 if [[ x"${release}" == x"alpine" ]]; then
