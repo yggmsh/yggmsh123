@@ -240,9 +240,9 @@ warp_ip() {
 
         # 启动后再次检查Warp状态，确保变量已更新
         warpcheck
-        
+
         # 只要IPv4或IPv6中有一个Warp服务开启，就认为成功
-        if [[ $wgcfv4 =~ on|plus || $wgcfv6 =~ on|plus ]]; then 
+        if [[ $wgcfv4 =~ on|plus || $wgcfv6 =~ on|plus ]]; then
             echo "Cloudflare Warp 服务已成功启动。"
             v4v6 # 获取Warp后的IP
             warp_ipv4="$v4"
@@ -256,7 +256,7 @@ warp_ip() {
         systemctl enable warp-go >/dev/null 2>&1
         systemctl start warp-go >/dev/null 2>&1
         sleep 2 # 稍作等待以确保服务稳定
-        
+
         v4v6 # 获取Warp后的IP
         warp_ipv4="$v4"
         warp_ipv6="$v6"
@@ -378,7 +378,7 @@ v2version=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | gre
 ###############################################################################################################
 
 # 开始选择 mihomo 安装 正式版 或 测试版
-inssb() {
+mihomo_setup() { # 配置完成
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     yellow "1：使用 mihomo 正式版内核 (回车默认)"
     yellow "2：使用 mihomo 测试版内核"
@@ -416,15 +416,13 @@ inssb() {
 
 ###############################################################################################################
 #
-# 思路没想好,需要好好考虑,刚修改到这里
-inscertificate() {
+#
+mihomo_cert_private() {
     ymzs() {
         ym_vl_re=www.yahoo.com
         echo "$ym_vl_re" >/etc/ys/vless/server-name.txt
         echo
         blue "Vless-reality的SNI域名默认为 www.yahoo.com"
-        blue "Vmess-ws将开启TLS，Hysteria-2、Tuic-v5将使用 $(cat /root/ygkkkca/ca.log 2>/dev/null) 证书，并开启SNI证书验证"
-        tlsyn=true
         ym_vm_ws=$(cat /root/ygkkkca/ca.log 2>/dev/null)
         certificatec_vmess_ws='/root/ygkkkca/cert.crt'
         certificatep_vmess_ws='/root/ygkkkca/private.key'
@@ -442,7 +440,6 @@ inscertificate() {
         echo
         blue "Vless-reality的SNI域名默认为 www.yahoo.com"
         blue "Vmess-ws将关闭TLS，Hysteria-2、Tuic-v5将使用bing自签证书，并关闭SNI证书验证"
-        tlsyn=false
         ym_vm_ws=www.bing.com
         certificatec_vmess_ws='/etc/ys/me/cert.pem'
         certificatep_vmess_ws='/etc/ys/me/private.key'
@@ -499,8 +496,8 @@ inscertificate() {
 
 ###############################################################################################################
 
-# 端口设置函数，思路没想好,需要好好考虑,刚修改到这里
-insport() {
+# mihomo 自动配置端口,与手动配置端口的主函数
+mihomo_port_auto() { # 配置完成
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     green "三、设置各个协议端口"
     yellow "1：自动生成每个协议的随机端口 (10000-65535范围内)，回车默认"
@@ -554,7 +551,7 @@ insport() {
                 for item2 in "${mihomo_array[@]}"; do
                     # 比较元素是否相同
                     if [[ "$item1" == "$item2" ]]; then
-                        insport # 返回本函数
+                        mihomo_port_auto # 返回本函数
                     fi
                 done
             done
@@ -572,7 +569,7 @@ insport() {
                 for item2 in "${mihomo_array[@]}"; do
                     # 比较元素是否相同
                     if [[ "$item1" == "$item2" ]]; then
-                        insport # 返回本函数
+                        mihomo_port_auto # 返回本函数
                     fi
                 done
             done
@@ -701,7 +698,7 @@ socks5port() {
     portsocks5=$port
 }
 
-mihomo_name_password() {
+name_password() {
     readp "\n设置全脚本的用户名：" name
     all_name=$name
     readp "设置全脚本的密码：" password
@@ -751,27 +748,81 @@ write_array_mihomo() {                  # 写入变量 WRITE_ARRAY_FILT="/root/m
 
 ###############################################################################################################
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   mieru   $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$#
-# 检查是否安装了mita
-mieru_jiance() {
-    if [ -f "/etc/mita/config.json" ] && [ -f "/etc/ys/mieru/mieru.txt" ] && [ -f "/root/mieru_array.txt" ]; then
-        echo "已经安装mieru,无需再安装"
+
+########################################## mieru 常用函数模块 #############################################################
+# 删除 mieru 函数
+mieru_shanchu() {
+    if command -v dpkg &>/dev/null; then # 判断系统使用的是不是Debian 系linux
+        name_v=$(dpkg -l | grep -i mita | awk '{print $3}')
+        sudo dpkg -P mita$name_v
+    elif command -v rpm &>/dev/null; then # 判断系统使用的是不是red 系linux
+        name_v1=$(rpm -qa | grep -i mita)
+        sudo rpm -e $name_v1
+    else
+        echo "无法卸载"
     fi
 }
 
+# 获取 mieru 版本号
 mieru_version() {
     mieru_zhengshi=$(curl -s https://api.github.com/repos/enfein/mieru/releases | grep '"tag_name":' | sed -n '1p' | awk -F'"' '{print $(NF-1)}')
     mieru_zhengshi_v=$(curl -s https://api.github.com/repos/enfein/mieru/releases | grep '"tag_name":' | sed -n '1p' | awk -F'"' '{print $(NF-1)}' | sed 's/^v//')
 }
-mieru_bbr() {
-    curl -fSsLO https://raw.githubusercontent.com/enfein/mieru/refs/heads/main/tools/enable_tcp_bbr.py
-    chmod +x enable_tcp_bbr.py
-    sudo python3 enable_tcp_bbr.py
+
+# 检查tcp端口是否被占用                 编写完了
+tcp_port() {
+    [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
 }
+# 检查udp端口是否被占用
+udp_port() {
+    [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
+}
+
+read_array_mieru() { # 读取变量 READ_ARRAY_FILE="/root/mihomo_array.txt"
+    # 检查文件是否存在
+    if [[ ! -f "$READ_ARRAY_FILE" ]]; then
+        echo "错误：文件 $READ_ARRAY_FILE 不存在。退出 read_array() 函数。"
+        return 1 # 返回非零状态码表示失败
+    fi
+
+    # 使用 mapfile (或 readarray) 将文件内容读取到 mihomo_array 数组中
+    # -t 选项去除每行的换行符
+    mapfile -t mihomo_array <"$READ_ARRAY_FILE"
+
+    echo "已从 $READ_ARRAY_FILE 读取数据到 mihomo_array 数组。"
+    return 0 # 返回零状态码表示成功
+}
+
+write_array_mieru() {                  # 写入变量 WRITE_ARRAY_FILT="/root/mieru_array.txt"
+    local arr_name="${1:-mieru_array}" # 默认为 mieru_array
+    local arr_ref                      # 声明一个nameref变量
+
+    # 使用nameref来间接引用数组 (Bash 4.3+ 支持)
+    if declare -n arr_ref="$arr_name" 2>/dev/null; then
+        # 确保文件可写。如果文件不存在，追加写入会创建文件。
+        if [[ -f "$WRITE_ARRAY_FILT" && ! -w "$WRITE_ARRAY_FILT" ]]; then
+            chmod 777 $WRITE_ARRAY_FILT
+        fi
+
+        # 遍历数组并追加写入文件
+        for item in "${arr_ref[@]}"; do
+            echo "$item" >>"$WRITE_ARRAY_FILT" # 使用 >> 进行追加写入
+        done
+
+        echo "已将 ${arr_name} 数组内容追加写入 $WRITE_ARRAY_FILT。"
+        return 0
+    else
+        echo "错误：数组 '${arr_name}' 不存在或不是有效的数组名。"
+        return 1
+    fi
+} #编写完了
+############################################## mieru 常用函数模块 ##############################################################
+############################################## mieru 端口与协议配置 ############################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 安装mieru 服务端 函数 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 安装
-mieru_setup() {
-    mieru_jiance
-    mieru_version
-    if command -v dpkg &>/dev/null; then
+mieru_setup() {                          # 编写完毕
+    mieru_version                        #获取 mieru 版本号
+    if command -v dpkg &>/dev/null; then # 判断系统使用的是不是Debian 系linux
         red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         yellow "是否安装 mieru$mieru_zhengshi 正式版内核 (回车默认 1 )"
         yellow "输入 1 或 回车 安装 mieru "
@@ -788,7 +839,7 @@ mieru_setup() {
         else
             sb
         fi
-    elif command -v rpm &>/dev/null; then
+    elif command -v rpm &>/dev/null; then # 判断系统使用的是不是red 系linux
         red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         yellow "是否安装 mieru$mieru_zhengshi 正式版内核 (回车默认 1 )"
         yellow "输入 1 或 回车 安装 mieru "
@@ -800,7 +851,7 @@ mieru_setup() {
             *) red "目前脚本不支持$(uname -m)架构" && exit ;;
             esac
             cd /root/
-            sudo dnf install mita.rpm
+            sudo rpm -Uvh --force mita.rpm
             echo "rpm 包安装完成"
         else
             sb
@@ -809,8 +860,9 @@ mieru_setup() {
         echo "不支持该系统"
     fi
 }
-
-mita-config() {
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 写入 mieru 服务端配置文件 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 配置mieru 服务端配置文件
+mieru_config() {
     cat >/etc/mita/config.json <<EOF
 {
 	"portBindings": [
@@ -864,63 +916,10 @@ mita-config() {
 	}
 }
 EOF
-    green "mieru的mita服务器脚本执行完毕。"
-
 }
 
-########################################## mieru 常用函数模块 #############################################################
-
-# 检查tcp端口是否被占用                 编写完了
-tcp_port() {
-    [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
-}
-# 检查udp端口是否被占用
-udp_port() {
-    [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
-}
-
-read_array_mieru() { # 读取变量 READ_ARRAY_FILE="/root/mihomo_array.txt"
-    # 检查文件是否存在
-    if [[ ! -f "$READ_ARRAY_FILE" ]]; then
-        echo "错误：文件 $READ_ARRAY_FILE 不存在。退出 read_array() 函数。"
-        return 1 # 返回非零状态码表示失败
-    fi
-
-    # 使用 mapfile (或 readarray) 将文件内容读取到 mihomo_array 数组中
-    # -t 选项去除每行的换行符
-    mapfile -t mihomo_array <"$READ_ARRAY_FILE"
-
-    echo "已从 $READ_ARRAY_FILE 读取数据到 mihomo_array 数组。"
-    return 0 # 返回零状态码表示成功
-}
-
-write_array_mieru() {                  # 写入变量 WRITE_ARRAY_FILT="/root/mieru_array.txt"
-    local arr_name="${1:-mieru_array}" # 默认为 mieru_array
-    local arr_ref                      # 声明一个nameref变量
-
-    # 使用nameref来间接引用数组 (Bash 4.3+ 支持)
-    if declare -n arr_ref="$arr_name" 2>/dev/null; then
-        # 确保文件可写。如果文件不存在，追加写入会创建文件。
-        if [[ -f "$WRITE_ARRAY_FILT" && ! -w "$WRITE_ARRAY_FILT" ]]; then
-            chmod 777 $WRITE_ARRAY_FILT
-        fi
-
-        # 遍历数组并追加写入文件
-        for item in "${arr_ref[@]}"; do
-            echo "$item" >>"$WRITE_ARRAY_FILT" # 使用 >> 进行追加写入
-        done
-
-        echo "已将 ${arr_name} 数组内容追加写入 $WRITE_ARRAY_FILT。"
-        return 0
-    else
-        echo "错误：数组 '${arr_name}' 不存在或不是有效的数组名。"
-        return 1
-    fi
-} #编写完了
-############################################## mieru 常用函数模块 ##############################################################
-############################################## mieru 端口与协议配置 ############################################################
 # mieru 函数开始  配置                      配置完了
-mieruport() { #配置mieru主端口与协议
+mieruport() { #配置mieru主端口与协议   已完成
     readp "\n设置mieru主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     # 增加写入txt数据,#还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
@@ -942,7 +941,7 @@ mieruport() { #配置mieru主端口与协议
     port_mieru=$prot
 }
 
-mieruports() { # mieru多端口配置端口与协议
+mieruports() { # mieru多端口配置端口与协议  已完成
     blue "设置mieru多端口 格式为[10000-10010],如果不输入直接回车,则随机产生一个"
     blue "10000-65525之间的随机端口,并在这个端口连续往后增加10个端口"
     readp "设置mieru多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口)" port
@@ -1010,7 +1009,8 @@ mieruports() { # mieru多端口配置端口与协议
         mieruports
     fi
 }
-mieru_xieyi_zhu() {
+
+mieru_xieyi_zhu() { # 已完成
     readp "设置mieru主端口传输协议[输入 1 为 TCP 输入 2 为 UDP](回车默认TCP)：" protocol
     if [[ -z "$protocol" || "$protocol" == "1" ]]; then
         xieyi_one="TCP"
@@ -1021,7 +1021,7 @@ mieru_xieyi_zhu() {
         mieru_xieyi_zhu
     fi
 }
-mieru_xieyi_duo() {
+mieru_xieyi_duo() { # 已完成
     readp "设置meiru主端口传输协议[输入 1 为 TCP 输入 2 为 UDP](回车默认TCP)：" protocols
     if [[ -z "$protocols" || "$protocols" == "1" ]]; then
         xieyi_duo="TCP"
@@ -1033,7 +1033,7 @@ mieru_xieyi_duo() {
     fi
 }
 # 设置 mieru 端口函数入口
-mieru_port_auto() { # 还有问题,在考虑
+mieru_port_auto() {
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     green "三、设置各个协议端口"
     yellow "1：自动生成每个协议的随机端口 (10000-65535范围内)，回车默认"
@@ -1055,7 +1055,8 @@ mieru_port_auto() { # 还有问题,在考虑
         num1=${ports[1]}
         num2=$((num1 + 10))
         mieru_array=()
-        mieru_array+=($num1)
+        mieru_array+=${ports[0]}
+        mieru_array+=${ports[2]}
         for xport in $(seq "$num1" "$num2"); do
             if ! tcp_port "$xport" || ! udp_port "$xport"; then
                 mieru_port_auto
@@ -1063,8 +1064,8 @@ mieru_port_auto() { # 还有问题,在考虑
             mieru_array+=($xport)
             #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
             READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru # 读取 mihomo 占用的端口
-            for item1 in "${mihomo_array[@]}"; do
+            read_array_mieru                      # 读取 mihomo 占用的端口
+            for item1 in "${mihomo_array[@]}"; do # 目的是看看有没有跟mihomo的使用端口重复
                 # 遍历第二个数组的每个元素
                 for item2 in "${mieru_array[@]}"; do
                     # 比较元素是否相同
@@ -1075,12 +1076,22 @@ mieru_port_auto() { # 还有问题,在考虑
             done
             write_array_mieru #写入 mieru 端口文件
         done
-        write_array_mieru # 写入端口信息
-        # 如果生成的数组 与 mihomo 重复,则从执行函数mieru_port_auto
         port_mieru=${ports[0]}
         ports_mieru="$num1-$num2"
+        if [[ ! -f '/etc/ys/socks5/port_scoks5.txt' ]]; then
+            socks5port=${ports[2]}
+            echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+        else
+            socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
+        fi
     else
         mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo
+        if [[ ! -f '/etc/ys/socks5/port_scoks5.txt' ]]; then
+            socks5port
+            echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+        else
+            socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
+        fi
     fi
     echo
     blue "各协议端口确认如下"
@@ -1088,51 +1099,95 @@ mieru_port_auto() { # 还有问题,在考虑
     blue "Mieru主端口协议：$xieyi_one"
     blue "Mieru多端口：$ports_mieru"
     blue "Mieru多端口协议：$xieyi_duo"
+    blue "Mieru所使用的socks5协议端口："$pocks5port
     echo "$port_mieru" >/etc/ys/mieru/port_mieru.txt
     echo "$xieyi_one" >/etc/ys/mieru/xieyi_one.txt
     echo "$ports_mieru" >/etc/ys/mieru/ports_mieru.txt
     echo "$xieyi_duo" >/etc/ys/mieru/xieyi_duo.txt
     # 加入写入/etc/ys/mieru 各个信息
 }
-read_xuyao_xinxi() {
+
+# 读取mieru 用到的配置信息
+mieru_read_peizi() { # 已完成
     port_mieru=$(cat /etc/ys/mieru/port_mieru.txt)
     xieyi_one=$(cat /etc/ys/mieru/xieyi_one.txt)
     ports_mieru=$(cat /etc/ys/mieru/ports_mieru.txt)
     xieyi_duo=$(cat /etc/ys/mieru/xieyi_duo.txt)
     all_name=$(cat /etc/ys/info/all_name.txt)
     all_password=$(cat /etc/ys/info/all_password.txt)
-    if [[ ! -f '/etc/systemd/system/ys.service' ]]; then
-        socks5port
-        echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
-        socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
-    else
-        socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
-    fi
-
+    socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
 }
-############################################## mieru 端口与协议配置 ############################################################
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru_link 配置信息 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#显示 mieru_link 配置信息
+mieru_peizhi() {
+    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    mieru_link2="mierus://$all_name:$all_password@$server_ip?:$port_mieru&port=$port_mieru&mtu=1400&multiplexing=8&profile=mieru-$hostname&protocol=$xieyi_one"
+    echo "$mieru_link2" >/etc/ys/mieru/mieru.txt
+    echo
+    red "🚀【 mieru 】节点信息如下：" && sleep 2
+    echo -e "${yellow}$(cat /etc/ys/mieru/mieru.txt)${plain}"
+    echo
+    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo "nekobox分享链接我不会,就手动选择mieru插件,手动填写吧"
+    red "🚀【 mieru 】节点信息如下：" && sleep 2
+    echo "服务器:$server_ip"
+    echo "单端口:$port_mieru"
+    echo "单端口协议:$xieyi_one"
+    echo "多端口:$ports_mieru"
+    echo "多端口协议$xieyi_duo"
+    echo "用户名:$all_name"
+    echo "密码:$all_password"
+    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    # 预计还要加入 同步到mihomo 客户端配置,与 sing-box 客户端配置
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru_link 配置信息 上~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# 检查 mieru 是否运行
+mieru_jieche() {
+    if systemctl is-active --quiet mita; then
+        echo "mita 服务端 (mita) 已成功安装并正在运行。"
+    elif command -v mita &>/dev/null; then
+        echo "mita 服务端 (mita) 命令已找到，但可能服务未启动。"
+        echo "您可能需要手动启动服务: sudo systemctl start mita"
+    else
+        echo "mita 服务端 (mita) 未检测到安装成功。"
+        echo "请检查安装日志或手动尝试安装。"
+    fi
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru 菜单里 一键安装的脚本 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 一键安装菜单
-mieru_caidai() {
+mieru_run() {
+    if [ -d "/etc/ys/mieru" ] && [ -f "/etc/mita/config.json" ]; then
+        echo "已安装mieru服务端,将退出安装程序"
+        exit 0
+    fi
     mkdir -p /etc/ys/mieru
     chmod 777 /etc/ys/mieru
-    openyn # 询问是否开放防火墙
-    mieru_setup
-    mieru_port_auto
-    if [[ ! -f '/etc/systemd/system/ys.service' ]]; then
-        mihomo_name_password
+    if [[ ! -d '/etc/ys/socks5' ]]; then # 如果没有这个目录,就建立目录
+        mkdir -p /etc/ys/socks5
+        chmod 777 /etc/ys/socks5
     fi
-    read_xuyao_xinxi
-    mita-config
-    $(mita apply config /etc/mita/config.json)
+    openyn          # 询问是否开放防火墙
+    mieru_setup     # 安装mieru 服务端
+    mieru_port_auto # 设置mieru端口
+    if [[ ! -f '/etc/ys/info/all_name.txt' || ! -f '/etc/ys/info/all_password.txt' ]]; then
+        name_password
+    fi
+    mieru_read_peizi                           # 读取端口等信息
+    mieru_config                               # 写入 mieru 服务端配置
+    $(mita apply config /etc/mita/config.json) # 配置生效命令
     sleep 2
     echo
+    mieru_peizhi # 显示配置信息
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    mieru_jieche # 检查 mieru 是否运行
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
 
 }
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru 菜单里 一键安装的脚本 上~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-###############################################################################################################
+#################################################上面是 mieru 服务端配置 ##############################################################
 
 # 获取warp 密钥,ipv6 等值
 warpwg() {
@@ -1185,88 +1240,6 @@ warpwg() {
 ###############################################################################################################
 
 # 各个协议配置文件
-ys_hysteria2() {
-    cat <<YAML_BLOCK
-- name: hy2-sb
-  type: hysteria2
-  port: $port_hy2
-  listen: 0.0.0.0
-  users:
-    $all_name: $all_password
-  # up: 1000
-  # down: 1000
-  ignore-client-bandwidth: false
-  masquerade: ""
-  alpn:
-  - h3
-  certificate: $certificatec_hy2
-  private-key: $certificatep_hy2
-
-YAML_BLOCK
-}
-
-ys_tuic() {
-    cat <<YAML_BLOCK
-- name: tuic5-sb
-  type: tuic
-  port: $port_tu
-  listen: 0.0.0.0
-  users:
-    $all_name: $all_password
-  certificate: $certificatec_tuic
-  private-key: $certificatep_tuic
-  congestion-controller: bbr
-  max-idle-time: 15000
-  authentication-timeout: 1000
-  alpn:
-    - h3
-  max-udp-relay-packet-size: 1500
-YAML_BLOCK
-}
-
-ys_anytls() {
-    cat <<YAML_BLOCK
-- name: anytls-sb
-  type: anytls
-  port: $port_any
-  listen: 0.0.0.0
-  users:
-    $all_name: $all_password
-  certificate: $certificatec_anytls
-  private-key: $certificatep_anytls
-  padding-scheme: |
-   stop=8
-   0=30-30
-   1=100-400
-   2=400-500,c,500-1000,c,500-1000,c,500-1000,c,500-1000
-   3=9-9,500-1000
-   4=500-1000
-   5=500-1000
-   6=500-1000
-   7=500-1000
-YAML_BLOCK
-}
-
-ys_vless_reality_vision() {
-    cat <<YAML_BLOCK
-- name: vless-sb
-  type: vless
-  port: ${port_vl_re}
-  listen: 0.0.0.0
-  users:
-    - username: $all_name
-      uuid: "${uuid}"
-      flow: xtls-rprx-vision
-  reality-config:
-    dest: $ym_vl_re:443
-    private-key: $private_key
-    short-id:
-      - $short_id
-    server-names:
-      - $ym_vl_re
-YAML_BLOCK
-}
-
 ys_vmess_ws_tls() {
     cat <<YAML_BLOCK
 - name: vmess-sb-inbound
@@ -1298,7 +1271,7 @@ YAML_BLOCK
 ###############################################################################################################
 
 # 创建 mihomo 服务端配置文件
-inssbjsonser() {
+mihomo_config() {
     cat >/etc/ys/config.yaml <<EOF
 mixed-port: $socks5port    # 混合代理端口 (同时支持 HTTP 和 SOCKS5)
 authentication:   # 认证设置，仅作用于 HTTP/SOCKS 代理端口
@@ -1307,15 +1280,71 @@ allow-lan: false    # 如果你只允许本机访问，这里通常设置为 fal
 bind-address: "127.0.0.1" # **修改为 127.0.0.1**
 ipv6: true
 listeners:
-$(ys_vless_reality_vision)
 
-$(ys_vmess_ws_tls)
+- name: hy2-sb
+  type: hysteria2
+  port: $port_hy2
+  listen: 0.0.0.0
+  users:
+    $all_name: $all_password
+  # up: 1000
+  # down: 1000
+  ignore-client-bandwidth: false
+  masquerade: ""
+  alpn:
+  - h3
+  certificate: $certificatec_hy2
+  private-key: $certificatep_hy2
 
-$(ys_hysteria2)
+- name: tuic5-sb
+  type: tuic
+  port: $port_tu
+  listen: 0.0.0.0
+  users:
+    $all_name: $all_password
+  certificate: $certificatec_tuic
+  private-key: $certificatep_tuic
+  congestion-controller: bbr
+  max-idle-time: 15000
+  authentication-timeout: 1000
+  alpn:
+    - h3
+  max-udp-relay-packet-size: 1500
 
-$(ys_tuic)
+- name: vless-sb
+  type: vless
+  port: ${port_vl_re}
+  listen: 0.0.0.0
+  users:
+    - username: $all_name
+      uuid: "${uuid}"
+      flow: xtls-rprx-vision
+  reality-config:
+    dest: $ym_vl_re:443
+    private-key: $private_key
+    short-id:
+      - $short_id
+    server-names:
+      - $ym_vl_re
 
-$(ys_anytls)
+- name: anytls-sb
+  type: anytls
+  port: $port_any
+  listen: 0.0.0.0
+  users:
+    $all_name: $all_password
+  certificate: $certificatec_anytls
+  private-key: $certificatep_anytls
+  padding-scheme: |
+   stop=8
+   0=30-30
+   1=100-400
+   2=400-500,c,500-1000,c,500-1000,c,500-1000,c,500-1000
+   3=9-9,500-1000
+   4=500-1000
+   5=500-1000
+   6=500-1000
+   7=500-1000
 
 proxies:
 - name: "MyWireGuard"
@@ -1361,7 +1390,7 @@ EOF
 ###############################################################################################################
 
 # 写入开机启动配置文件
-sbservice() {
+mihomo_kaiji() {
     if [[ x"${release}" == x"alpine" ]]; then
         echo '#!/sbin/openrc-run
 description="ys service"
@@ -1407,7 +1436,7 @@ sbactive() {
 ###############################################################################################################
 
 # 生成快捷方式
-lnsb() {
+mihomo_gengxin() {
     rm -rf /usr/bin/mihomo
     curl -L -o /usr/bin/mihomo -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/ys.sh
     chmod +x /usr/bin/mihomo
@@ -1416,15 +1445,15 @@ lnsb() {
 ###############################################################################################################
 
 # 凌晨1点重启 mihomo 定时任务
-cronsb() {
-    uncronsb
+mihomo_dingshi() {
+    mihomo_shanchu_dingshi
     crontab -l >/tmp/crontab.tmp
     echo "0 1 * * * systemctl restart ys;rc-service sy restart" >>/tmp/crontab.tmp
     crontab /tmp/crontab.tmp
     rm /tmp/crontab.tmp
 }
 # 删除 mihomo 定时任务
-uncronsb() {
+mihomo_shanchu_dingshi() {
     crontab -l >/tmp/crontab.tmp
     sed -i '/ys/d' /tmp/crontab.tmp
     sed -i '/sbargopid/d' /tmp/crontab.tmp
@@ -1591,7 +1620,7 @@ reshy2() {
     echo
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     #hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&mport=$hyps&sni=$hy2_name#hy2-$hostname"
-    hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
+    hy2_link="hysteria2://$all_password@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
     echo "$hy2_link" >/etc/ys/hysteria2/hy2.txt
     red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
     echo
@@ -1608,7 +1637,7 @@ reshy2() {
 restu5() {
     echo
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    tuic5_link="tuic://$uuid:$uuid@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&allow_insecure=$ins#tu5-$hostname"
+    tuic5_link="tuic://$uuid:$all_password@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&allow_insecure=$ins#tu5-$hostname"
     echo "$tuic5_link" >/etc/ys/tuic5/tuic5.txt
     red "🚀【 Tuic-v5 】节点信息如下：" && sleep 2
     echo
@@ -1625,7 +1654,7 @@ restu5() {
 resanytls() {
     echo
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    anytls_link="anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#$anytls-$hostname"
+    anytls_link="anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
     echo "$anytls_link" >/etc/ys/anytls/anytls.txt
     red "🚀【 anytls 】节点信息如下：" && sleep 2
     echo
@@ -1650,7 +1679,7 @@ resanytls() {
 }
 
 ###############################################################################################################
-# 待思考 函数是用来给 节点信息的各个变量赋值的,用来判断 自签证书还是 acme证书等  修改完了
+# 函数是用来给 节点信息的各个变量赋值的,用来判断 自签证书还是 acme证书等  修改完了
 result_vl_vm_hy_tu() {
     if [[ -f /root/ygkkkca/cert.crt && -f /root/ygkkkca/private.key && -s /root/ygkkkca/cert.crt && -s /root/ygkkkca/private.key ]]; then
         ym=$(bash ~/.acme.sh/acme.sh --list | tail -1 | awk '{print $1}')
@@ -1662,14 +1691,27 @@ result_vl_vm_hy_tu() {
     server_ipcl=$(cat /etc/ys/info/server_ipcl.log)                                         # server_ipcl 存储 ip
     hostname=$(cat /etc/ys/info/hostname.log)
 
-    argo=$(cat /etc/ys/info/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-    ws_path=$(cat /etc/ys/vmess/path.txt 2>/dev/null) # 得到path
-    vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
-    vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-    tu5_port=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+    # hysteria2 link需要的配置信息  完成
+    #    "hysteria2://$all_password@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
+    hy2_name=www.bing.com
+    sb_hy2_ip=$server_ip                                          # link ip地址
+    cl_hy2_ip=$server_ipcl                                        # 客户端配置文件ip
+    all_password=$(cat /etc/ys/info/all_password.txt 2>/dev/null) # 密码
+    hy2_port=$(cat /etc/ys/hysteria2/port_hy2.txt 2>/dev/null)    # 端口
+    hy2_ports=$(cat /etc/ys/hysteria2/hy2_ports.txt 2>/dev/null)  # 多端口
+    ins_hy2=1
 
-    # vless 需要的配置信息
-    vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vl-reality-$hostname"
+    # tuic5 需要的配置信息  完成
+    #    "tuic://$uuid:$all_password@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&allow_insecure=$ins#tu5-$hostname"
+    tu5_name=www.bing.com
+    sb_tu5_ip=$server_ip
+    cl_tu5_ip=$server_ipcl
+    tu5_port=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+    port_tu=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+    ins=1
+
+    # vless 需要的配置信息  完成
+    #    vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vl-reality-$hostname"
     uuid=$(cat /etc/ys/vless/uuid.txt 2>/dev/null)               # 读取uuid
     vl_port=$(cat /etc/ys/vless/port_vl_re.txt 2>/dev/null)      # 读取端口
     vl_name=$(cat /etc/ys/vless/server-name.txt 2>/dev/null)     # 读取 www.yahoo.com
@@ -1678,51 +1720,18 @@ result_vl_vm_hy_tu() {
     short_id=$(cat /etc/ys/vless/short_id.txt 2>/dev/null)       # 读取 short-id
 
     # anytls 需要的配置信息
+    "anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
     cl_any_ip=$server_ip
     port_any=(cat /etc/ys/anytls/port_any.txt)
     ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
 
-    # 判断 tls 开起或关闭
-    tls=true
-
     # vmess 需要的配置信息
     vmadd_local=$server_ipcl
     vmadd_are_local=$server_ip
-
-    # hy2_port=$(cat /etc/ys/Hysteria2/port_hy2.txt 2>/dev/null)
-    # hy2_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$hy2_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
-    # if [[ -n $hy2_ports ]]; then
-    #     hy2ports=$(echo $hy2_ports | sed 's/:/-/g')
-    #     hyps=$hy2_port,$hy2ports
-    # else
-    #     hyps=
-    # fi
-    # hysteria2 需要的配置信息
-    hy2_name=www.bing.com
-    sb_hy2_ip=$server_ip
-    cl_hy2_ip=$server_ipcl
-    cl_any_ip=$server_ip
-    ins_hy2=1
-    hy2_ins=true
-
-    # hy2_name=$ym
-    # sb_hy2_ip=$ym
-    # cl_hy2_ip=$ym
-    # ins_hy2=0
-    # hy2_ins=false
-
-    # tuic5 需要的配置信息
-    tu5_name=www.bing.com
-    sb_tu5_ip=$server_ip
-    cl_tu5_ip=$server_ipcl
-    ins=1
-    tu5_ins=true
-
-    # tu5_name=$ym
-    # sb_tu5_ip=$ym
-    # cl_tu5_ip=$ym
-    # ins=0
-    # tu5_ins=false
+    argo=$(cat /etc/ys/info/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
+    ws_path=$(cat /etc/ys/vmess/path.txt 2>/dev/null) # 得到path
+    vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
+    vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
 
 }
 
@@ -1730,12 +1739,20 @@ result_vl_vm_hy_tu() {
 # 显示节点信息  修改完了
 sbshare() {
     rm -rf /etc/ys/jhdy.txt /etc/ys/vless/vl_reality.txt /etc/ys/vmess/vm_ws_argols.txt /etc/ys/vmess/vm_ws_argogd.txt /etc/ys/vmess/vm_ws.txt /etc/ys/vmess/vm_ws_tls.txt /etc/ys/hysteria2/hy2.txt /etc/ys/tuic5/tuic5.txt /etc/ys/anytls/anytls.txt
-    result_vl_vm_hy_tu && resvless && resvmess && reshy2 && restu5 && resanytls
+    result_vl_vm_hy_tu && reshy2 && restu5 && resvless && resanytls # 读取配置信息  hy2link  tu5link vlesslink anytlslink
     cat /etc/ys/vless/vl_reality.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    cat /etc/ys/vmess/vm_ws_argols.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    cat /etc/ys/vmess/vm_ws_argogd.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    cat /etc/ys/vmess/vm_ws.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    cat /etc/ys/vmess/vm_ws_tls.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    if [ -f '/etc/ys/vmess/vm_ws_argols.txt' ]; then
+        cat /etc/ys/vmess/vm_ws_argols.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    fi
+    if [ -f '/etc/ys/vmess/vm_ws_argogd.txt' ]; then
+        cat /etc/ys/vmess/vm_ws_argogd.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    fi
+    if [ -f '/etc/ys/vmess/vm_ws_argogd.txt' ]; then
+        cat /etc/ys/vmess/vm_ws.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    fi
+    if [ -f '/etc/ys/vmess/vm_ws_argogd.txt' ]; then
+        cat /etc/ys/vmess/vm_ws_tls.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    fi
     cat /etc/ys/hysteria2/hy2.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/tuic5/tuic5.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/anytls/anytls.txt 2>/dev/null >>/etc/ys/jhdy.txt
@@ -1857,63 +1874,12 @@ sb_client() {
       "default": "auto",
       "outbounds": [
         "auto",
-        "vless-$hostname",
-        "vmess-$hostname",
         "hy2-$hostname",
         "tuic5-$hostname",
+        "vless-$hostname",
         "anytls-$hostname"
       ]
     },
-    {
-      "type": "vless",
-      "tag": "vless-$hostname",
-      "server": "$server_ipcl",
-      "server_port": $vl_port,
-      "uuid": "$uuid",
-      "packet_encoding": "xudp",
-      "flow": "xtls-rprx-vision",
-      "tls": {
-        "enabled": true,
-        "server_name": "$vl_name",
-        "utls": {
-          "enabled": true,
-          "fingerprint": "chrome"
-        },
-      "reality": {
-          "enabled": true,
-          "public_key": "$public_key",
-          "short_id": "$short_id"
-        }
-      }
-    },
-{
-            "server": "$vmadd_local",
-            "server_port": $vm_port,
-            "tag": "vmess-$hostname",
-            "tls": {
-                "enabled": $tls,
-                "server_name": "$vm_name",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "packet_encoding": "packetaddr",
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$vm_name"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-
     {
         "type": "hysteria2",
         "tag": "hy2-$hostname",
@@ -1950,6 +1916,28 @@ sb_client() {
                 ]
             }
         },
+     {
+      "type": "vless",
+      "tag": "vless-$hostname",
+      "server": "$server_ipcl",
+      "server_port": $vl_port,
+      "uuid": "$uuid",
+      "packet_encoding": "xudp",
+      "flow": "xtls-rprx-vision",
+      "tls": {
+        "enabled": true,
+        "server_name": "$vl_name",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+      "reality": {
+          "enabled": true,
+          "public_key": "$public_key",
+          "short_id": "$short_id"
+        }
+      }
+    },
         {
         "type": "anytls",
         "tag": "anytls-$hostname",
@@ -1962,7 +1950,7 @@ sb_client() {
         "min_idle_session": 5,
         "tls": {
             "enabled": true,
-            "server_name": "wwww.bing.com",
+            "server_name": "www.bing.com",
             "insecure": true,
             "utls": {
             "enabled": true,
@@ -1979,10 +1967,9 @@ sb_client() {
       "tag": "auto",
       "type": "urltest",
       "outbounds": [
-        "vless-$hostname",
-        "vmess-$hostname",
         "hy2-$hostname",
         "tuic5-$hostname",
+        "vless-$hostname",
         "anytls-$hostname"
       ],
       "url": "https://www.gstatic.com/generate_204",
@@ -2099,36 +2086,6 @@ dns:
       - 240.0.0.0/4
 
 proxies:
-- name: vless-reality-vision-$hostname               
-  type: vless
-  server: $server_ipcl                           
-  port: $vl_port                                
-  uuid: $uuid   
-  network: tcp
-  udp: true
-  tls: true
-  flow: xtls-rprx-vision
-  servername: $vl_name                 
-  reality-opts: 
-    public-key: $public_key    
-    short-id: $short_id                    
-  client-fingerprint: chrome                  
-
-- name: vmess-ws-$hostname                         
-  type: vmess
-  server: $vmadd_local                        
-  port: $vm_port                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: $tls
-  network: ws
-  servername: $vm_name                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $vm_name                     
 
 - name: hysteria2-$hostname                            
   type: hysteria2                                      
@@ -2150,6 +2107,34 @@ proxies:
   # initial-connection-receive-window： 20971520
   # max-connection-receive-window： 20971520
 
+- name: tuic5-$hostname                            
+  server: $cl_tu5_ip                      
+  port: $tu5_port                                    
+  type: tuic
+  uuid: $uuid       
+  password: $all_password   
+  alpn: [h3]
+  disable-sni: true
+  reduce-rtt: true
+  udp-relay-mode: native
+  congestion-controller: bbr
+  sni: $tu5_name                                
+  skip-cert-verify: $tu5_ins
+
+- name: vless-reality-vision-$hostname               
+  type: vless
+  server: $server_ipcl                           
+  port: $vl_port                                
+  uuid: $uuid   
+  network: tcp
+  udp: true
+  tls: true
+  flow: xtls-rprx-vision
+  servername: $vl_name                 
+  reality-opts: 
+    public-key: $public_key    
+    short-id: $short_id                    
+  client-fingerprint: chrome                  
 
 - name: anytls-$hostname
   type: anytls
@@ -2166,17 +2151,17 @@ proxies:
     - h2
     - http/1.1
   skip-cert-verify: true
+
 proxy-groups:
 - name: 负载均衡
   type: load-balance
   url: https://www.gstatic.com/generate_204
   interval: 300
   strategy: round-robin
-  proxies:
-    - vless-reality-vision-$hostname                              
-    - vmess-ws-$hostname
+  proxies:                              
     - hysteria2-$hostname
     - tuic5-$hostname
+    - vless-reality-vision-$hostname
     - anytls-$hostname
 
 - name: 自动选择
@@ -2184,11 +2169,10 @@ proxy-groups:
   url: https://www.gstatic.com/generate_204
   interval: 300
   tolerance: 50
-  proxies:
-    - vless-reality-vision-$hostname                              
-    - vmess-ws-$hostname
+  proxies:                             
     - hysteria2-$hostname
     - tuic5-$hostname
+    - vless-reality-vision-$hostname 
     - anytls-$hostname
     
 - name: 🌍选择代理节点
@@ -2197,10 +2181,9 @@ proxy-groups:
     - 负载均衡                                         
     - 自动选择
     - DIRECT
-    - vless-reality-vision-$hostname                              
-    - vmess-ws-$hostname
-    - hysteria2-$hostname
+    - hysteria2-$hostname    
     - tuic5-$hostname
+    - vless-reality-vision-$hostname 
     - anytls-$hostname
 
 rules:
@@ -2224,7 +2207,7 @@ EOF
 
 ###############################################################################################################
 
-Vless-reality() {       # vless-reality-key short_id 
+mihomo_reality() { # vless-reality-key short_id
     blue "Vless-reality相关key与id将自动生成……"
     key_pair=$(/etc/ys/ys generate reality-keypair)                           # 修改完mihomo配置
     private_key=$(echo "$key_pair" | grep "PrivateKey: " | awk '{print $NF}') # 修改完mihomo配置
@@ -2238,8 +2221,8 @@ Vless-reality() {       # vless-reality-key short_id
 }
 
 # 主菜单1项 安装 mihomo 一键脚本    修改完了
-instsllsingbox() {
-    if [[ -f '/etc/systemd/system/ys.service' ]]; then
+mihomo_run() {
+    if [ -f "/etc/ys/config.yaml" ] && [ -f "/etc/ys/ys" ]; then
         red "已安装mihomo服务，无法再次安装" && exit
     fi
     mkdir -p /etc/ys
@@ -2258,32 +2241,36 @@ instsllsingbox() {
     chmod 777 /etc/ys/tuic5
     mkdir -p /etc/ys/Anytls
     chmod 777 /etc/ys/Anytls
-    mkdir -p /etc/ys/socks5
-    chmod 777 /etc/ys/socks5
-    v6                   # 核心逻辑部分，根据网络环境（特别是 IPv4 或纯 IPv6）进行配置，并处理 Warp 的状态。
-    openyn               # 询问是否开放防火墙
-    inssb                # 选择 mihomo 安装 正式版 或 测试版
-    inscertificate       # 自签证书与各个产生的变量    还在考虑
-    insport              # 配置协议端口               还在考虑
-    mihomo_name_password # 账户 密码
-    Vless-reality        #  vless-reality-key short_id
+    if [ ! -d '/etc/ys/socks5' ]; then # 如果没有这个目录,就建立目录
+        mkdir -p /etc/ys/socks5
+        chmod 777 /etc/ys/socks5
+    fi
+    v6                  # 核心逻辑部分，根据网络环境（特别是 IPv4 或纯 IPv6）进行配置，并处理 Warp 的状态。
+    openyn              # 询问是否开放防火墙
+    mihomo_setup        # 选择 mihomo 安装 正式版 或 测试版
+    mihomo_cert_private # 自签证书与各个产生的变量
+    mihomo_port_auto    # 配置协议端口
+    mihomo_reality      #  vless-reality-key short_id
+    if [[ ! -f '/etc/ys/info/all_name.txt' || ! -f '/etc/ys/info/all_password.txt' ]]; then
+        name_password
+    fi # 账户 密码
     echo
     wget -q -O /root/geoip.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db
     wget -q -O /root/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     green "五、自动生成warp-wireguard出站账户" && sleep 2
-    warpwg       # 获取 warp 密钥,ipv6 等值
-    inssbjsonser # 创建 mihomo 服务端配置文件
-    sbservice    # 写入开机启动配置文件
-    sbactive     # 检查 mihomo 配置文件是否存在
+    warpwg        # 获取 warp 密钥,ipv6 等值
+    mihomo_config # 创建 mihomo 服务端配置文件
+    mihomo_kaiji  # 写入开机启动配置文件
+    sbactive      # 检查 mihomo 配置文件是否存在
     curl -sL https://github.com/yggmsh/yggmsh123/blob/main/vys | awk -F "更新内容" '{print $1}' | head -n 1 >/etc/ys/v
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    lnsb && blue " mihomo 脚本安装成功，脚本快捷方式：mihomo" && cronsb # lnsb 生成 mihomo 快捷方式  cronsb 凌晨1点重启 mihomo 定时任务
+    mihomo_gengxin && blue " mihomo 脚本安装成功，脚本快捷方式：mihomo" && mihomo_dingshi # mihomo_gengxin 生成 mihomo 快捷方式  mihomo_dingshi 凌晨1点重启 mihomo 定时任务
     echo
     wgcfgo  # 管理并确保 Cloudflare WARP 服务的运行，并在必要时刷新或重新配置其网络参数。 它会根据 WARP 的当前状态来决定执行初始化或重启流程
     sbshare # 显示节点信息
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    blue "Hysteria2/Tuic5自定义V2rayN配置、Clash-Meta/Sing-box客户端配置及私有订阅链接，请选择9查看"
+    blue "Clash-Meta/Sing-box客户端配置及私有订阅链接，请选择9查看"
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
 }
@@ -2304,7 +2291,7 @@ unins() {
     kill -15 $(cat /etc/ys/info/sbargoympid.log 2>/dev/null) >/dev/null 2>&1
     kill -15 $(cat /etc/ys/info/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
     rm -rf /etc/ys sbyg_update /usr/bin/mihomo /root/geoip.db /root/geosite.db /root/warpapi /root/warpip
-    uncronsb # 删除 mihomo 定时任务
+    mihomo_shanchu_dingshi # 删除 mihomo 定时任务
     iptables -t nat -F PREROUTING >/dev/null 2>&1
     netfilter-persistent save >/dev/null 2>&1
     service iptables save >/dev/null 2>&1
@@ -3015,14 +3002,14 @@ upsbyg() {
     if [[ ! -f '/usr/bin/mihomo' ]]; then
         red "未正常安装mihomo" && exit
     fi
-    lnsb # 更新菜单
+    mihomo_gengxin # 更新菜单
     curl -sL https://github.com/yggmsh/yggmsh123/blob/main/vys | awk -F "更新内容" '{print $1}' | head -n 1 >/etc/ys/v
     green " mihomo 安装脚本升级成功" && sleep 5 && mihomo
 }
 ###############################################################################################################
 # 主菜单8 更新/切换/指定 mihomo 内核版本  修改完了
 upsbcroe() {
-    inssb # 安装linux内核
+    mihomo_setup # 安装linux内核
 }
 ###############################################################################################################
 # 主菜单9 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】  修改完了
@@ -3083,7 +3070,7 @@ sblog() {
 }
 # 主菜单10 查看 mihomo 运行日志  修改完了
 ###############################################################################################################
-# 主菜单11 一键原版BBR+FQ加速   不需要修改
+# 主菜单11 bbr加速菜单   不需要修改
 bbr() {
     if [[ $vi =~ lxc|openvz ]]; then
         yellow "当前VPS的架构为 $vi，不支持开启原版BBR加速" && sleep 2 && exit
@@ -3092,6 +3079,27 @@ bbr() {
         bash <(curl -Ls https://raw.githubusercontent.com/teddysun/across/master/bbr.sh)
     fi
 }
+mieru_bbr() {
+    curl -fSsLO https://raw.githubusercontent.com/enfein/mieru/refs/heads/main/tools/enable_tcp_bbr.py
+    chmod +x enable_tcp_bbr.py
+    sudo python3 enable_tcp_bbr.py
+}
+
+bbrplus() {
+    echo
+    green "1：勇哥版一键原版BBR+FQ加速"
+    green "2：mieru 版本bbr脚本"
+    green "0：返回上层"
+    readp "请选择【0-2】：" menu
+    if [ "$menu" = "1" ]; then
+        bbr
+    elif [ "$menu" = "2" ]; then
+        bbrplus
+    else
+        sb
+    fi
+}
+
 # 主菜单11 一键原版BBR+FQ加速   不需要修改   ^^^^^
 ###############################################################################################################
 # 主菜单12 管理 Acme 申请域名证书   不需要修改
@@ -3301,7 +3309,90 @@ showprotocol() { # 主界面显示的 信息函数    修改完了
     echo "------------------------------------------------------------------------------------"
 }
 ###############################################################################################################
-
+mihomo_mieru_run() {
+    if [ -f "/etc/ys/config.yaml" ] && [ -f "/etc/ys/ys" ]; then
+        red "已安装mihomo或mieru服务，请卸载在安装" && exit
+    fi
+    mkdir -p /etc/ys
+    chmod 777 /etc/ys
+    mkdir -p /etc/ys/info
+    chmod 777 /etc/ys/info
+    mkdir -p /etc/ys/me/
+    chmod 777 /etc/ys/me/
+    mkdir -p /etc/ys/vless
+    chmod 777 /etc/ys/vless
+    mkdir -p /etc/ys/vmess
+    chmod 777 /etc/ys/vmess
+    mkdir -p /etc/ys/Hysteria2
+    chmod 777 /etc/ys/Hysteria2
+    mkdir -p /etc/ys/tuic5
+    chmod 777 /etc/ys/tuic5
+    mkdir -p /etc/ys/Anytls
+    chmod 777 /etc/ys/Anytls
+    if [ ! -d '/etc/ys/socks5' ]; then # 如果没有这个目录,就建立目录
+        mkdir -p /etc/ys/socks5
+        chmod 777 /etc/ys/socks5
+    fi
+    v6                  # 核心逻辑部分，根据网络环境（特别是 IPv4 或纯 IPv6）进行配置，并处理 Warp 的状态。
+    openyn              # 询问是否开放防火墙
+    mihomo_setup        # 选择 mihomo 安装 正式版 或 测试版
+    mihomo_cert_private # 自签证书与各个产生的变量
+    mihomo_port_auto    # 配置协议端口
+    mihomo_reality      #  vless-reality-key short_id
+    if [[ ! -f '/etc/ys/info/all_name.txt' || ! -f '/etc/ys/info/all_password.txt' ]]; then
+        name_password
+    fi # 账户 密码
+    echo
+    # 开始mieru 服务端安装
+    if [ -d "/etc/ys/mieru" ] && [ -f "/etc/mita/config.json" ]; then
+        echo "已安装mieru服务端,将退出安装程序"
+        exit 0
+    fi
+    mkdir -p /etc/ys/mieru
+    chmod 777 /etc/ys/mieru
+    if [[ ! -d '/etc/ys/socks5' ]]; then # 如果没有这个目录,就建立目录
+        mkdir -p /etc/ys/socks5
+        chmod 777 /etc/ys/socks5
+    fi
+    mieru_setup     # 安装mieru 服务端
+    mieru_port_auto # 设置mieru端口
+    if [[ ! -f '/etc/ys/info/all_name.txt' || ! -f '/etc/ys/info/all_password.txt' ]]; then
+        name_password
+    fi
+    wget -q -O /root/geoip.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db
+    wget -q -O /root/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    green "五、自动生成warp-wireguard出站账户" && sleep 2
+    warpwg                                     # 获取 warp 密钥,ipv6 等值
+    mihomo_config                              # 创建 mihomo 服务端配置文件
+    mihomo_kaiji                               # 写入开机启动配置文件
+    sbactive                                   # 检查 mihomo 配置文件是否存在
+    mieru_read_peizi                           # 读取端口等信息
+    mieru_config                               # 写入 mieru 服务端配置
+    $(mita apply config /etc/mita/config.json) # 配置生效命令
+    sleep 2
+    echo
+    curl -sL https://github.com/yggmsh/yggmsh123/blob/main/vys | awk -F "更新内容" '{print $1}' | head -n 1 >/etc/ys/v
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    mihomo_gengxin && blue " mihomo 脚本安装成功，脚本快捷方式：mihomo" && mihomo_dingshi # mihomo_gengxin 生成 mihomo 快捷方式  mihomo_dingshi 凌晨1点重启 mihomo 定时任务
+    echo
+    wgcfgo  # 管理并确保 Cloudflare WARP 服务的运行，并在必要时刷新或重新配置其网络参数。 它会根据 WARP 的当前状态来决定执行初始化或重启流程
+    sbshare # 显示节点信息
+    echo
+    mieru_peizhi # 显示配置信息
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    mieru_jieche # 检查 mieru 是否运行
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    blue "Clash-Meta/Sing-box客户端配置及私有订阅链接，请选择9查看"
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+}
+mihomo_mieru_un() {
+    unins
+    mieru_shanchu
+}
+#################################################################################################################
 #这是脚本的主代码,用来运行脚本菜的的界面
 clear
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -3311,34 +3402,38 @@ echo -e "${bblue}  █   █ █   █  █  █   █ █   █ █   █ █  
 echo -e "${bblue}  █   █ █   █  █  █   █ █   █  █ █  █   █ █  █ █                        "
 echo -e "${bblue}  █   ███   █ ███ █   ███   █   █   █    ██   █                         "
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-white "甬哥Github项目  ：github.com/yonggekkk"
-white "甬哥Blogger博客 ：ygkkk.blogspot.com"
-white "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
+white "这是一个参照了勇哥sb脚本,使用了勇哥脚本一些功能函数的 Mihomo 与 mieru 脚本的一键脚本,本~"
+white "脚本有各种bug,不建议大家使用,脚本是我为了方便自己使用设计的,再次声明,不建议大家使用呦呦~~"
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-white "Vless-reality-vision、Vmess-ws(tls)+Argo、Hysteria-2、Tuic-v5 四协议共存脚本"
-white "这是一个mihomo脚本,学习勇哥脚本,在勇哥脚本的各种函数修改抄袭改进而来的,功能上使用"
-white "选择协议的模式,在勇哥协议上,支持了更多的协议,主要是为了自己使用方便,存在各种 bug "
-white "脚本快捷方式：ys"
+white "本脚本是mihomo的一键脚本,支持下面五种协议,脚本还在改进状态,里面有各种bug,不要使用呦呦呦呦"
+white "Vless-reality-vision、Anytls、Hysteria-2、Tuic-v5 (Vmess argo)待研究改四协议共存脚本"
+white "安装 mieru 协议 后mihomo客户端支持 mieru 协议,sing-box客户端不支持,"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-green " 1. 一键安装 mihomo (待整理测试)"
-green " 2. 删除卸载 mihomo (完)"
+white "脚本快捷方式：mihomo"
+red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+green " 1. 一键安装 mihomo 与 mieru (测试)"
+green " 2. 一键删除 mihomo 与 mieru (测试)"
 white "----------------------------------------------------------------------------------"
-green " 3. 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】(待修改)"
-green " 4. 更改主端口/添加多端口跳跃复用(待修改)"
-green " 5. 关闭/重启 mihomo (完)"
-green " 6. 更新 mihomo 脚本(完)"
-green " 7. 更新/切换/指定 mihomo 内核版本 (完)"
+green " 3. 一键安装 mihomo (测试)"
+green " 4. 删除卸载 mihomo (测试)"
 white "----------------------------------------------------------------------------------"
-green " 8. 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】(完)"
-green " 9. 查看 mihomo 运行日志(完)"
-green "10. 勇哥一键原版BBR+FQ加速(完)"
-green "11. 勇哥管理 Acme 申请域名证书(完)"
-green "12. 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况(完)"
-green "13. 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】(待修改)"
+green " 5. 一键安装 mieru (测试)"
+green " 6. 一键删除 mieru (测试)"
 white "----------------------------------------------------------------------------------"
-green "14. 一键安装 mieru 待修改"
-green "15. mieru 配置菜单 待修改"
-green "16. mieru bbr菜单"
+green " 7. 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】(待修改)"
+green " 8. 更改主端口/添加多端口跳跃复用(待修改)"
+green " 9. 关闭/重启 mihomo (完)"
+green "10. 更新 mihomo 脚本(完)"
+green "11. 更新/切换/指定 mihomo 内核版本 (完)"
+white "----------------------------------------------------------------------------------"
+green "12. mieru 配置菜单 待修改"
+white "----------------------------------------------------------------------------------"
+green "13. 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】(完)"
+green "14. 查看 mihomo 运行日志(完)"
+green "15. bbr加速菜单(完)"
+green "16. 勇哥管理 Acme 申请域名证书(完)"
+green "17. 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况(完)"
+green "18. 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】(待修改)"
 white "----------------------------------------------------------------------------------"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -3399,7 +3494,7 @@ echo -e "内核:$blue$version$plain  \c"
 echo -e "处理器:$blue$cpu$plain  \c"
 echo -e "虚拟化:$blue$vi$plain  \c"
 echo -e "BBR算法:$blue$bbr$plain"
-vps_ip  # 获取本地vps的真实ip
+vps_ip # 获取本地vps的真实ip
 echo -e "本地IPV4地址：${blue}${vps_ipv4}$plain    本地IPV6地址：${blue}${vps_ipv6}$plain"
 warp_ip # 获取warp的ip
 echo -e "WARP IPV4地址：${blue}${warp_ipv4}$plain    WARP IPV6地址：${blue}${warp_ipv6}$plain"
@@ -3432,21 +3527,23 @@ red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo
 readp "请输入数字【0-16】:" Input
 case "$Input" in
-1) instsllsingbox ;; # 一键安装 mihomo 完
-2) unins ;;          # 删除卸载 mihomo 完
-3) changeserv ;;     # 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】
-4) changeport ;;     # 更改主端口/添加多端口跳跃复用
-5) stclre ;;         # 关闭/重启 mihomo 完
-6) upsbyg ;;         # 更新 mihomo 脚本 完
-7) upsbcroe ;;       # 更新/切换/指定 mihomo 内核版本 完
-8) clash_sb_share ;; # 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】完
-9) sblog ;;          # 查看 mihomo 运行日志 完
-10) bbr ;;           # 勇哥一键原版BBR+FQ加速 完
-11) acme ;;          # 勇哥管理 Acme 申请域名证书 完
-12) cfwarp ;;        # 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况 完
-13) inssbwpph-x ;;     # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
-14) mieru_caidai ;;  # 一键安装 mieru
-15) zzzzzz ;;        # mieru 配置菜单
-16) mieru_bbr ;;     # mieru bbr菜单
+1) mihomo_mieru_run ;; # 一键安装 mihomo 与 mieru 还没写
+2) mihomo_mieru_un ;;  # 一键安装 mihomo 与 mieru 还没写
+3) mihomo_run ;;       # 一键安装 mihomo 完
+4) unins ;;            # 删除卸载 mihomo 完
+5) mieru_run ;;        # 一键安装 mieru 完
+6) mieru_shanchu ;;    # 一键删除 mieru 还没写
+7) changeserv ;;       # 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】待修改
+8) changeport ;;       # 更改主端口/添加多端口跳跃复用 待修改
+9) stclre ;;           # 关闭/重启 mihomo 完
+10) upsbyg ;;          # 更新 mihomo 脚本 完
+11) upsbcroe ;;        # 更新/切换/指定 mihomo 内核版本 完
+12) zzzzzz ;;          # mieru 配置菜单 还没写
+13) clash_sb_share ;;  # 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】完
+14) sblog ;;           # 查看 mihomo 运行日志 完
+15) bbrplus ;;         # 勇哥一键原版BBR+FQ加速 完
+16) acme ;;            # 勇哥管理 Acme 申请域名证书 完
+17) cfwarp ;;          # 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况 完
+18) inssbwpph-x ;;     # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
 *) exit ;;
 esac
