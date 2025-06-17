@@ -3526,7 +3526,7 @@ if [ -f '/etc/ys/config.yaml' ]; then
 fi
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
-readp "请输入数字【0-16】:" Input
+readp "请输入数字【0-18】:" Input
 case "$Input" in
 1) mihomo_mieru_run ;; # 一键安装 mihomo 与 mieru 还没写
 2) mihomo_mieru_un ;;  # 一键安装 mihomo 与 mieru 还没写
