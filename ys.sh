@@ -464,6 +464,7 @@ mihomo_cert_private() {
         red "生成bing自签证书失败" && exit
     fi
     echo
+    echo "$hostname" >/etc/ys/info/hostname.log
     if [[ -f /root/ygkkkca/cert.crt && -f /root/ygkkkca/private.key && -s /root/ygkkkca/cert.crt && -s /root/ygkkkca/private.key ]]; then
         yellow "经检测，之前已使用Acme-yg脚本申请过Acme域名证书：$(cat /root/ygkkkca/ca.log) "
         green "是否使用 $(cat /root/ygkkkca/ca.log) 域名证书？"
@@ -516,7 +517,7 @@ mihomo_port_auto() { # 配置完成
                 fi
             done
         done
-        port_vm_ws_vps=${ports[0]}
+        port_vm_ws=${ports[0]}
         port_vl_re=${ports[1]}
         port_hy2=${ports[2]}
         port_tu=${ports[3]}
@@ -559,7 +560,7 @@ mihomo_port_auto() { # 配置完成
         WRITE_ARRAY_FILT="/root/mihomo_array.txt"
         write_array_mihomo # 写入mihomo函数
     else
-        vlport && vmport && hy2port && hy2ports && tu5port && anytlsport && socks5port
+        vlport && vmport && hy2port && hy2ports && tu5port && tu5ports && anytlsport && socks5port
         mihomo_array=("$port_vl_re" "$port_vm_ws" "$port_hy2" "$port_tu" "$port_any" "$port_socks5" "$hy2_array")
         if [ -f "/etc/mita/config.json" ] && [ -f "/etc/ys/mieru/mieru.txt" ] && [ -f "/root/mieru_array.txt" ]; then
             READ_ARRAY_FILE="/root/mieru_array.txt"
@@ -580,21 +581,12 @@ mihomo_port_auto() { # 配置完成
     echo
     blue "各协议端口确认如下"
     blue "Vless-reality端口：$port_vl_re"
-    echo "$port_vl_re" >/etc/ys/vless/port_vl_re.txt
-    blue "Vmess-ws端口：$port_vm_ws"
-    echo "$port_vm_ws" >/etc/ys/vmess/port_vm_ws.txt
-    blue "vmess-ws-vps端口："$port_vm_ws_vps
-    echo "$prot_vm_ws_vps" >/etc/ys/vmess/port_vm_ws_vps.txt
-    blue "Hysteria-2端口：$port_hy2"
-    echo "$port_hy2" >/etc/ys/hysteria2/port_hy2.txt
+    blue "Hysteria-2端口：$port_hy2"    
     blue "Hysteria-2多端口：$hy2_ports"
-    echo "$hy2_ports" >/etc/ys/hysteria2/hy2_ports.txt
     blue "Tuic-v5端口：$port_tu"
-    echo "$port_tu" >/etc/ys/tuic5/port_tu.txt
     blue "Anytls端口：$port_any"
-    echo "$port_any" >/etc/ys/anytls/port_any.txt
     blue "socks5端口：$socks5port"
-    echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     green "四、自动生成各个协议统一的uuid (密码)"
     uuid=$(uuidgen)
@@ -603,7 +595,6 @@ mihomo_port_auto() { # 配置完成
     echo "$uuid" >/etc/ys/vless/uuid.txt
     echo "$uuid" >/etc/ys/vmess/uuid.txt
     echo "${uuid}-vm" >/etc/ys/vmess/path.txt
-    echo "$hostname" >/etc/ys/info/hostname.log
 }
 
 ###############################################################################################################
@@ -628,19 +619,21 @@ vlport() {
     readp "\n设置Vless-reality端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     port_vl_re=$port
+    echo "$port_vl_re" >/etc/ys/vless/port_vl_re.txt
 }
 vmport() {
     readp "\n设置Vmess-ws端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     port_vm_ws=$port
+    echo "$port_vm_ws" >/etc/ys/vmess/port_vm_ws.txt      
 }
 hy2port() {
     readp "\n设置Hysteria2主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     port_hy2=$port
+    echo "$port_hy2" >/etc/ys/hysteria2/port_hy2.txt
 }
 hy2ports() {
-
     blue "设置Hysteria2多端口 格式为[10000-10010],如果不输入直接回车,则随机产生一个"
     blue "10000-65525之间的随机端口,并在这个端口连续往后增加10个端口"
     readp "设置Hysteria2多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口)" port
@@ -663,6 +656,13 @@ hy2ports() {
             hy2_array+=($xport)
         done
         hy2_ports="$num1-$num2"
+        hy2_port=$(cat /etc/ys/hysteria2/port_hy2.txt 2>/dev/null)
+        xxxx=$hy2_ports
+        ports_hy2="${xxxx//-/:}"
+        $(iptables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+        $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+        $(netfilter-persistent save)  
+        echo "$hy2_ports" >/etc/ys/hysteria2/hy2_ports.txt    
     # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
     elif [[ "$port" =~ $PORT_RANGE_REGEX ]]; then
         echo "port ($port) 是 'xxxx数-yyyy数' 格式"
@@ -677,7 +677,14 @@ hy2ports() {
             #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端
         done
         hy2_ports=$ports_x
-    # 其他情况
+        hy2_port=$(cat /etc/ys/hysteria2/port_hy2.txt 2>/dev/null)
+        xxxx=$hy2_ports
+        ports_hy2="${xxxx//-/:}"
+        $(iptables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+        $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+        $(netfilter-persistent save)     
+        echo "$hy2_ports" >/etc/ys/hysteria2/hy2_ports.txt   
+        # 其他情况
     else
         hy2ports
     fi
@@ -686,16 +693,74 @@ tu5port() {
     readp "\n设置Tuic5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     port_tu=$port
+    echo "$port_tu" >/etc/ys/tuic5/port_tu.txt
 }
+tu5ports(){
+    blue "设置Tuic5多端口 格式为[10000-10010],如果不输入直接回车,则随机产生一个~"
+    blue "10000-65525之间的随机端口,并在这个端口连续往后增加10个端口"
+    readp "设置Tuic5多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口)" port
+    chooseport
+    PORT_RANGE_REGEX="^[0-9]+-[0-9]+$"
+    # 第一部分判断：port小于65525 并且 不是一个 xxxx数-yyyy数
+    if [[ "$port" -lt 65525 && ! "$port" =~ $PORT_RANGE_REGEX ]]; then
+        echo "port ($port) 小于 65525 并且不是 'xxxx数-yyyy数' 格式"
+        num1=$port
+        num2=$((port + 10)) # 使用 $((...)) 进行算术运
+        tuic5_array=()
+        #hy2_array+=$num1
+        for xport in $(seq "$num1" "$num2"); do
+            # 加入if语句判断端口是否被占用,占用就执行else mieruports
+            if ! tcp_port "$xport" || ! udp_port "$xport"; then
+                tu5ports
+            fi
+            tuic5_array+=($xport)
+        done
+        tu_ports="$num1-$num2"
+        echo "$tu_ports" >/etc/ys/tuic5/tu_ports.txt
+        port_tu=(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+        tutu=$tu_ports
+        ports_tu="${tutu//-/:}"
+        $(iptables -t nat -A PREROUTING -p udp --dport $ports_tu -j DNAT --to-destination :$port_tu)
+        $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_tu -j DNAT --to-destination :$port_tu)
+        $(netfilter-persistent save)
+    # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
+    elif [[ "$port" =~ $PORT_RANGE_REGEX ]]; then
+        echo "port ($port) 是 'xxxx数-yyyy数' 格式"
+        ports_x="$port"
+        tuic5_array=()
+        IFS='-' read -r start_num end_num <<<"$ports_x"
+        for xport in $(seq "$start_num" "$end_num"); do
+            if ! tcp_port "$xport" || ! udp_port "$xport"; then
+                tu5ports
+            fi
+            tuic5_array+=($xport)
+            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端
+        done
+        tu_ports=$ports_x
+        echo "$tu_ports" >/etc/ys/tuic5/tu_ports.txt
+        port_tu=(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+        tutu=$tu_ports
+        ports_tu="${tutu//-/:}"
+        $(iptables -t nat -A PREROUTING -p udp --dport $ports_tu -j DNAT --to-destination :$port_tu)
+        $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_tu -j DNAT --to-destination :$port_tu)
+        $(netfilter-persistent save)
+    # 其他情况
+    else
+        tu5ports
+    fi
+}
+    
 anytlsport() {
     readp "\n设置Anytls主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     port_any=$port
+    echo "$port_any" >/etc/ys/anytls/port_any.txt
 }
 socks5port() {
     readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     portsocks5=$port
+    echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
 }
 
 name_password() {
@@ -745,449 +810,6 @@ write_array_mihomo() {                  # 写入变量 WRITE_ARRAY_FILT="/root/m
         return 1
     fi
 }
-
-###############################################################################################################
-#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   mieru   $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$#
-
-########################################## mieru 常用函数模块 #############################################################
-# 删除 mieru 函数
-mieru_shanchu() {
-    if command -v dpkg &>/dev/null; then # 判断系统使用的是不是Debian 系linux
-        name_v=$(dpkg -l | grep -i mita | awk '{print $3}')
-        sudo dpkg -P mita$name_v
-    elif command -v rpm &>/dev/null; then # 判断系统使用的是不是red 系linux
-        name_v1=$(rpm -qa | grep -i mita)
-        sudo rpm -e $name_v1
-    else
-        echo "无法卸载"
-    fi
-}
-
-# 获取 mieru 版本号
-mieru_version() {
-    mieru_zhengshi=$(curl -s https://api.github.com/repos/enfein/mieru/releases | grep '"tag_name":' | sed -n '1p' | awk -F'"' '{print $(NF-1)}')
-    mieru_zhengshi_v=$(curl -s https://api.github.com/repos/enfein/mieru/releases | grep '"tag_name":' | sed -n '1p' | awk -F'"' '{print $(NF-1)}' | sed 's/^v//')
-}
-
-# 检查tcp端口是否被占用                 编写完了
-tcp_port() {
-    [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
-}
-# 检查udp端口是否被占用
-udp_port() {
-    [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
-}
-
-read_array_mieru() { # 读取变量 READ_ARRAY_FILE="/root/mihomo_array.txt"
-    # 检查文件是否存在
-    if [[ ! -f "$READ_ARRAY_FILE" ]]; then
-        echo "错误：文件 $READ_ARRAY_FILE 不存在。退出 read_array() 函数。"
-        return 1 # 返回非零状态码表示失败
-    fi
-
-    # 使用 mapfile (或 readarray) 将文件内容读取到 mihomo_array 数组中
-    # -t 选项去除每行的换行符
-    mapfile -t mihomo_array <"$READ_ARRAY_FILE"
-
-    echo "已从 $READ_ARRAY_FILE 读取数据到 mihomo_array 数组。"
-    return 0 # 返回零状态码表示成功
-}
-
-write_array_mieru() {                  # 写入变量 WRITE_ARRAY_FILT="/root/mieru_array.txt"
-    local arr_name="${1:-mieru_array}" # 默认为 mieru_array
-    local arr_ref                      # 声明一个nameref变量
-
-    # 使用nameref来间接引用数组 (Bash 4.3+ 支持)
-    if declare -n arr_ref="$arr_name" 2>/dev/null; then
-        # 确保文件可写。如果文件不存在，追加写入会创建文件。
-        if [[ -f "$WRITE_ARRAY_FILT" && ! -w "$WRITE_ARRAY_FILT" ]]; then
-            chmod 777 $WRITE_ARRAY_FILT
-        fi
-
-        # 遍历数组并追加写入文件
-        for item in "${arr_ref[@]}"; do
-            echo "$item" >>"$WRITE_ARRAY_FILT" # 使用 >> 进行追加写入
-        done
-
-        echo "已将 ${arr_name} 数组内容追加写入 $WRITE_ARRAY_FILT。"
-        return 0
-    else
-        echo "错误：数组 '${arr_name}' 不存在或不是有效的数组名。"
-        return 1
-    fi
-} #编写完了
-############################################## mieru 常用函数模块 ##############################################################
-############################################## mieru 端口与协议配置 ############################################################
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 安装mieru 服务端 函数 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 安装
-mieru_setup() {                          # 编写完毕
-    mieru_version                        #获取 mieru 版本号
-    if command -v dpkg &>/dev/null; then # 判断系统使用的是不是Debian 系linux
-        red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        yellow "是否安装 mieru$mieru_zhengshi 正式版内核 (回车默认 1 )"
-        yellow "输入 1 或 回车 安装 mieru "
-        readp "输入 2 或其他退出程序返回上级菜单 " menu
-        if [ -z "$menu" ] || [ "$menu" = "1" ]; then
-            case $(uname -m) in
-            aarch64) curl -L -o /root/mita.deb -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita_${mieru_zhengshi_v}_${cpu}.deb ;;
-            x86_64) curl -L -o /root/mita.deb -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita_${mieru_zhengshi_v}_${cpu}.deb ;;
-            *) red "目前脚本不支持$(uname -m)架构" && exit ;;
-            esac
-            cd /root/
-            sudo dpkg -i mita.deb
-            echo "deb 包安装完成"
-        else
-            sb
-        fi
-    elif command -v rpm &>/dev/null; then # 判断系统使用的是不是red 系linux
-        red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        yellow "是否安装 mieru$mieru_zhengshi 正式版内核 (回车默认 1 )"
-        yellow "输入 1 或 回车 安装 mieru "
-        readp "输入 2 或其他退出程序返回上级菜单 " menu
-        if [ -z "$menu" ] || [ "$menu" = "1" ]; then
-            case $(uname -m) in
-            aarch64) curl -L -o /root/mita.rpm -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita-${mieru_zhengshi-v}-1.${cpu}.rpm ;;
-            x86_64) curl -L -o /root/mita.rpm -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita-${mieru_zhengshi-v}-1.${cpu}.rpm ;;
-            *) red "目前脚本不支持$(uname -m)架构" && exit ;;
-            esac
-            cd /root/
-            sudo rpm -Uvh --force mita.rpm
-            echo "rpm 包安装完成"
-        else
-            sb
-        fi
-    else
-        echo "不支持该系统"
-    fi
-}
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 写入 mieru 服务端配置文件 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 配置mieru 服务端配置文件
-mieru_config() {
-    cat >/etc/mita/config.json <<EOF
-{
-	"portBindings": [
-		{
-			"portRange": "$ports_mieru",
-			"protocol": "$xieyi_duo"
-		},
-		{
-			"port": $port_mieru,
-			"protocol": "$xieyi_one"
-		}
-	],
-	"users": [
-		{
-			"name": "$all_name",
-			"password": "$all_password",
-            "allowPrivateIP": false,
-            "allowLoopbackIP": true
-		}
-	],
-	"loggingLevel": "INFO",
-	"mtu": 1400,
-    "dns": {
-        "dualStack": "PREFER_IPv4"
-    },
-	"egress": {
-		"proxies": [
-			{
-				"name": "cloudflare",
-				"protocol": "SOCKS5_PROXY_PROTOCOL",
-				"host": "127.0.0.1",
-				"port": $socks5port,
-				"socks5Authentication": {
-					"user": "$all_name",
-					"password": "$all_password"
-				}
-			}
-		],
-		"rules": [
-			{
-				"ipRanges": [
-					"*"
-				],
-				"domainNames": [
-					"*"
-				],
-				"action": "PROXY",
-				"proxyName": "cloudflare"
-			}
-		]
-	}
-}
-EOF
-}
-
-# mieru 函数开始  配置                      配置完了
-mieruport() { #配置mieru主端口与协议   已完成
-    readp "\n设置mieru主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
-    chooseport
-    # 增加写入txt数据,#还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-    mieru_array=()
-    mieru_array+=$port
-    WRITE_ARRAY_FILT="/root/mieru_array.txt"
-    # 检查文件是否存在
-    read_array_mieru
-    for item1 in "${mihomo_array[@]}"; do
-        # 遍历第二个数组的每个元素
-        for item2 in "${mieru_array[@]}"; do
-            # 比较元素是否相同
-            if [[ "$item1" == "$item2" ]]; then
-                mieruport
-            fi
-        done
-    done
-    write_array_mieru # 写入端口信息
-    port_mieru=$prot
-}
-
-mieruports() { # mieru多端口配置端口与协议  已完成
-    blue "设置mieru多端口 格式为[10000-10010],如果不输入直接回车,则随机产生一个"
-    blue "10000-65525之间的随机端口,并在这个端口连续往后增加10个端口"
-    readp "设置mieru多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口)" port
-    chooseport
-    # 如果 port小于65525 并且 不是一个 xxxx数-yyyy数 则执行 num1=$port  num2=$port+10   ports_mieru="$num1-$num2"
-    # 判断如果是这个形式的数 xxxx数-yyyy数 则执行pors_mieru=$port 否则返回mieruports
-    PORT_RANGE_REGEX="^[0-9]+-[0-9]+$"
-    # 第一部分判断：port小于65525 并且 不是一个 xxxx数-yyyy数
-    if [[ "$port" -lt 65525 && ! "$port" =~ $PORT_RANGE_REGEX ]]; then
-        echo "port ($port) 小于 65525 并且不是 'xxxx数-yyyy数' 格式"
-        num1=$port
-        num2=$((port + 10)) # 使用 $((...)) 进行算术运
-        mieru_array=()
-        mieru_array+=$num1
-        for xport in $(seq "$num1" "$num2"); do
-            # 加入if语句判断端口是否被占用,占用就执行else mieruports
-            if ! tcp_port "$xport" || ! udp_port "$xport"; then
-                mieruports
-            fi
-            mieru_array+=($xport)
-            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-            READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru # 读取 mihomo 占用的端口
-            for item1 in "${mihomo_array[@]}"; do
-                # 遍历第二个数组的每个元素
-                for item2 in "${mieru_array[@]}"; do
-                    # 比较元素是否相同
-                    if [[ "$item1" == "$item2" ]]; then
-                        mieruports
-                    fi
-                done
-            done
-            WRITE_ARRAY_FILT="/root/mieru_array.txt"
-            write_array_mieru #写入 mieru 端口文件
-        done
-        ports_mieru="$num1-$num2"
-    # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
-    elif [[ "$port" =~ $PORT_RANGE_REGEX ]]; then
-        echo "port ($port) 是 'xxxx数-yyyy数' 格式"
-        ports_x="$port"
-        mieru_array=()
-        IFS='-' read -r start_num end_num <<<"$ports_x"
-        for xport in $(seq "$start_num" "$end_num"); do
-            if ! tcp_port "$xport" || ! udp_port "$xport"; then
-                mieruports
-            fi
-            mieru_array+=($xport)
-            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-            READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru # 读取 mihomo 占用的端口
-            for item1 in "${mihomo_array[@]}"; do
-                # 遍历第二个数组的每个元素
-                for item2 in "${mieru_array[@]}"; do
-                    # 比较元素是否相同
-                    if [[ "$item1" == "$item2" ]]; then
-                        mieruports
-                    fi
-                done
-            done
-            write_array_mieru #写入 mieru 端口文件
-        done
-        ports_mieru=$ports_x
-    # 其他情况
-    else
-        mieruports
-    fi
-}
-
-mieru_xieyi_zhu() { # 已完成
-    readp "设置mieru主端口传输协议[输入 1 为 TCP 输入 2 为 UDP](回车默认TCP)：" protocol
-    if [[ -z "$protocol" || "$protocol" == "1" ]]; then
-        xieyi_one="TCP"
-    elif [[ "$protocol" == "2" ]]; then
-        xieyi_one="UDP"
-    else
-        echo "输入错误,请从新输入"
-        mieru_xieyi_zhu
-    fi
-}
-mieru_xieyi_duo() { # 已完成
-    readp "设置meiru主端口传输协议[输入 1 为 TCP 输入 2 为 UDP](回车默认TCP)：" protocols
-    if [[ -z "$protocols" || "$protocols" == "1" ]]; then
-        xieyi_duo="TCP"
-    elif [[ "$protocols" == "2" ]]; then
-        xieyi_duo="UDP"
-    else
-        echo "输入错误,请从新输入"
-        mieru_xieyi_duo
-    fi
-}
-# 设置 mieru 端口函数入口
-mieru_port_auto() {
-    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    green "三、设置各个协议端口"
-    yellow "1：自动生成每个协议的随机端口 (10000-65535范围内)，回车默认"
-    yellow "2：自定义每个协议端口"
-    readp "请输入【1-2】：" port
-    if [ -z "$port" ] || [ "$port" = "1" ]; then
-        ports=()
-        for i in {1..3}; do
-            while true; do
-                port=$(shuf -i 10000-65535 -n 1)
-                if ! [[ " ${ports[@]} " =~ " $port " ]] &&
-                    [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] &&
-                    [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
-                    ports+=($port)
-                    break
-                fi
-            done
-        done
-        num1=${ports[1]}
-        num2=$((num1 + 10))
-        mieru_array=()
-        mieru_array+=${ports[0]}
-        mieru_array+=${ports[2]}
-        for xport in $(seq "$num1" "$num2"); do
-            if ! tcp_port "$xport" || ! udp_port "$xport"; then
-                mieru_port_auto
-            fi
-            mieru_array+=($xport)
-            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-            READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru                      # 读取 mihomo 占用的端口
-            for item1 in "${mihomo_array[@]}"; do # 目的是看看有没有跟mihomo的使用端口重复
-                # 遍历第二个数组的每个元素
-                for item2 in "${mieru_array[@]}"; do
-                    # 比较元素是否相同
-                    if [[ "$item1" == "$item2" ]]; then
-                        mieru_port_auto
-                    fi
-                done
-            done
-            write_array_mieru #写入 mieru 端口文件
-        done
-        port_mieru=${ports[0]}
-        ports_mieru="$num1-$num2"
-        if [[ ! -f '/etc/ys/socks5/port_scoks5.txt' ]]; then
-            socks5port=${ports[2]}
-            echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
-        else
-            socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
-        fi
-    else
-        mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo
-        if [[ ! -f '/etc/ys/socks5/port_scoks5.txt' ]]; then
-            socks5port
-            echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
-        else
-            socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
-        fi
-    fi
-    echo
-    blue "各协议端口确认如下"
-    blue "Mieru主端口：$port_mieru"
-    blue "Mieru主端口协议：$xieyi_one"
-    blue "Mieru多端口：$ports_mieru"
-    blue "Mieru多端口协议：$xieyi_duo"
-    blue "Mieru所使用的socks5协议端口："$pocks5port
-    echo "$port_mieru" >/etc/ys/mieru/port_mieru.txt
-    echo "$xieyi_one" >/etc/ys/mieru/xieyi_one.txt
-    echo "$ports_mieru" >/etc/ys/mieru/ports_mieru.txt
-    echo "$xieyi_duo" >/etc/ys/mieru/xieyi_duo.txt
-    # 加入写入/etc/ys/mieru 各个信息
-}
-
-# 读取mieru 用到的配置信息
-mieru_read_peizi() { # 已完成
-    port_mieru=$(cat /etc/ys/mieru/port_mieru.txt)
-    xieyi_one=$(cat /etc/ys/mieru/xieyi_one.txt)
-    ports_mieru=$(cat /etc/ys/mieru/ports_mieru.txt)
-    xieyi_duo=$(cat /etc/ys/mieru/xieyi_duo.txt)
-    all_name=$(cat /etc/ys/info/all_name.txt)
-    all_password=$(cat /etc/ys/info/all_password.txt)
-    socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
-}
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru_link 配置信息 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#显示 mieru_link 配置信息
-mieru_peizhi() {
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    mieru_link2="mierus://$all_name:$all_password@$server_ip?:$port_mieru&port=$port_mieru&mtu=1400&multiplexing=8&profile=mieru-$hostname&protocol=$xieyi_one"
-    echo "$mieru_link2" >/etc/ys/mieru/mieru.txt
-    echo
-    red "🚀【 mieru 】节点信息如下：" && sleep 2
-    echo -e "${yellow}$(cat /etc/ys/mieru/mieru.txt)${plain}"
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "nekobox分享链接我不会,就手动选择mieru插件,手动填写吧"
-    red "🚀【 mieru 】节点信息如下：" && sleep 2
-    echo "服务器:$server_ip"
-    echo "单端口:$port_mieru"
-    echo "单端口协议:$xieyi_one"
-    echo "多端口:$ports_mieru"
-    echo "多端口协议$xieyi_duo"
-    echo "用户名:$all_name"
-    echo "密码:$all_password"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    # 预计还要加入 同步到mihomo 客户端配置,与 sing-box 客户端配置
-}
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru_link 配置信息 上~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 检查 mieru 是否运行
-mieru_jieche() {
-    if systemctl is-active --quiet mita; then
-        echo "mita 服务端 (mita) 已成功安装并正在运行。"
-    elif command -v mita &>/dev/null; then
-        echo "mita 服务端 (mita) 命令已找到，但可能服务未启动。"
-        echo "您可能需要手动启动服务: sudo systemctl start mita"
-    else
-        echo "mita 服务端 (mita) 未检测到安装成功。"
-        echo "请检查安装日志或手动尝试安装。"
-    fi
-}
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru 菜单里 一键安装的脚本 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 一键安装菜单
-mieru_run() {
-    if [ -d "/etc/ys/mieru" ] && [ -f "/etc/mita/config.json" ]; then
-        echo "已安装mieru服务端,将退出安装程序"
-        exit 0
-    fi
-    mkdir -p /etc/ys/mieru
-    chmod 777 /etc/ys/mieru
-    if [[ ! -d '/etc/ys/socks5' ]]; then # 如果没有这个目录,就建立目录
-        mkdir -p /etc/ys/socks5
-        chmod 777 /etc/ys/socks5
-    fi
-    openyn          # 询问是否开放防火墙
-    mieru_setup     # 安装mieru 服务端
-    mieru_port_auto # 设置mieru端口
-    if [[ ! -f '/etc/ys/info/all_name.txt' || ! -f '/etc/ys/info/all_password.txt' ]]; then
-        name_password
-    fi
-    mieru_read_peizi                           # 读取端口等信息
-    mieru_config                               # 写入 mieru 服务端配置
-    $(mita apply config /etc/mita/config.json) # 配置生效命令
-    sleep 2
-    echo
-    mieru_peizhi # 显示配置信息
-    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    mieru_jieche # 检查 mieru 是否运行
-    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-
-}
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru 菜单里 一键安装的脚本 上~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-
-#################################################上面是 mieru 服务端配置 ##############################################################
 
 # 获取warp 密钥,ipv6 等值
 warpwg() {
@@ -2863,18 +2485,19 @@ changeport() {
     green "Hysteria2支持端口跳跃，且与Tuic5都支持多端口复用"
     echo
     green "1：Vless-reality协议 ${yellow}端口:$vl_port${plain}"
-    green "2：Vmess-ws协议 ${yellow}端口:$vm_port${plain}"
+    green "2：Vmess-ws协议 ${yellow}端口:$vm_port${plain}-目前不可用"
     green "3：Hysteria2协议 ${yellow}端口:$hy2_port  转发多端口: $hy2zfport${plain}"
     green "4：Tuic5协议 ${yellow}端口:$tu5_port  转发多端口: $tu5zfport${plain}"
     green "0：返回上层"
     readp "请选择要变更端口的协议【0-4】：" menu
     if [ "$menu" = "1" ]; then
         vlport
-        echo $sbfiles | xargs -n1 sed -i "14s/$vl_port/$port_vl_re/" # 需要修改行数
+        "$vl_port" >/etc/ys/vless/port_vl_re.txt
+        echo $sbfiles | xargs -n1 sed -i "41s/$vl_port/$port_vl_re/" # 修改了行数
         restartsb                                                    # 重启mihomo
         blue "Vless-reality端口更改完成，可选择9输出配置信息"
         echo
-    elif [ "$menu" = "2" ]; then
+    elif [ "$menu" = "2" ]; then #目前不好使
         vmport
         echo $sbfiles | xargs -n1 sed -i "41s/$vm_port/$port_vm_ws/" # 需要修改行数
         restartsb                                                    # 重启mihomo
@@ -3308,6 +2931,450 @@ showprotocol() { # 主界面显示的 信息函数    修改完了
     fi
     echo "------------------------------------------------------------------------------------"
 }
+###############################################################################################################
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$   mieru   $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$#
+
+########################################## mieru 常用函数模块 #############################################################
+# 删除 mieru 函数
+mieru_shanchu() {
+    if command -v dpkg &>/dev/null; then # 判断系统使用的是不是Debian 系linux
+        name_v=$(dpkg -l | grep -i mita | awk '{print $3}')
+        sudo dpkg -P mita$name_v
+    elif command -v rpm &>/dev/null; then # 判断系统使用的是不是red 系linux
+        name_v1=$(rpm -qa | grep -i mita)
+        sudo rpm -e $name_v1
+    else
+        echo "无法卸载"
+    fi
+}
+
+# 获取 mieru 版本号
+mieru_version() {
+    mieru_zhengshi=$(curl -s https://api.github.com/repos/enfein/mieru/releases | grep '"tag_name":' | sed -n '1p' | awk -F'"' '{print $(NF-1)}')
+    mieru_zhengshi_v=$(curl -s https://api.github.com/repos/enfein/mieru/releases | grep '"tag_name":' | sed -n '1p' | awk -F'"' '{print $(NF-1)}' | sed 's/^v//')
+}
+
+# 检查tcp端口是否被占用                 编写完了
+tcp_port() {
+    [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
+}
+# 检查udp端口是否被占用
+udp_port() {
+    [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
+}
+
+read_array_mieru() { # 读取变量 READ_ARRAY_FILE="/root/mihomo_array.txt"
+    # 检查文件是否存在
+    if [[ ! -f "$READ_ARRAY_FILE" ]]; then
+        echo "错误：文件 $READ_ARRAY_FILE 不存在。退出 read_array() 函数。"
+        return 1 # 返回非零状态码表示失败
+    fi
+
+    # 使用 mapfile (或 readarray) 将文件内容读取到 mihomo_array 数组中
+    # -t 选项去除每行的换行符
+    mapfile -t mihomo_array <"$READ_ARRAY_FILE"
+
+    echo "已从 $READ_ARRAY_FILE 读取数据到 mihomo_array 数组。"
+    return 0 # 返回零状态码表示成功
+}
+
+write_array_mieru() {                  # 写入变量 WRITE_ARRAY_FILT="/root/mieru_array.txt"
+    local arr_name="${1:-mieru_array}" # 默认为 mieru_array
+    local arr_ref                      # 声明一个nameref变量
+
+    # 使用nameref来间接引用数组 (Bash 4.3+ 支持)
+    if declare -n arr_ref="$arr_name" 2>/dev/null; then
+        # 确保文件可写。如果文件不存在，追加写入会创建文件。
+        if [[ -f "$WRITE_ARRAY_FILT" && ! -w "$WRITE_ARRAY_FILT" ]]; then
+            chmod 777 $WRITE_ARRAY_FILT
+        fi
+
+        # 遍历数组并追加写入文件
+        for item in "${arr_ref[@]}"; do
+            echo "$item" >>"$WRITE_ARRAY_FILT" # 使用 >> 进行追加写入
+        done
+
+        echo "已将 ${arr_name} 数组内容追加写入 $WRITE_ARRAY_FILT。"
+        return 0
+    else
+        echo "错误：数组 '${arr_name}' 不存在或不是有效的数组名。"
+        return 1
+    fi
+} #编写完了
+############################################## mieru 常用函数模块 ##############################################################
+############################################## mieru 端口与协议配置 ############################################################
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 安装mieru 服务端 函数 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 安装
+mieru_setup() {                          # 编写完毕
+    mieru_version                        #获取 mieru 版本号
+    if command -v dpkg &>/dev/null; then # 判断系统使用的是不是Debian 系linux
+        red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        yellow "是否安装 mieru$mieru_zhengshi 正式版内核 (回车默认 1 )"
+        yellow "输入 1 或 回车 安装 mieru "
+        readp "输入 2 或其他退出程序返回上级菜单 " menu
+        if [ -z "$menu" ] || [ "$menu" = "1" ]; then
+            case $(uname -m) in
+            aarch64) curl -L -o /root/mita.deb -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita_${mieru_zhengshi_v}_${cpu}.deb ;;
+            x86_64) curl -L -o /root/mita.deb -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita_${mieru_zhengshi_v}_${cpu}.deb ;;
+            *) red "目前脚本不支持$(uname -m)架构" && exit ;;
+            esac
+            cd /root/
+            sudo dpkg -i mita.deb
+            echo "deb 包安装完成"
+        else
+            sb
+        fi
+    elif command -v rpm &>/dev/null; then # 判断系统使用的是不是red 系linux
+        red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        yellow "是否安装 mieru$mieru_zhengshi 正式版内核 (回车默认 1 )"
+        yellow "输入 1 或 回车 安装 mieru "
+        readp "输入 2 或其他退出程序返回上级菜单 " menu
+        if [ -z "$menu" ] || [ "$menu" = "1" ]; then
+            case $(uname -m) in
+            aarch64) curl -L -o /root/mita.rpm -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita-${mieru_zhengshi-v}-1.${cpu}.rpm ;;
+            x86_64) curl -L -o /root/mita.rpm -# --retry 2 https://github.com/enfein/mieru/releases/download/${mieru_zhengshi}/mita-${mieru_zhengshi-v}-1.${cpu}.rpm ;;
+            *) red "目前脚本不支持$(uname -m)架构" && exit ;;
+            esac
+            cd /root/
+            sudo rpm -Uvh --force mita.rpm
+            echo "rpm 包安装完成"
+        else
+            sb
+        fi
+    else
+        echo "不支持该系统"
+    fi
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 写入 mieru 服务端配置文件 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 配置mieru 服务端配置文件
+mieru_config() {
+    cat >/etc/mita/config.json <<EOF
+{
+	"portBindings": [
+		{
+			"portRange": "$ports_mieru",
+			"protocol": "$xieyi_duo"
+		},
+		{
+			"port": $port_mieru,
+			"protocol": "$xieyi_one"
+		}
+	],
+	"users": [
+		{
+			"name": "$all_name",
+			"password": "$all_password",
+            "allowPrivateIP": false,
+            "allowLoopbackIP": true
+		}
+	],
+	"loggingLevel": "INFO",
+	"mtu": 1400,
+    "dns": {
+        "dualStack": "PREFER_IPv4"
+    },
+	"egress": {
+		"proxies": [
+			{
+				"name": "cloudflare",
+				"protocol": "SOCKS5_PROXY_PROTOCOL",
+				"host": "127.0.0.1",
+				"port": $socks5port,
+				"socks5Authentication": {
+					"user": "$all_name",
+					"password": "$all_password"
+				}
+			}
+		],
+		"rules": [
+			{
+				"ipRanges": [
+					"*"
+				],
+				"domainNames": [
+					"*"
+				],
+				"action": "PROXY",
+				"proxyName": "cloudflare"
+			}
+		]
+	}
+}
+EOF
+}
+
+# mieru 函数开始  配置                      配置完了
+mieruport() { #配置mieru主端口与协议   已完成
+    readp "\n设置mieru主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
+    chooseport
+    # 增加写入txt数据,#还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
+    mieru_array=()
+    mieru_array+=$port
+    WRITE_ARRAY_FILT="/root/mieru_array.txt"
+    # 检查文件是否存在
+    read_array_mieru
+    for item1 in "${mihomo_array[@]}"; do
+        # 遍历第二个数组的每个元素
+        for item2 in "${mieru_array[@]}"; do
+            # 比较元素是否相同
+            if [[ "$item1" == "$item2" ]]; then
+                mieruport
+            fi
+        done
+    done
+    write_array_mieru # 写入端口信息
+    port_mieru=$prot
+}
+
+mieruports() { # mieru多端口配置端口与协议  已完成
+    blue "设置mieru多端口 格式为[10000-10010],如果不输入直接回车,则随机产生一个"
+    blue "10000-65525之间的随机端口,并在这个端口连续往后增加10个端口"
+    readp "设置mieru多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口)" port
+    chooseport
+    # 如果 port小于65525 并且 不是一个 xxxx数-yyyy数 则执行 num1=$port  num2=$port+10   ports_mieru="$num1-$num2"
+    # 判断如果是这个形式的数 xxxx数-yyyy数 则执行pors_mieru=$port 否则返回mieruports
+    PORT_RANGE_REGEX="^[0-9]+-[0-9]+$"
+    # 第一部分判断：port小于65525 并且 不是一个 xxxx数-yyyy数
+    if [[ "$port" -lt 65525 && ! "$port" =~ $PORT_RANGE_REGEX ]]; then
+        echo "port ($port) 小于 65525 并且不是 'xxxx数-yyyy数' 格式"
+        num1=$port
+        num2=$((port + 10)) # 使用 $((...)) 进行算术运
+        mieru_array=()
+        mieru_array+=$num1
+        for xport in $(seq "$num1" "$num2"); do
+            # 加入if语句判断端口是否被占用,占用就执行else mieruports
+            if ! tcp_port "$xport" || ! udp_port "$xport"; then
+                mieruports
+            fi
+            mieru_array+=($xport)
+            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
+            READ_ARRAY_FILE="/root/mihomo_array.txt"
+            read_array_mieru # 读取 mihomo 占用的端口
+            for item1 in "${mihomo_array[@]}"; do
+                # 遍历第二个数组的每个元素
+                for item2 in "${mieru_array[@]}"; do
+                    # 比较元素是否相同
+                    if [[ "$item1" == "$item2" ]]; then
+                        mieruports
+                    fi
+                done
+            done
+            WRITE_ARRAY_FILT="/root/mieru_array.txt"
+            write_array_mieru #写入 mieru 端口文件
+        done
+        ports_mieru="$num1-$num2"
+    # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
+    elif [[ "$port" =~ $PORT_RANGE_REGEX ]]; then
+        echo "port ($port) 是 'xxxx数-yyyy数' 格式"
+        ports_x="$port"
+        mieru_array=()
+        IFS='-' read -r start_num end_num <<<"$ports_x"
+        for xport in $(seq "$start_num" "$end_num"); do
+            if ! tcp_port "$xport" || ! udp_port "$xport"; then
+                mieruports
+            fi
+            mieru_array+=($xport)
+            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
+            READ_ARRAY_FILE="/root/mihomo_array.txt"
+            read_array_mieru # 读取 mihomo 占用的端口
+            for item1 in "${mihomo_array[@]}"; do
+                # 遍历第二个数组的每个元素
+                for item2 in "${mieru_array[@]}"; do
+                    # 比较元素是否相同
+                    if [[ "$item1" == "$item2" ]]; then
+                        mieruports
+                    fi
+                done
+            done
+            write_array_mieru #写入 mieru 端口文件
+        done
+        ports_mieru=$ports_x
+    # 其他情况
+    else
+        mieruports
+    fi
+}
+
+mieru_xieyi_zhu() { # 已完成
+    readp "设置mieru主端口传输协议[输入 1 为 TCP 输入 2 为 UDP](回车默认TCP)：" protocol
+    if [[ -z "$protocol" || "$protocol" == "1" ]]; then
+        xieyi_one="TCP"
+    elif [[ "$protocol" == "2" ]]; then
+        xieyi_one="UDP"
+    else
+        echo "输入错误,请从新输入"
+        mieru_xieyi_zhu
+    fi
+}
+mieru_xieyi_duo() { # 已完成
+    readp "设置meiru主端口传输协议[输入 1 为 TCP 输入 2 为 UDP](回车默认TCP)：" protocols
+    if [[ -z "$protocols" || "$protocols" == "1" ]]; then
+        xieyi_duo="TCP"
+    elif [[ "$protocols" == "2" ]]; then
+        xieyi_duo="UDP"
+    else
+        echo "输入错误,请从新输入"
+        mieru_xieyi_duo
+    fi
+}
+# 设置 mieru 端口函数入口
+mieru_port_auto() {
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    green "三、设置各个协议端口"
+    yellow "1：自动生成每个协议的随机端口 (10000-65535范围内)，回车默认"
+    yellow "2：自定义每个协议端口"
+    readp "请输入【1-2】：" port
+    if [ -z "$port" ] || [ "$port" = "1" ]; then
+        ports=()
+        for i in {1..3}; do
+            while true; do
+                port=$(shuf -i 10000-65535 -n 1)
+                if ! [[ " ${ports[@]} " =~ " $port " ]] &&
+                    [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] &&
+                    [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; then
+                    ports+=($port)
+                    break
+                fi
+            done
+        done
+        num1=${ports[1]}
+        num2=$((num1 + 10))
+        mieru_array=()
+        mieru_array+=${ports[0]}
+        mieru_array+=${ports[2]}
+        for xport in $(seq "$num1" "$num2"); do
+            if ! tcp_port "$xport" || ! udp_port "$xport"; then
+                mieru_port_auto
+            fi
+            mieru_array+=($xport)
+            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
+            READ_ARRAY_FILE="/root/mihomo_array.txt"
+            read_array_mieru                      # 读取 mihomo 占用的端口
+            for item1 in "${mihomo_array[@]}"; do # 目的是看看有没有跟mihomo的使用端口重复
+                # 遍历第二个数组的每个元素
+                for item2 in "${mieru_array[@]}"; do
+                    # 比较元素是否相同
+                    if [[ "$item1" == "$item2" ]]; then
+                        mieru_port_auto
+                    fi
+                done
+            done
+            write_array_mieru #写入 mieru 端口文件
+        done
+        port_mieru=${ports[0]}
+        ports_mieru="$num1-$num2"
+        if [[ ! -f '/etc/ys/socks5/port_scoks5.txt' ]]; then
+            socks5port=${ports[2]}
+            echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+        else
+            socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
+        fi
+    else
+        mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo
+        if [[ ! -f '/etc/ys/socks5/port_scoks5.txt' ]]; then
+            socks5port
+            echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+        else
+            socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
+        fi
+    fi
+    echo
+    blue "各协议端口确认如下"
+    blue "Mieru主端口：$port_mieru"
+    blue "Mieru主端口协议：$xieyi_one"
+    blue "Mieru多端口：$ports_mieru"
+    blue "Mieru多端口协议：$xieyi_duo"
+    blue "Mieru所使用的socks5协议端口："$pocks5port
+    echo "$port_mieru" >/etc/ys/mieru/port_mieru.txt
+    echo "$xieyi_one" >/etc/ys/mieru/xieyi_one.txt
+    echo "$ports_mieru" >/etc/ys/mieru/ports_mieru.txt
+    echo "$xieyi_duo" >/etc/ys/mieru/xieyi_duo.txt
+    # 加入写入/etc/ys/mieru 各个信息
+}
+
+# 读取mieru 用到的配置信息
+mieru_read_peizi() { # 已完成
+    port_mieru=$(cat /etc/ys/mieru/port_mieru.txt)
+    xieyi_one=$(cat /etc/ys/mieru/xieyi_one.txt)
+    ports_mieru=$(cat /etc/ys/mieru/ports_mieru.txt)
+    xieyi_duo=$(cat /etc/ys/mieru/xieyi_duo.txt)
+    all_name=$(cat /etc/ys/info/all_name.txt)
+    all_password=$(cat /etc/ys/info/all_password.txt)
+    socks5port=$(cat /etc/ys/socks5/port_scoks5.txt)
+}
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru_link 配置信息 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#显示 mieru_link 配置信息
+mieru_peizhi() {
+    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    mieru_link2="mierus://$all_name:$all_password@$server_ip?:$port_mieru&port=$port_mieru&mtu=1400&multiplexing=8&profile=mieru-$hostname&protocol=$xieyi_one"
+    echo "$mieru_link2" >/etc/ys/mieru/mieru.txt
+    echo
+    red "🚀【 mieru 】节点信息如下：" && sleep 2
+    echo -e "${yellow}$(cat /etc/ys/mieru/mieru.txt)${plain}"
+    echo
+    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo "nekobox分享链接我不会,就手动选择mieru插件,手动填写吧"
+    red "🚀【 mieru 】节点信息如下：" && sleep 2
+    echo "服务器:$server_ip"
+    echo "单端口:$port_mieru"
+    echo "单端口协议:$xieyi_one"
+    echo "多端口:$ports_mieru"
+    echo "多端口协议$xieyi_duo"
+    echo "用户名:$all_name"
+    echo "密码:$all_password"
+    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    # 预计还要加入 同步到mihomo 客户端配置,与 sing-box 客户端配置
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru_link 配置信息 上~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# 检查 mieru 是否运行
+mieru_jieche() {
+    if systemctl is-active --quiet mita; then
+        echo "mita 服务端 (mita) 已成功安装并正在运行。"
+    elif command -v mita &>/dev/null; then
+        echo "mita 服务端 (mita) 命令已找到，但可能服务未启动。"
+        echo "您可能需要手动启动服务: sudo systemctl start mita"
+    else
+        echo "mita 服务端 (mita) 未检测到安装成功。"
+        echo "请检查安装日志或手动尝试安装。"
+    fi
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru 菜单里 一键安装的脚本 下~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# 一键安装菜单
+mieru_run() {
+    if [ -d "/etc/ys/mieru" ] && [ -f "/etc/mita/config.json" ]; then
+        echo "已安装mieru服务端,将退出安装程序"
+        exit 0
+    fi
+    mkdir -p /etc/ys/mieru
+    chmod 777 /etc/ys/mieru
+    if [[ ! -d '/etc/ys/socks5' ]]; then # 如果没有这个目录,就建立目录
+        mkdir -p /etc/ys/socks5
+        chmod 777 /etc/ys/socks5
+    fi
+    openyn          # 询问是否开放防火墙
+    mieru_setup     # 安装mieru 服务端
+    mieru_port_auto # 设置mieru端口
+    if [[ ! -f '/etc/ys/info/all_name.txt' || ! -f '/etc/ys/info/all_password.txt' ]]; then
+        name_password
+    fi
+    mieru_read_peizi                           # 读取端口等信息
+    mieru_config                               # 写入 mieru 服务端配置
+    $(mita apply config /etc/mita/config.json) # 配置生效命令
+    sleep 2
+    echo
+    mieru_peizhi # 显示配置信息
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    mieru_jieche # 检查 mieru 是否运行
+    red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo
+
+}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ mieru 菜单里 一键安装的脚本 上~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#################################################上面是 mieru 服务端配置 ##############################################################
+
+
 ###############################################################################################################
 mihomo_mieru_run() {
     if [ -f "/etc/ys/config.yaml" ] && [ -f "/etc/ys/ys" ]; then
