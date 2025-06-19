@@ -4,11 +4,13 @@ mihomo
 bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/ys.sh)
 
 bash <(curl -Ls https://raw.githubusercontent.com/yggmsh/yggmsh123/main/ys.sh)
+
 sing-box
 
 bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/sb.sh)
 
 bash <(curl -Ls https://raw.githubusercontent.com/yggmsh/yggmsh123/main/sb.sh)
+
 mita
 
 bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/mita.sh)
