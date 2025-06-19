@@ -321,7 +321,7 @@ close() {
 
 ###############################################################################################################
 # 重启mihomo函数               修改完了
-restartsb() {
+mihomo_chongqi() {
     if [[ x"${release}" == x"alpine" ]]; then
         rc-service ys restart
     else
@@ -581,7 +581,7 @@ mihomo_port_auto() { # 配置完成
     echo
     blue "各协议端口确认如下"
     blue "Vless-reality端口：$port_vl_re"
-    blue "Hysteria-2端口：$port_hy2"    
+    blue "Hysteria-2端口：$port_hy2"
     blue "Hysteria-2多端口：$hy2_ports"
     blue "Tuic-v5端口：$port_tu"
     blue "Anytls端口：$port_any"
@@ -625,7 +625,7 @@ vmport() {
     readp "\n设置Vmess-ws端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     port_vm_ws=$port
-    echo "$port_vm_ws" >/etc/ys/vmess/port_vm_ws.txt      
+    echo "$port_vm_ws" >/etc/ys/vmess/port_vm_ws.txt
 }
 hy2port() {
     readp "\n设置Hysteria2主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
@@ -661,8 +661,8 @@ hy2ports() {
         ports_hy2="${xxxx//-/:}"
         $(iptables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
         $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
-        $(netfilter-persistent save)  
-        echo "$hy2_ports" >/etc/ys/hysteria2/hy2_ports.txt    
+        $(netfilter-persistent save)
+        echo "$hy2_ports" >/etc/ys/hysteria2/hy2_ports.txt
     # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
     elif [[ "$port" =~ $PORT_RANGE_REGEX ]]; then
         echo "port ($port) 是 'xxxx数-yyyy数' 格式"
@@ -682,8 +682,8 @@ hy2ports() {
         ports_hy2="${xxxx//-/:}"
         $(iptables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
         $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
-        $(netfilter-persistent save)     
-        echo "$hy2_ports" >/etc/ys/hysteria2/hy2_ports.txt   
+        $(netfilter-persistent save)
+        echo "$hy2_ports" >/etc/ys/hysteria2/hy2_ports.txt
         # 其他情况
     else
         hy2ports
@@ -695,7 +695,7 @@ tu5port() {
     port_tu=$port
     echo "$port_tu" >/etc/ys/tuic5/port_tu.txt
 }
-tu5ports(){
+tu5ports() {
     blue "设置Tuic5多端口 格式为[10000-10010],如果不输入直接回车,则随机产生一个~"
     blue "10000-65525之间的随机端口,并在这个端口连续往后增加10个端口"
     readp "设置Tuic5多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口)" port
@@ -717,7 +717,7 @@ tu5ports(){
         done
         tu_ports="$num1-$num2"
         echo "$tu_ports" >/etc/ys/tuic5/tu_ports.txt
-        port_tu=(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+        port_tu=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
         tutu=$tu_ports
         ports_tu="${tutu//-/:}"
         $(iptables -t nat -A PREROUTING -p udp --dport $ports_tu -j DNAT --to-destination :$port_tu)
@@ -738,7 +738,7 @@ tu5ports(){
         done
         tu_ports=$ports_x
         echo "$tu_ports" >/etc/ys/tuic5/tu_ports.txt
-        port_tu=(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+        port_tu=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
         tutu=$tu_ports
         ports_tu="${tutu//-/:}"
         $(iptables -t nat -A PREROUTING -p udp --dport $ports_tu -j DNAT --to-destination :$port_tu)
@@ -749,7 +749,7 @@ tu5ports(){
         tu5ports
     fi
 }
-    
+
 anytlsport() {
     readp "\n设置Anytls主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
@@ -994,18 +994,6 @@ rules:
   - DOMAIN-SUFFIX,openai.com,WireGuard_Group
   - DOMAIN-SUFFIX,chat.openai.com,WireGuard_Group
 
-# dns:
-#   enable: true
-#   listen: 0.0.0.0:53
-#   ipv6: false
-
-#   nameserver:
-#     - https://223.5.5.5/dns-query
-#     - tls://8.8.8.8:853
-
-#   fallback:
-#     - tls://1.1.1.1:853
-#     - 8.8.4.4
 EOF
 }
 
@@ -1359,7 +1347,7 @@ result_vl_vm_hy_tu() {
 
 ###############################################################################################################
 # 显示节点信息  修改完了
-sbshare() {
+mihomo_read_link() {
     rm -rf /etc/ys/jhdy.txt /etc/ys/vless/vl_reality.txt /etc/ys/vmess/vm_ws_argols.txt /etc/ys/vmess/vm_ws_argogd.txt /etc/ys/vmess/vm_ws.txt /etc/ys/vmess/vm_ws_tls.txt /etc/ys/hysteria2/hy2.txt /etc/ys/tuic5/tuic5.txt /etc/ys/anytls/anytls.txt
     result_vl_vm_hy_tu && reshy2 && restu5 && resvless && resanytls # 读取配置信息  hy2link  tu5link vlesslink anytlslink
     cat /etc/ys/vless/vl_reality.txt 2>/dev/null >>/etc/ys/jhdy.txt
@@ -1389,12 +1377,12 @@ sbshare() {
     echo -e "${yellow}$baseurl${plain}"
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
-    sb_client # 创建 sing-box 客户端与 mihomo 客户端配置文件
+    mihomo_client # 创建 sing-box 客户端与 mihomo 客户端配置文件
 }
 # 显示节点信息  修改完了
 ###############################################################################################################
 # 创建 sing-box 客户端与 mihomo 客户端配置文件      修改完了
-sb_client() {
+mihomo_client() {
     argopid # 检查 arogid 信息
     cat >/etc/ys/sing_box_client.json <<EOF
 {
@@ -1889,8 +1877,8 @@ mihomo_run() {
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     mihomo_gengxin && blue " mihomo 脚本安装成功，脚本快捷方式：mihomo" && mihomo_dingshi # mihomo_gengxin 生成 mihomo 快捷方式  mihomo_dingshi 凌晨1点重启 mihomo 定时任务
     echo
-    wgcfgo  # 管理并确保 Cloudflare WARP 服务的运行，并在必要时刷新或重新配置其网络参数。 它会根据 WARP 的当前状态来决定执行初始化或重启流程
-    sbshare # 显示节点信息
+    wgcfgo           # 管理并确保 Cloudflare WARP 服务的运行，并在必要时刷新或重新配置其网络参数。 它会根据 WARP 的当前状态来决定执行初始化或重启流程
+    mihomo_read_link # 显示节点信息
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     blue "Clash-Meta/Sing-box客户端配置及私有订阅链接，请选择9查看"
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1924,217 +1912,192 @@ unins() {
 ###############################################################################################################
 # 主菜单3项  变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3菜单第1项  更换Reality域名伪装地址,修改服务端服务端,修改客户端配置,快捷链接  修改完了
-changeym() {
-    CONFIG_FILE="/etc/ys/config.yaml"
-    OLD_DOMAIN="cat /etc/ys/vless/server-name.txt 2>/dev/null"
-    # 定义你想要设置的新域名
-
-    if [ -f "$CONFIG_FILE.bak" ]; then
-        rm "$CONFIG_FILE.bak"
-        echo "正在备份 $CONFIG_FILE 到 $CONFIG_FILE.bak..."
-        sudo cp "$CONFIG_FILE" "$CONFIG_FILE.bak"
-        readp "填写要网址:" wangzi
-        NEW_DOMAIN=$wangzi
-        sudo sed -i "s|dest: ${OLD_DOMAIN}:443|dest: ${NEW_DOMAIN}:443|" "$CONFIG_FILE"
-        sudo sed -i "s|      - ${OLD_DOMAIN}|      - ${NEW_DOMAIN}|" "$CONFIG_FILE"
-    else
-        echo "正在备份 $CONFIG_FILE 到 $CONFIG_FILE.bak..."
-        sudo cp "$CONFIG_FILE" "$CONFIG_FILE.bak"
-        readp "填写要网址:" wangzi
-        NEW_DOMAIN=$wangzi
-        sudo sed -i "s|dest: ${OLD_DOMAIN}:443|dest: ${NEW_DOMAIN}:443|" "$CONFIG_FILE"
-        sudo sed -i "s|      - ${OLD_DOMAIN}|      - ${NEW_DOMAIN}|" "$CONFIG_FILE"
-    fi
-    echo "$NEW_DOMAIN" >/etc/ys/vless/server-name.txt
-    # 添加重启ys语句
-    restartsb
-    # 添加客户端配置与快捷方式
-    allports
-    sbshare
-    # 返回菜单3
-    readp "输入1返回菜单:/ns输入2退出脚本:" numm
-    if [ "$numm" == "1" ]; then
-        changeserv
-    fi
-
-    if [ "$numm" != "1" ]; then
-        exit 0 # 0 表示成功退出
-    fi
-}
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3菜单第2项    修改uuid与path路径  修改完了
-changeuuid() {
+# 3菜单第1项  更换Reality域名伪装地址,修改服务端服务端,修改客户端配置,快捷链接
+menu_3() {
     echo
-    olduuid=$(cat /etc/ys/vless/uuid.txt)
-    oldvmpath=$(cat /etc/ys/vmess/path.txt)
-    green "全协议的uuid (密码)：$olduuid"
-    green "Vmess的path路径：$oldvmpath"
-    echo
-    yellow "1：自定义全协议的uuid (密码)"
-    yellow "2：自定义Vmess的path路径"
-    yellow "0：返回上层"
-    readp "请选择【0-2】：" menu
-    if [ "$menu" = "1" ]; then
-        readp "输入uuid，必须是uuid格式，不懂就回车(重置并随机生成uuid)：" menu
-        if [ -z "$menu" ]; then # 回车就为空 就生成新的uuid
-            uuid=$(uuidgen)
+    echo "这里是重新设置各个协议的配置"
+    yellow "1:重新设置hysteria2协议"
+    yellow "2:重新设置Tuic5协议"
+    yellow "3:重新设置vless reality协议"
+    yellow "4:重新设置Anytls协议"
+    yellow "0:返回上级菜单"
+    readp "选择你要修改的协议:" menu
+    if [ $menu == 1 ]; then
+        echo "设置Hysteria2各种参数"
+        yellow "1:设置Hysteria2单端口"
+        yellow "2:设置Hysteria2多端口"
+        yellow "3:设置Hysteria2使用的证书"
+        yellow "4:设置Hysteria2使用udp模式还是bbr模式"
+        yellow "5:设置Hysteria2用户名密码"
+        yellow "0:返回上级菜单"
+        readp "选择你要修改的:" menu
+        if [ $menu == 1 ]; then
+            oldhy2port=$(cat /etc/ys/hysteria2/port_hy2.txt 2>/dev/null)
+            echo "旧的 hysteria2 的端口是:$oldhy2port"
+            echo "$oldhy2port" >/etc/ys/hysteria2/oldhy2port.txt
+            echo "设置新的 hysteria2 端口"
+            hy2port # 新的端口  $port_hy2"
+            newhy2port=$(cat /etc/ys/hysteria2/port_hy2.txt 2>/dev/null)
+            sed -i 's/'"$oldhy2port"'/'"$newhy2port"'/g' /etc/ys/config.yaml
+            # 客户端文件替换
+            sed -i 's/'"$oldhy2port"'/'"$newhy2port"'/g' /etc/ys/clash_meta_client.yaml
+            sed -i 's/'"$oldhy2port"'/'"$newhy2port"'/g' /etc/ys/sing_box_client.json
+            $(netfilter-persistent save)
+            # 添加重启ys语句
+            mihomo_chongqi
+            # 添加客户端配置与快捷方式
+            allports
+            mihomo_read_link
+            # 返回菜单3
+            readp "输入1返回菜单:/ns输入2退出脚本:" numm
+            if [ "$numm" == "1" ]; then
+                menu_3_1
+            fi
+        elif [$menu == 2]; then
+            oldhy2ports=$(cat /etc/ys/hysteria2/oldhy2pord.txt 2>/dev/null)
+            echo "旧的 hysteria2 多端口是:$oldhy2ports"
+            oldhy2port=$(/etc/ys/hysteria2/oldhy2port.txt 2>/dev/null)
+            echo "旧的上一个 hysteria2 单端口为:$oldhy2port"
+            newhy2port=$(cat /etc/ys/hysteria2/port_hy2.txt 2>/dev/null)
+            echo "新的 hysteria2 单端口是:$newhy2port"
+            xxxx=$oldhy2ports
+            ports_hy2_old="${xxxx//-/:}"
+            # 删除旧的绑定端口,,10000:11000,9999
+            $(iptables -t nat -D PREROUTING -p udp --dport $ports_hy2_old -j DNAT --to-destination :$oldhy2port)
+            $(ip6tables -t nat -D PREROUTING -p udp --dport $ports_hy2_old -j DNAT --to-destination :$oldhy2port)
+            $(netfilter-persistent save)
+            # 删除旧的多端口
+            echo "设置新hysteria2的多端口"
+            hy2ports # 设置多端口函数     "$hy2_ports"
+            newhy2ports=$(cat /etc/ys/hysteria2/hy2_ports.txt 2>/dev/null)
+            sed -i 's/'"$oldhy2port"'/'"$newhy2ports"'/g' /etc/ys/config.yaml
+            # 客户端文件替换
+            sed -i 's/'"$oldhy2ports"'/'"$newhy2ports"'/g' /etc/ys/clash_meta_client.yaml
+            sed -i 's/'"$oldhy2ports"'/'"$newhy2ports"'/g' /etc/ys/sing_box_client.json
+            # 添加重启ys语句
+            mihomo_chongqi
+            # 添加客户端配置与快捷方式
+            allports
+            mihomo_read_link
+            # 返回菜单3
+            readp "输入1返回菜单:/ns输入2退出脚本:" numm
+            if [ "$numm" == "1" ]; then
+                menu_3_1
+            fi
+        elif [$menu == 3]; then
+
+        elif [$menu == 4]; then
+
+        elif [$menu == 5]; then
+
+        elif [$menu == 0]; then
+            menu_3_1 #返回上级菜单
         else
-            uuid=$menu
+
         fi
-        echo $sbfiles | xargs -n1 sed -i "s/$olduuid/$uuid/g" # 路径sbfiles 里的文件把原uuid 替换新uuid
-        echo "$uuid" >/etc/ys/vless/uuid.txt
-        restartsb # 重启mihomo
-        blue "已确认uuid (密码)：${uuid}"
-        blue "已确认Vmess的path路径：$oldvmpath"
-    elif [ "$menu" = "2" ]; then
-        readp "输入Vmess的path路径，回车表示不变：" menu
-        if [ -z "$menu" ]; then
+    elif [ $menu == 2 ]; then
+        echo "重新设置Tuic5协议"
+
+    elif [ $menu == 3 ]; then
+        echo "重新设置vless reality协议"
+        yellow "1:从新设置其他伪装域名"
+        yellow "2:从新设置其他uuid"
+        yellow "3:从新设置端口"
+        yellow "4:从新设置key"
+        yellow "5:从新设置16进制码"
+        yellow "0:"
+        readp "选择你要修改的:" menu
+        if [ $menu == 1 ]; then
+            # 设置域名
+            old_server_name=$(cat /etc/ys/vless/server-name.txt 2>/dev/null)
+            # 定义你想要设置的新域名
+            echo "你的旧域名是:$old_server_name"
+            readp "设置你要更换的Reality域名伪装地址:" wangzi
+            echo "$wangzi" >/etc/ys/vless/server-name.txt
+            # 服务端文件替换
+            sed -i 's/'"$old_server_name"'/'"$wangzi"'/g' /etc/ys/config.yaml
+            # 客户端文件替换
+            sed -i 's/'"$old_server_name"'/'"$wangzi"'/g' /etc/ys/clash_meta_client.yaml
+            sed -i 's/'"$old_server_name"'/'"$wangzi"'/g' /etc/ys/sing_box_client.json
+            # 添加重启ys语句
+            mihomo_chongqi
+            # 添加客户端配置与快捷方式
+            allports
+            mihomo_read_link
+            # 设置域名
+            # 返回菜单3
+            readp "输入1返回菜单:/ns输入2退出脚本:" numm
+            if [ "$numm" == "1" ]; then
+                menu_3_1
+            fi
+        elif [$menu == 2]; then
+            # 设置uuid
             echo
+            olduuid=$(cat /etc/ys/vless/uuid.txt 2>/dev/null)
+            green "旧的全协议的uuid:$olduuid"
+            echo
+            readp "输入uuid，必须是uuid格式，不懂就回车(重置并随机生成uuid)：" menu
+            if [ -z "$menu" ]; then # 回车就为空 就生成新的uuid
+                newuuid=$(uuidgen)
+            else
+                newuuid=$menu
+            fi
+            # 服务端文件替换
+            sed -i 's/'"$olduuid"'/'"$newuuid"'/g' /etc/ys/config.yaml # 所有旧的,替换新的
+            # 客户端文件替换
+            sed -i 's/'"$olduuid"'/'"$newuuid"'/g' /etc/ys/clash_meta_client.yaml
+            sed -i 's/'"$olduuid"'/'"$newuuid"'/g' /etc/ys/sing_box_client.json
+            echo "$newuuid" >/etc/ys/vless/uuid.txt
+            mihomo_chongqi # 重启mihomo
+            mihomo_read_link
+            blue "已确认uuid (密码)：${uuid}"
+            # 设置uuid
+            # 返回菜单3
+            readp "输入1返回菜单:/ns输入2退出脚本:" numm
+            if [ "$numm" == "1" ]; then
+                menu_3_1
+            fi
+        elif [ $menu == 3 ]; then
+            oldvless=$(cat /etc/ys/vless/port_vl_re.txt 2>/dev/null)
+            echo "旧的vless 端口:$oldvless"
+            vlport
+            newvless=$(cat /etc.ys/vless/port_vl_re.txt 2>/dev/null)
+            sed -i 's/'"$oldvless"'/'"$newvless"'/g' /etc/ys/config.yaml
+            # 客户端文件替换
+            sed -i 's/'"$oldvless"'/'"$newvless"'/g' /etc/ys/clash_meta_client.yaml
+            sed -i 's/'"$oldvless"'/'"$newvless"'/g' /etc/ys/sing_box_client.json
+            # 添加重启ys语句
+            mihomo_chongqi
+            # 添加客户端配置与快捷方式
+            allports
+            mihomo_read_link
+            # 设置域名
+            # 返回菜单3
+            readp "输入1返回菜单:/ns输入2退出脚本:" numm
+            if [ "$numm" == "1" ]; then
+                menu_3_1
+            fi
+        elif [ $menu == 4 ]; then
+            echo "从新设置vless reality key"
+        elif [ $menu == 5 ]; then
+            echo "从新设置vless reality 16进制码"
+        elif [ $menu == 0 ]; then
+            menu_3_1 #返回上级菜单
         else
-            vmpath=$menu
-            echo $sbfiles | xargs -n1 sed -i "50s#$oldvmpath#$vmpath#g" # 需要修改行数
-            restartsb                                                   # 重启mihomo
+            echo "输入错误,请从新输入" && menu_3_1
         fi
-        blue "已确认Vmess的path路径：$(cat /etc/ys/vmess/path.txt)"
-        sbshare # 显示节点信息
-    else
-        changeserv
-    fi
-}
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3菜单第3项                    修改完了
-# argo 临时隧道与固定隧道
-cfargo_ym() {
-    tls=$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].tls.enabled')
-    if [[ "$tls" = "false" ]]; then
-        echo
-        yellow "1：Argo临时隧道"
-        yellow "2：Argo固定隧道"
-        yellow "0：返回上层"
-        readp "请选择【0-2】：" menu
-        if [ "$menu" = "1" ]; then
-            cfargo
-        elif [ "$menu" = "2" ]; then
-            cfargoym
-        else
-            changeserv
-        fi
-    else
-        yellow "因vmess开启了tls，Argo隧道功能不可用" && sleep 2
-    fi
-}
-# 安装 argo 函数
-cloudflaredargo() {
-    if [ ! -e /etc/ys/cloudflared ]; then
-        case $(uname -m) in
-        aarch64) cpu=arm64 ;;
-        x86_64) cpu=amd64 ;;
-        esac
-        curl -L -o /etc/ys/cloudflared -# --retry 2 https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-$cpu
-        chmod +x /etc/ys/cloudflared
-    fi
-}
-# 配置 argo 固定隧道
-cfargoym() {
-    echo
-    if [[ -f /etc/ys/sbargotoken.log && -f /etc/ys/sbargoym.log ]]; then
-        green "当前Argo固定隧道域名：$(cat /etc/ys/sbargoym.log 2>/dev/null)"
-        green "当前Argo固定隧道Token：$(cat /etc/ys/sbargotoken.log 2>/dev/null)"
-    fi
-    echo
-    green "请确保Cloudflare官网 --- Zero Trust --- Networks --- Tunnels已设置完成"
-    yellow "1：重置/设置Argo固定隧道域名"
-    yellow "2：停止Argo固定隧道"
-    yellow "0：返回上层"
-    readp "请选择【0-2】：" menu
-    if [ "$menu" = "1" ]; then
-        cloudflaredargo # 安装argo
-        readp "输入Argo固定隧道Token: " argotoken
-        readp "输入Argo固定隧道域名: " argoym
-        if [[ -n $(ps -e | grep cloudflared) ]]; then
-            kill -15 $(cat /etc/ys/sbargoympid.log 2>/dev/null) >/dev/null 2>&1
-        fi
-        echo
-        if [[ -n "${argotoken}" && -n "${argoym}" ]]; then
-            nohup setsid /etc/ys/cloudflared tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token ${argotoken} >/dev/null 2>&1 &
-            echo "$!" >/etc/ys/sbargoympid.log
-            sleep 20
-        fi
-        echo ${argoym} >/etc/ys/sbargoym.log
-        echo ${argotoken} >/etc/ys/sbargotoken.log
-        crontab -l >/tmp/crontab.tmp
-        sed -i '/sbargoympid/d' /tmp/crontab.tmp
-        echo '@reboot /bin/bash -c "nohup setsid /etc/ys/cloudflared tunnel --no-autoupdate --edge-ip-version auto --protocol http2 run --token $(cat /etc/ys/sbargotoken.log 2>/dev/null) >/dev/null 2>&1 & pid=\$! && echo \$pid > /etc/ys/sbargoympid.log"' >>/tmp/crontab.tmp
-        crontab /tmp/crontab.tmp
-        rm /tmp/crontab.tmp
-        argo=$(cat /etc/ys/sbargoym.log 2>/dev/null)
-        blue "Argo固定隧道设置完成，固定域名：$argo"
-    elif [ "$menu" = "2" ]; then
-        kill -15 $(cat /etc/ys/sbargoympid.log 2>/dev/null) >/dev/null 2>&1
-        crontab -l >/tmp/crontab.tmp
-        sed -i '/sbargoympid/d' /tmp/crontab.tmp
-        crontab /tmp/crontab.tmp
-        rm /tmp/crontab.tmp
-        rm -rf /etc/ys/vm_ws_argogd.txt
-        green "Argo固定隧道已停止"
-    else
-        cfargo_ym
-    fi
-}
-# 配置 argo 临时隧道
-cfargo() {
-    echo
-    yellow "1：重置Argo临时隧道域名"
-    yellow "2：停止Argo临时隧道"
-    yellow "0：返回上层"
-    readp "请选择【0-2】：" menu
-    if [ "$menu" = "1" ]; then
-        cloudflaredargo
-        i=0
-        while [ $i -le 4 ]; do
-            let i++
-            yellow "第$i次刷新验证Cloudflared Argo临时隧道域名有效性，请稍等……"
-            if [[ -n $(ps -e | grep cloudflared) ]]; then
-                kill -15 $(cat /etc/ys/sbargopid.log 2>/dev/null) >/dev/null 2>&1
-            fi
-            nohup setsid /etc/ys/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 >/etc/ys/argo.log 2>&1 &
-            echo "$!" >/etc/ys/sbargopid.log
-            sleep 20
-            if [[ -n $(curl -sL https://$(cat /etc/ys/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')/ -I | awk 'NR==1 && /404|400|503/') ]]; then
-                argo=$(cat /etc/ys/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-                blue "Argo临时隧道申请成功，域名验证有效：$argo" && sleep 2
-                break
-            fi
-            if [ $i -eq 5 ]; then
-                echo
-                yellow "Argo临时域名验证暂不可用，稍后可能会自动恢复，或者申请重置" && sleep 3
-            fi
-        done
-        crontab -l >/tmp/crontab.tmp
-        sed -i '/sbargopid/d' /tmp/crontab.tmp
-        echo '@reboot /bin/bash -c "nohup setsid /etc/ys/cloudflared tunnel --url http://localhost:$(sed 's://.*::g' /etc/ys/config.yaml | jq -r '.inbounds[1].listen_port') --edge-ip-version auto --no-autoupdate --protocol http2 > /etc/ys/argo.log 2>&1 & pid=\$! && echo \$pid > /etc/ys/sbargopid.log"' >>/tmp/crontab.tmp
-        crontab /tmp/crontab.tmp
-        rm /tmp/crontab.tmp
-    elif [ "$menu" = "2" ]; then
-        kill -15 $(cat /etc/ys/sbargopid.log 2>/dev/null) >/dev/null 2>&1
-        crontab -l >/tmp/crontab.tmp
-        sed -i '/sbargopid/d' /tmp/crontab.tmp
-        crontab /tmp/crontab.tmp
-        rm /tmp/crontab.tmp
-        rm -rf /etc/ys/vm_ws_argols.txt
-        green "Argo临时隧道已停止"
-    else
-        cfargo_ym
-    fi
-}
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3菜单第4项
-# changeip() { #
+    elif [ $menu == 4 ]; then
+        echo "重新设置Anytls协议"
 
-# }
+    elif [ $menu == 0 ]; then
+        mihomo #返回主菜单
+    else
+        echo "输入错误,请从新输入" && menu_3_1
+    fi
+}
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3菜单第5项  设置Telegram推送节点通知    修改完了,没加入mieru ,等编写完成在加入
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# 3菜单第4项  设置Telegram推送节点通知    修改完了,没加入mieru ,等编写完成在加入
 tgsbshow() { # telegram 推送设置
     echo
     yellow "1：重置/设置Telegram机器人的Token、用户ID"
@@ -2245,26 +2208,23 @@ fi
         green "设置完成！请确保TG机器人已处于激活状态！"
         tgnotice # telegram 推送文件
     else
-        changeserv # 返回菜单3
+        menu_settings_3 # 返回菜单3
     fi
 }
 # telegram 推送文件
 tgnotice() {
     if [[ -f /etc/ys/sbtg.sh ]]; then
         green "请稍等5秒，TG机器人准备推送……"
-        sbshare >/dev/null 2>&1 # 显示节点信息
+        mihomo_read_link >/dev/null 2>&1 # 显示节点信息
         bash /etc/ys/sbtg.sh
     else
         yellow "未设置TG通知功能"
     fi
     exit
 }
-# 3菜单第5项  设置Telegram推送节点通知    ^^^^^
+# 3菜单第4项  设置Telegram推送节点通知    ^^^^^
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3菜单第6项
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3菜单第7项  设置Gitlab订阅分享链接"  修改完了
+# 3菜单第5项  设置Gitlab订阅分享链接"  修改完了
 gitlabsub() {
     echo
     green "请确保Gitlab官网上已建立项目，已开启推送功能，已获取访问令牌"
@@ -2322,7 +2282,7 @@ EOF
         fi
         cd
     else
-        changeserv # 返回3菜单
+        menu_settings_3 # 返回3菜单
     fi
 }
 # gitlab更新节点显示        修改完了
@@ -2352,7 +2312,7 @@ clsbshow() {
     yellow "可以在网页上输入订阅链接查看配置内容，如果无配置内容，请自检Gitlab相关设置并重置"
     echo
 }
-# 推送gitlab 订阅函数  用在了菜单9里
+# 推送gitlab 订阅函数
 gitlabsubgo() {
     cd /etc/ys
     if [[ $(ls -a | grep '^\.git$') ]]; then
@@ -2371,35 +2331,32 @@ gitlabsubgo() {
     fi
     cd
 }
-# 3菜单第7项  设置Gitlab订阅分享链接"   ^^^^^
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3菜单第8项
-
+# 3菜单第5项  设置Gitlab订阅分享链接"   ^^^^^
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # 3菜单选项                     待修改
-changeserv() {
+menu_settings_3() {
     sbactive # 检查 mihomo 配置文件是否存在
     echo
     green " mihomo 配置变更选择如下:"
-    green "1：更换Reality域名伪装地址"
-    green "2：更换全协议UUID(密码)、Vmess-Path路径"
-    green "3：设置Argo临时隧道、固定隧道"
+    green "1:修改各个协议配置信息"
+    green "2：更换全协议UUID(密码)"
+    green "3：重新设置各个协议端口"
     green "4：设置Telegram推送节点通知"
     green "5：设置Gitlab订阅分享链接"
     green "0：返回上层"
-    readp "请选择【0-8】：" menu
+    readp "请选择【0-5】：" menu
     if [ "$menu" = "1" ]; then
-        changeym
+        menu_3_1
     elif [ "$menu" = "2" ]; then
-        changeuuid
+        menu_3_2
     elif [ "$menu" = "3" ]; then
-        cfargo_ym
+        menu_3_3
     elif [ "$menu" = "4" ]; then
         tgsbshow
     elif [ "$menu" = "5" ]; then
         gitlabsub
     else
-        sb
+        mihomo
     fi
 }
 
@@ -2494,13 +2451,13 @@ changeport() {
         vlport
         "$vl_port" >/etc/ys/vless/port_vl_re.txt
         echo $sbfiles | xargs -n1 sed -i "41s/$vl_port/$port_vl_re/" # 修改了行数
-        restartsb                                                    # 重启mihomo
+        mihomo_chongqi                                               # 重启mihomo
         blue "Vless-reality端口更改完成，可选择9输出配置信息"
         echo
     elif [ "$menu" = "2" ]; then #目前不好使
         vmport
         echo $sbfiles | xargs -n1 sed -i "41s/$vm_port/$port_vm_ws/" # 需要修改行数
-        restartsb                                                    # 重启mihomo
+        mihomo_chongqi                                               # 重启mihomo
         blue "Vmess-ws端口更改完成，可选择9输出配置信息"
         echo
     elif [ "$menu" = "3" ]; then
@@ -2514,13 +2471,13 @@ changeport() {
                 hy2deports
                 hy2port
                 echo $sbfiles | xargs -n1 sed -i "67s/$hy2_port/$port_hy2/" # 需要修改行数
-                restartsb                                                   # 重启mihomo
-                result_vl_vm_hy_tu && reshy2 && sb_client
+                mihomo_chongqi                                              # 重启mihomo
+                result_vl_vm_hy_tu && reshy2 && mihomo_client
             else
                 hy2port
                 echo $sbfiles | xargs -n1 sed -i "67s/$hy2_port/$port_hy2/" # 需要修改行数
-                restartsb                                                   # 重启mihomo
-                result_vl_vm_hy_tu && reshy2 && sb_client
+                mihomo_chongqi                                              # 重启mihomo
+                result_vl_vm_hy_tu && reshy2 && mihomo_client
             fi
         elif [ "$menu" = "2" ]; then
             green "1：添加Hysteria2范围端口"
@@ -2529,16 +2486,16 @@ changeport() {
             readp "请选择【0-2】：" menu
             if [ "$menu" = "1" ]; then
                 port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[2].listen_port') # 修改过//,改成了#
-                fports && result_vl_vm_hy_tu && sb_client && changeport
+                fports && result_vl_vm_hy_tu && mihomo_client && changeport
             elif [ "$menu" = "2" ]; then
                 port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[2].listen_port') # 修改过//,改成了#
-                fport && result_vl_vm_hy_tu && sb_client && changeport
+                fport && result_vl_vm_hy_tu && mihomo_client && changeport
             else
                 changeport
             fi
         elif [ "$menu" = "3" ]; then
             if [ -n $hy2_ports ]; then
-                hy2deports && result_vl_vm_hy_tu && sb_client && changeport
+                hy2deports && result_vl_vm_hy_tu && mihomo_client && changeport
             else
                 yellow "Hysteria2未设置多端口" && changeport
             fi
@@ -2557,13 +2514,13 @@ changeport() {
                 tu5deports
                 tu5port
                 echo $sbfiles | xargs -n1 sed -i "89s/$tu5_port/$port_tu/" # 需要修改行数
-                restartsb                                                  # 重启mihomo
-                result_vl_vm_hy_tu && restu5 && sb_client
+                mihomo_chongqi                                             # 重启mihomo
+                result_vl_vm_hy_tu && restu5 && mihomo_client
             else
                 tu5port
                 echo $sbfiles | xargs -n1 sed -i "89s/$tu5_port/$port_tu/" #需要修改行数
-                restartsb                                                  # 重启mihomo
-                result_vl_vm_hy_tu && restu5 && sb_client
+                mihomo_chongqi                                             # 重启mihomo
+                result_vl_vm_hy_tu && restu5 && mihomo_client
             fi
         elif [ "$menu" = "2" ]; then
             green "1：添加Tuic5范围端口"
@@ -2572,16 +2529,16 @@ changeport() {
             readp "请选择【0-2】：" menu
             if [ "$menu" = "1" ]; then
                 port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[3].listen_port') # 修改过//,改成了#
-                fports && result_vl_vm_hy_tu && sb_client && changeport
+                fports && result_vl_vm_hy_tu && mihomo_client && changeport
             elif [ "$menu" = "2" ]; then
                 port=$(sed 's:#.*::g' /etc/ys/config.yaml | jq -r '.inbounds[3].listen_port') # 修改过//,改成了#
-                fport && result_vl_vm_hy_tu && sb_client && changeport
+                fport && result_vl_vm_hy_tu && mihomo_client && changeport
             else
                 changeport
             fi
         elif [ "$menu" = "3" ]; then
             if [ -n $tu5_ports ]; then
-                tu5deports && result_vl_vm_hy_tu && sb_client && changeport
+                tu5deports && result_vl_vm_hy_tu && mihomo_client && changeport
             else
                 yellow "Tuic5未设置多端口" && changeport
             fi
@@ -2597,31 +2554,56 @@ changeport() {
 
 ###############################################################################################################
 # 主菜单6项  关闭/重启 mihomo       修改完了
-stclre() { # 重启mihomo  关闭mihomo
+mihomo_mieru_re_stop() { # 重启mihomo  关闭mihomo
     if [[ ! -f '/etc/ys/config.yaml' ]]; then
         red "未正常安装mihomo" && exit
     fi
-    readp "1：重启\n2：关闭\n请选择：" menu
-    if [ "$menu" = "1" ]; then
-        restartsb # 重启mihomo 函数
-        sbactive  # 检查 mihomo 配置文件是否存在的 函数
-        green "mihomo服务已重启\n" && sleep 3 && sb
-    elif [ "$menu" = "2" ]; then
-        if [[ x"${release}" == x"alpine" ]]; then
-            rc-service ys stop
+    echo "1:mihomo 关闭重启菜单"
+    echo "2:mieru 关闭重启菜单"
+    echo "0:返回主菜单"
+    readp "请选择要关闭或重启的协议:" menu
+    if [ $menu == 1 ]; then
+        readp "1：重启\n2：关闭\n请选择：" menu
+        if [ "$menu" = "1" ]; then
+            mihomo_chongqi # 重启mihomo 函数
+            sbactive       # 检查 mihomo 配置文件是否存在的 函数
+            green "mihomo服务已重启\n" && sleep 3 && sb
+        elif [ "$menu" = "2" ]; then
+            if [[ x"${release}" == x"alpine" ]]; then
+                rc-service ys stop
+            else
+                systemctl stop ys
+                systemctl disable ys
+            fi
+            green "mihomo服务已关闭\n" && sleep 3 && sb
         else
-            systemctl stop ys
-            systemctl disable ys
+            mihomo_mieru_re_stop # 返回本函数
         fi
-        green "mihomo服务已关闭\n" && sleep 3 && sb
+    elif [ $menu == 2 ]; then
+        readp "1：重启\n2：关闭\n请选择：" menu
+        if [ "$menu" = "1" ]; then
+            mihomo_chongqi # 重启mihomo 函数
+            sbactive       # 检查 mihomo 配置文件是否存在的 函数
+            green "mihomo服务已重启\n" && sleep 3 && sb
+        elif [ "$menu" = "2" ]; then
+            if [[ x"${release}" == x"alpine" ]]; then
+                rc-service ys stop
+            else
+                systemctl stop ys
+                systemctl disable ys
+            fi
+            green "mihomo服务已关闭\n" && sleep 3 && sb
+        else
+            mihomo_mieru_re_stop # 返回本函数
+        fi
     else
-        stclre # 返回本函数
+        mihomo
     fi
 }
 # 主菜单6项  关闭/重启 mihomo       修改完了
 ###############################################################################################################
 # 主菜单7项  更新 mihomo 脚本   修改完了
-upsbyg() {
+bash_up() {
     if [[ ! -f '/usr/bin/mihomo' ]]; then
         red "未正常安装mihomo" && exit
     fi
@@ -2631,8 +2613,13 @@ upsbyg() {
 }
 ###############################################################################################################
 # 主菜单8 更新/切换/指定 mihomo 内核版本  修改完了
-upsbcroe() {
-    mihomo_setup # 安装linux内核
+mihomo_mieru_up() {
+    if [ -f '/etc/ys/config.yaml' ]; then
+        mihomo_setup
+    fi
+    if [ -f '/etc/mita/config.json' ]; then
+        mieru_setup
+    fi
 }
 ###############################################################################################################
 # 主菜单9 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】  修改完了
@@ -2641,15 +2628,15 @@ clash_sb_share() {
     echo
     yellow "1：刷新并查看各协议分享链接、二维码、四合一聚合订阅"
     yellow "2：刷新并查看mihomo、Sing-box客户端SFA/SFI/SFW三合一配置、Gitlab私有订阅链接"
-    yellow "3：目前无用,就放了一个sbshare函数"
+    yellow "3：目前无用,就放了一个mihomo_read_link函数"
     yellow "4：推送最新节点配置信息(选项1+选项2)到Telegram通知"
     yellow "0：返回上层"
     readp "请选择【0-4】：" menu
     if [ "$menu" = "1" ]; then
-        sbshare # 显示节点信息
+        mihomo_read_link # 显示节点信息
     elif [ "$menu" = "2" ]; then
         green "请稍等……"
-        sbshare >/dev/null 2>&1 # 显示节点信息
+        mihomo_read_link >/dev/null 2>&1 # 显示节点信息
         white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         red "Gitlab订阅链接如下："
         gitlabsubgo # 推送gitlab 订阅函数
@@ -2672,7 +2659,7 @@ clash_sb_share() {
         echo
     elif [ "$menu" = "3" ]; then
         green "请稍等……"
-        sbshare >/dev/null 2>&1 # 显示节点信息
+        mihomo_read_link >/dev/null 2>&1 # 显示节点信息
     elif [ "$menu" = "4" ]; then
         tgnotice # telegram 推送文件
     else
@@ -2682,13 +2669,24 @@ clash_sb_share() {
 # 主菜单9 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】  修改完了
 ###############################################################################################################
 # 主菜单10 查看 mihomo 运行日志  修改完了
-sblog() {
+mihomo_mieru_rizhi() {
     red "退出日志 Ctrl+c"
     if [[ x"${release}" == x"alpine" ]]; then
         yellow "暂不支持alpine查看日志"
     else
-        #systemctl status ys
-        journalctl -u ys.service -o cat -f
+        echo "1:查看 mihomo 运行日志"
+        echo "2:查看 mieru 运行日志"
+        echo "0:返回菜单"
+        readp "选择要查看的菜单:" menu
+        if [ $menu == 1 ]; then
+            $(systemctl status ys)
+        fi
+        if [ $menu == 2 ]; then
+            $(mita status)
+        fi
+        if [ $menu == 0 ]; then
+            mihomo
+        fi
     fi
 }
 # 主菜单10 查看 mihomo 运行日志  修改完了
@@ -2777,7 +2775,7 @@ inssbwpph() {
         sed -i "127s/$s5port/$port/g" /etc/ys/config.yaml #需要修改行数 ,端口
         sed -i "150s/$s5port/$port/g" /etc/ys/config.yaml #需要修改行数 ,端口
         rm -rf /etc/ys/config.yaml
-        restartsb
+        mihomo_chongqi
     }
     unins() {
         kill -15 $(cat /etc/ys/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
@@ -3374,11 +3372,14 @@ mieru_run() {
 
 #################################################上面是 mieru 服务端配置 ##############################################################
 
-
 ###############################################################################################################
 mihomo_mieru_run() {
     if [ -f "/etc/ys/config.yaml" ] && [ -f "/etc/ys/ys" ]; then
         red "已安装mihomo或mieru服务，请卸载在安装" && exit
+    fi
+    if [ -d "/etc/ys/mieru" ] && [ -f "/etc/mita/config.json" ]; then
+        echo "已安装mieru服务端,将退出安装程序"
+        exit 0
     fi
     mkdir -p /etc/ys
     chmod 777 /etc/ys
@@ -3411,10 +3412,6 @@ mihomo_mieru_run() {
     fi # 账户 密码
     echo
     # 开始mieru 服务端安装
-    if [ -d "/etc/ys/mieru" ] && [ -f "/etc/mita/config.json" ]; then
-        echo "已安装mieru服务端,将退出安装程序"
-        exit 0
-    fi
     mkdir -p /etc/ys/mieru
     chmod 777 /etc/ys/mieru
     if [[ ! -d '/etc/ys/socks5' ]]; then # 如果没有这个目录,就建立目录
@@ -3443,8 +3440,8 @@ mihomo_mieru_run() {
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     mihomo_gengxin && blue " mihomo 脚本安装成功，脚本快捷方式：mihomo" && mihomo_dingshi # mihomo_gengxin 生成 mihomo 快捷方式  mihomo_dingshi 凌晨1点重启 mihomo 定时任务
     echo
-    wgcfgo  # 管理并确保 Cloudflare WARP 服务的运行，并在必要时刷新或重新配置其网络参数。 它会根据 WARP 的当前状态来决定执行初始化或重启流程
-    sbshare # 显示节点信息
+    wgcfgo           # 管理并确保 Cloudflare WARP 服务的运行，并在必要时刷新或重新配置其网络参数。 它会根据 WARP 的当前状态来决定执行初始化或重启流程
+    mihomo_read_link # 显示节点信息
     echo
     mieru_peizhi # 显示配置信息
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -3488,16 +3485,17 @@ white "-------------------------------------------------------------------------
 green " 5. 一键安装 mieru (测试)"
 green " 6. 一键删除 mieru (测试)"
 white "----------------------------------------------------------------------------------"
-green " 7. 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】(待修改)"
-green " 8. 更改主端口/添加多端口跳跃复用(待修改)"
-green " 9. 关闭/重启 mihomo (完)"
-green "10. 更新 mihomo 脚本(完)"
-green "11. 更新/切换/指定 mihomo 内核版本 (完)"
+green " 7. mihomo 修改配置菜单(待修改)"
+green " 8. mieru 配置菜单 (待修改)"
 white "----------------------------------------------------------------------------------"
-green "12. mieru 配置菜单 待修改"
+green " 9. 查看 mihomo 运行日志(完)"
+green "10. 关闭/重启 mihomo (完)"
+green "11. 更新脚本(完)"
+green "12. 更新 mihomo 与 mieru 服务端 (完)"
 white "----------------------------------------------------------------------------------"
-green "13. 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】(完)"
-green "14. 查看 mihomo 运行日志(完)"
+green "13. 设置同步菜单"
+green "14. 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】(完)"
+white "----------------------------------------------------------------------------------"
 green "15. bbr加速菜单(完)"
 green "16. 勇哥管理 Acme 申请域名证书(完)"
 green "17. 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况(完)"
@@ -3595,23 +3593,23 @@ red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 echo
 readp "请输入数字【0-18】:" Input
 case "$Input" in
-1) mihomo_mieru_run ;; # 一键安装 mihomo 与 mieru 还没写
-2) mihomo_mieru_un ;;  # 一键安装 mihomo 与 mieru 还没写
-3) mihomo_run ;;       # 一键安装 mihomo 完
-4) unins ;;            # 删除卸载 mihomo 完
-5) mieru_run ;;        # 一键安装 mieru 完
-6) mieru_shanchu ;;    # 一键删除 mieru 还没写
-7) changeserv ;;       # 变更配置 【双证书TLS/UUID路径/Argo/IP优先/TG通知/Warp/订阅/CDN优选】待修改
-8) changeport ;;       # 更改主端口/添加多端口跳跃复用 待修改
-9) stclre ;;           # 关闭/重启 mihomo 完
-10) upsbyg ;;          # 更新 mihomo 脚本 完
-11) upsbcroe ;;        # 更新/切换/指定 mihomo 内核版本 完
-12) zzzzzz ;;          # mieru 配置菜单 还没写
-13) clash_sb_share ;;  # 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】完
-14) sblog ;;           # 查看 mihomo 运行日志 完
-15) bbrplus ;;         # 勇哥一键原版BBR+FQ加速 完
-16) acme ;;            # 勇哥管理 Acme 申请域名证书 完
-17) cfwarp ;;          # 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况 完
-18) inssbwpph-x ;;     # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
+1) mihomo_mieru_run ;;      # 一键安装 mihomo 与 mieru 还没写
+2) mihomo_mieru_un ;;       # 一键安装 mihomo 与 mieru 还没写
+3) mihomo_run ;;            # 一键安装 mihomo 完
+4) unins ;;                 # 删除卸载 mihomo 完
+5) mieru_run ;;             # 一键安装 mieru 完
+6) mieru_shanchu ;;         # 一键删除 mieru 还没写
+7) menu_3 ;;                # mihomo 修改配置菜单 完
+8) zzzzzzzzzz ;;            # mieru 修改配置菜单 还没写
+9) mihomo_mieru_rizhi ;;    # 查看 mihomo 运行日志 完
+10) mihomo_mieru_re_stop ;; # 关闭/重启 mihomo 完
+11) bash_up ;;              # 更新脚本 完
+12) mihomo_mieru_up ;;      # 更新 mihomo 与 mieru 服务端 完
+13) changeport ;;           # 设置同步菜单
+14) clash_sb_share ;;       # 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】完
+15) bbrplus ;;              # 勇哥一键原版BBR+FQ加速 完
+16) acme ;;                 # 勇哥管理 Acme 申请域名证书 完
+17) cfwarp ;;               # 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况 完
+18) inssbwpph-x ;;          # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
 *) exit ;;
 esac
