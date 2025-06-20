@@ -244,7 +244,7 @@ mieru_setup() {                          # 编写完毕
 }
 
 # 删除 mieru 函数
-mieru_shanchu() {
+mieru_del() {
     if command -v dpkg &>/dev/null; then # 判断系统使用的是不是Debian 系linux
         sudo dpkg -P mita
     elif command -v rpm &>/dev/null; then # 判断系统使用的是不是red 系linux
@@ -414,6 +414,7 @@ mieruport() { #配置mieru主端口与协议   已完成
     done
     write_array_mieru # 写入端口信息
     port_mieru=$prot
+    echo "$port_mieru" > /etc/mita/port_mieru.txt
 }
 
 # 自定义多端口
@@ -454,6 +455,7 @@ mieruports() {
             write_array_mieru #写入 mieru 端口文件
         done
         ports_mieru="$num1-$num2"
+        echo "$ports_mieru" > /etc/mita/ports_mieru.txt
     # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
     elif [[ "$port" =~ $PORT_RANGE_REGEX ]]; then
         echo "port ($port) 是 'xxxx数-yyyy数' 格式"
@@ -480,6 +482,7 @@ mieruports() {
             write_array_mieru #写入 mieru 端口文件
         done
         ports_mieru=$ports_x
+        echo "$ports_mieru" > /etc/mita/ports_mieru.txt
     # 其他情况
     else
         mieruports
@@ -491,8 +494,10 @@ mieru_xieyi_zhu() {
     readp "设置mieru主端口传输协议[输入 1 为 TCP 输入 2 为 UDP](回车默认TCP)：" protocol
     if [[ -z "$protocol" || "$protocol" == "1" ]]; then
         xieyi_one="TCP"
+        echo "$xieyi_one" >/etc/mita/xieyi_one.txt
     elif [[ "$protocol" == "2" ]]; then
         xieyi_one="UDP"
+        echo "$xieyi_one" >/etc/mita/xieyi_one.txt
     else
         echo "输入错误,请从新输入"
         mieru_xieyi_zhu
@@ -504,8 +509,10 @@ mieru_xieyi_duo() {
     readp "设置meiru主端口传输协议[输入 1 为 TCP 输入 2 为 UDP](回车默认TCP)：" protocols
     if [[ -z "$protocols" || "$protocols" == "1" ]]; then
         xieyi_duo="TCP"
+        echo "$xieyi_duo" >/etc/mita/xieyi_duo.txt 
     elif [[ "$protocols" == "2" ]]; then
         xieyi_duo="UDP"
+        echo "$xieyi_duo" >/etc/mita/xieyi_duo.txt 
     else
         echo "输入错误,请从新输入"
         mieru_xieyi_duo
@@ -557,21 +564,14 @@ mieru_port_auto() {
             write_array_mieru #写入 mieru 端口文件
         done
         port_mieru=${ports[0]}
+        echo "$port_mieru" >/etc/mita/port_mieru.txt
         ports_mieru="$num1-$num2"
-        if [[ ! -f '/etc/mita/port_scoks5.txt' ]]; then
-            socks5port=${ports[2]}
-            echo "$socks5port" >/etc/mita/port_scoks5.txt
-        else
-            socks5port=$(cat /etc/mita/port_scoks5.txt)
-        fi
+        echo "$ports_mieru" > /etc/mita/ports_mieru.txt
+        socks5port=${ports[2]}
+        echo "$socks5port" >/etc/mita/port_scoks5.txt
+      
     else
-        mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo
-        if [[ ! -f '/etc/mita/port_scoks5.txt' ]]; then
-            socks5port
-            echo "$socks5port" >/etc/mita/port_scoks5.txt
-        else
-            socks5port=$(cat /etc/mita/port_scoks5.txt)
-        fi
+        mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo && socks5port
     fi
     echo
     blue "各协议端口确认如下"
@@ -580,10 +580,6 @@ mieru_port_auto() {
     blue "Mieru多端口：$ports_mieru"
     blue "Mieru多端口协议：$xieyi_duo"
     blue "Mieru所使用的socks5协议端口："$pocks5port
-    echo "$port_mieru" >/etc/mita/port_mieru.txt
-    echo "$xieyi_one" >/etc/mita/xieyi_one.txt
-    echo "$ports_mieru" >/etc/mita/ports_mieru.txt
-    echo "$xieyi_duo" >/etc/mita/xieyi_duo.txt
     # 加入写入/etc/mita/mieru 各个信息
 }
 
@@ -601,13 +597,13 @@ mieru_jieche() {
 }
 # 读取个配置信息
 mieru_read_peizi() { 
-    port_mieru=$(cat /etc/mita/port_mieru.txt)
-    xieyi_one=$(cat /etc/mita/xieyi_one.txt)
-    ports_mieru=$(cat /etc/mita/ports_mieru.txt)
-    xieyi_duo=$(cat /etc/mita/xieyi_duo.txt)
-    all_name=$(cat /etc/mita/all_name.txt)
-    all_password=$(cat /etc/mita/all_password.txt)
-    socks5port=$(cat /etc/mita/port_scoks5.txt)
+    port_mieru=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
+    xieyi_one=$(cat /etc/mita/xieyi_one.txt 2>/dev/null)
+    ports_mieru=$(cat /etc/mita/ports_mieru.txt 2>/dev/null)
+    xieyi_duo=$(cat /etc/mita/xieyi_duo.txt 2>/dev/null)
+    all_name=$(cat /etc/mita/all_name.txt 2>/dev/null)
+    all_password=$(cat /etc/mita/all_password.txt 2>/dev/null)
+    socks5port=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
 }
 
 
@@ -633,7 +629,71 @@ mieru_link() {
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     # 预计还要加入 同步到mihomo 客户端配置,与 sing-box 客户端配置
 }
-
+mieru_deploy(){
+    echo "修改 Meru 协议的配置信息"
+    echo "1.单端口修改"
+    echo "2.单端口协议修改"
+    echo "3.多端口修改"
+    echo "4.多端口协议修改"
+    echo "5.修改socks5端口"
+    echo "6.修改用户名密码"
+    echo "0.返回主菜单"
+    readp "选择阿拉伯数字修改项:" menu
+    if [ $menu == 1 ]; then
+        oldport=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
+        echo "旧的端口为:$oldport"
+        mieruport
+        newport_mieru=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
+        sed -i 's/'"$oldport"'/'"$newport_mieru"'/g' /etc/mita/config.json
+        mita apply config /etc/mita/config.json
+        mieru_restart
+    elif [ $menu == 2 ]; then
+        oldxieyi=$(cat /etc/mita/xieyi_one.txt 2>/dev/null)
+        echo "旧的单端口协议为:$oldxieyi"
+        mieru_xieyi_zhu
+        newxieyi=$(cat /etc/mita/xieyi_one.txt 2>/dev/null)
+        sed -i 's/'"$oldxieyi"'/'"$newxieyi"'/g' /etc/mita/config.json
+        mita apply config /etc/mita/config.json
+        mieru_restart
+    elif [ $menu == 3 ]; then
+        oldports_=$(cat /etc/mita/ports_mieru.txt 2>/dev/null)
+        echo "旧的多端口为:$oldports"
+        mieruports
+        newports=$(cat /etc/mita/ports_mieru.txt 2>/dev/null)
+        sed -i 's/'"$oldports"'/'"$newports"'/g' /etc/mita/config.json
+        mita apply config /etc/mita/config.json
+        mieru_restart
+    elif [ $menu == 4 ]; then
+        oldxieyiduo=$(cat /etc/mita/xieyi_duo.txt 2>/dev/null)
+        echo "旧的多端口协议为:$oldxieyiduo"
+        mieru_xieyi_duo
+        newxieyiduo=$(cat /etc/mita/xieyi_duo.txt 2>/dev/null)
+        sed -i 's/'"$oldxieyiduo"'/'"$newxieyiduo"'/g' /etc/mita/config.json
+        mita apply config /etc/mita/config.json
+        mieru_restart
+    elif [ $menu == 5 ]; then
+        oldsocks5=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
+        echo "旧的 socks5 端口为:$oldsocks5"
+        socks5port
+        newsocks5=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
+        sed -i 's/'"$oldsocks5"'/'"$newsocks5"'/g' /etc/mita/config.json
+        mita apply config /etc/mita/config.json
+        mieru_restart
+    elif [ $menu == 6 ]; then
+        oldname=$(cat /etc/mita/all_name.txt 2>/dev/null)
+        oldpassword=$(cat /etc/mita/all_password.txt 2>/dev/null)
+        echo "旧的用户名为:$oldname 旧的密码为:$oldpassword"
+        name_password
+        newname=$(cat /etc/mita/all_name.txt 2>/dev/null)
+        newpassword=$(cat /etc/mita/all_password.txt 2>/dev/null)
+        sed -i 's/'"$oldname"'/'"$newname"'/g' /etc/mita/config.json
+        sed -i 's/'"$oldpassword"'/'"$newpassword"'/g' /etc/mita/config.json
+        mita apply config /etc/mita/config.json
+        mieru_restart
+    else
+        mieru    
+    fi 
+}
 mieru_run() {
     openyn          # 询问是否开放防火墙
     mieru_setup     # 安装mieru 服务端
@@ -643,7 +703,7 @@ mieru_run() {
     fi
     mieru_read_peizi                           # 读取端口等信息
     mieru_config                               # 写入 mieru 服务端配置
-    $(mita apply config /etc/mita/config.json) # 配置生效命令
+    mita apply config /etc/mita/config.json # 配置生效命令
     sleep 2
     mieru_jieche # 检查 mieru 是否运行
     echo
@@ -654,6 +714,23 @@ mieru_run() {
     echo
 }
 
+# 重启mieru
+mieru_restart(){
+    mita stop
+    mita start
+}
+# 关闭mieru
+mieru_stop(){
+    mita stop
+}
+# 升级mieru脚本
+mieru_up(){
+rm -rf /usr/bin/mieru
+curl -L -o /usr/bin/mieru -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/mita.sh
+chmod +x /usr/bin/mieru
+curl -sL https://raw.githubusercontent.com/yggmsh/yggmsh123/main/mita-v | awk -F "更新内容" '{print $1}' | head -n 1 > /etc/mita/v
+green "mieru 安装脚本升级成功" && sleep 5 && mieru    
+}
 #这是脚本的主代码,用来运行脚本菜的的界面
 clear
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -661,27 +738,27 @@ white "mieru 一键脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 white "脚本快捷方式：mieru"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-green " 1. 一键安装 mieru (测试)"
-green " 2. 一键删除 mieru (测试)"
-green " 3. 配置参数(还没写)"
-green " 4. 重启(还没写)"
-green " 5. 关闭(还没写)"
+green " 1. 一键安装 mieru(完)"
+green " 2. 一键删除 mieru(完)"
+green " 3. 配置参数(完)"
+green " 4. 重启mieru(完)"
+green " 5. 关闭mieru(完)"
 green " 6. 查看运行状态(完)"
 green " 7. 显示配置信息(完)"
-green " 8. 更新脚本(还没写)"
+green " 8. 更新脚本(完)"
 green " 9. 更新mieru(完)"
 green " 0. 退出脚本"
 echo
 readp "请输入数字【0-9】:" Input
 case "$Input" in
 1) mieru_run ;;
-2) mieru_shanchu ;;
-3) mihomo_run ;;
-4) unins ;;
-5) mieru_run ;;
+2) mieru_del ;;
+3) mieru_deploy ;;
+4) mieru_restart ;;
+5) mieru_stop ;;
 6) mieru_jieche ;;
 7) mieru_link ;;
-8) zzzzzzzzzz ;;
+8) mieru_up ;;
 9) mieru_setup ;;
 *) exit ;;
 esac
