@@ -365,6 +365,13 @@ anytlsport() {
   readp "\n设置anytls主端口[1-65535](回车跳过为10000-65535之间的随机端口)：" port
   chooseport
   port_anytls=$port
+  echo "$port_anytls" >/etc/s-box/port_anytls.txt
+}
+socks5port() {
+    readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
+    chooseport
+    portsocks5=$port
+    echo "$socks5port" >/etc/s-box/port_scoks5.txt
 }
 anytls_port() {                                             #自动生成
   anytls_num=("2053" "2083" "2087" "2096" "8443")           # 建立这几个端口的随机库
@@ -417,6 +424,7 @@ anytls_port() {                                             #自动生成
     if [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$num_tls") ]]; then
       # 如果未被占用，则赋值给 port_anytls 并跳出循环
       port_anytls="$num_tls"
+      echo "$port_anytls" >/etc/s-box/port_scoks5.txt
       break
     else
       # 如果被占用，将这个端口添加到 tried_ports 列表中
@@ -425,7 +433,14 @@ anytls_port() {                                             #自动生成
     fi
   done
 }
-
+name_password() {
+    readp "\n设置全脚本的用户名：" name
+    all_name=$name
+    readp "设置全脚本的密码：" password
+    all_password=$password
+    echo "$all_name" >/etc/s-box/all_name.txt
+    echo "$all_password" >/etc/s-box/all_password.txt
+}
 insport() {
   red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   green "三、设置各个协议端口"
@@ -434,7 +449,7 @@ insport() {
   readp "请输入【1-2】：" port
   if [ -z "$port" ] || [ "$port" = "1" ]; then
     ports=()
-    for i in {1..4}; do
+    for i in {1..5}; do
       while true; do
         port=$(shuf -i 10000-65535 -n 1)
         if ! [[ " ${ports[@]} " =~ " $port " ]] &&
@@ -449,6 +464,7 @@ insport() {
     port_vl_re=${ports[1]}
     port_hy2=${ports[2]}
     port_tu=${ports[3]}
+    portsocks5=${ports[4]}
     if [[ $tlsyn == "true" ]]; then
       numbers=("2053" "2083" "2087" "2096" "8443")
     else
@@ -467,16 +483,11 @@ insport() {
     blue "根据Vmess-ws协议是否启用TLS，随机指定支持CDN优选IP的标准端口：$port_vm_ws"
     anytls_port
   else
-    vlport && vmport && hy2port && tu5port && anytlsport
+    vlport && vmport && hy2port && tu5port && anytlsport && portsocks5 && name_password
   fi
-  readb "输入统一用户名:" all_name    # 输入用户名
-  readb "输入统一密码:" all_password # 输入密码
-  if [[ ! -d /etc/s-box/txt/ ]]; then
-    mkdir -p /etc/s-box/txt/
-    chmod +x /etc/s-box/txt/
+  if [ ! -f /etc/s-box/all_name.txt ] || [ ! -f /etc/s-box/all_password.txt ]; then
+    name_password
   fi
-  echo "$all_name" >/etc/s-box/txt/all_name.txt
-  echo "$all_password" >/etc/s-box/txt/all_password.txt
   echo
   blue "各协议端口确认如下"
   blue "Vless-reality端口：$port_vl_re"
@@ -484,7 +495,6 @@ insport() {
   blue "Hysteria-2端口：$port_hy2"
   blue "Tuic-v5端口：$port_tu"
   blue "Anytls端口：$port_anytls"
-  echo "$port_anytls" >/etc/s-box/txt/port_anytls.txt
   blue "已确认anytls的用户名：$all_name"
   blue "已确认anytls的密码：$all_password"
   red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -873,7 +883,19 @@ EOF
         "certificate_path": "$certificatec_anytls",
         "key_path": "$certificatep_anytls"
       }
+    },
+{
+  "type": "socks",
+  "tag": "socks-in",
+  "listen": "127.0.0.1",
+  "listen_port": $socks5port,
+  "users": [
+    {
+      "username": "$all_name",
+      "password": "$all_password"
     }
+  ]
+}
 ],
 "endpoints":[
 {
@@ -5027,7 +5049,7 @@ sblog() {
     yellow "暂不支持alpine查看日志"
   else
     #systemctl status sing-box
-    journalctl -u sing-box.service -o cat -f
+    journalctl -u sing-box --output cat -f
   fi
 }
 
