@@ -1179,60 +1179,6 @@ resvless() {
     echo
 }
 
-# vmess ws 或 vmess ws tls  或 arog 节点
-resvmess() {
-    if [[ "$tls" = "false" ]]; then
-        argopid
-        if [[ -n $(ps -e | grep -w $ls 2>/dev/null) ]]; then
-            echo
-            white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-            red "🚀【 vmess-ws(tls)+Argo 】临时节点信息如下(可选择3-8-3，自定义CDN优选地址)：" && sleep 2
-            echo
-            echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-            echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"8443","ps":"'vm-argo-$hostname'","tls":"tls","sni":"'$argo'","type":"none","v":"2"}' | base64 -w 0)${plain}"
-            echo
-            echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-            echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argo'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"8443","ps":"'vm-argo-$hostname'","tls":"tls","sni":"'$argo'","type":"none","v":"2"}' | base64 -w 0) >/etc/ys/info/vm_ws_argols.txt
-            qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vm_ws_argols.txt)"
-        fi
-        if [[ -n $(ps -e | grep -w $ym 2>/dev/null) ]]; then
-            argogd=$(cat /etc/ys/info/sbargoym.log 2>/dev/null)
-            echo
-            white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-            red "🚀【 vmess-ws(tls)+Argo 】固定节点信息如下 (可选择3-8-3，自定义CDN优选地址)：" && sleep 2
-            echo
-            echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-            echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"8443","ps":"'vm-argo-$hostname'","tls":"tls","sni":"'$argogd'","type":"none","v":"2"}' | base64 -w 0)${plain}"
-            echo
-            echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-            echo 'vmess://'$(echo '{"add":"'$vmadd_argo'","aid":"0","host":"'$argogd'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"8443","ps":"'vm-argo-$hostname'","tls":"tls","sni":"'$argogd'","type":"none","v":"2"}' | base64 -w 0) >/etc/ys/info/vm_ws_argogd.txt
-            qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vm_ws_argogd.txt)"
-        fi
-        echo
-        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        red "🚀【 vmess-ws 】节点信息如下 (建议选择3-8-1，设置为CDN优选节点)：" && sleep 2
-        echo
-        echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-        echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'vm-ws-$hostname'","tls":"","type":"none","v":"2"}' | base64 -w 0)${plain}"
-        echo
-        echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-        echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'vm-ws-$hostname'","tls":"","type":"none","v":"2"}' | base64 -w 0) >/etc/ys/info/vm_ws.txt
-        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vm_ws.txt)"
-    else
-        echo
-        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        red "🚀【 vmess-ws-tls 】节点信息如下 (建议选择3-8-1，设置为CDN优选节点)：" && sleep 2
-        echo
-        echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-        echo -e "${yellow}vmess://$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'vm-ws-tls-$hostname'","tls":"tls","sni":"'$vm_name'","type":"none","v":"2"}' | base64 -w 0)${plain}"
-        echo
-        echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-        echo 'vmess://'$(echo '{"add":"'$vmadd_are_local'","aid":"0","host":"'$vm_name'","id":"'$uuid'","net":"ws","path":"'$ws_path'","port":"'$vm_port'","ps":"'vm-ws-tls-$hostname'","tls":"tls","sni":"'$vm_name'","type":"none","v":"2"}' | base64 -w 0) >/etc/ys/info/vm_ws_tls.txt
-        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vm_ws_tls.txt)"
-    fi
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-}
 
 # hysteria2 节点信息
 reshy2() {
@@ -1304,11 +1250,11 @@ result_vl_vm_hy_tu() {
         ym=$(bash ~/.acme.sh/acme.sh --list | tail -1 | awk '{print $1}')
         echo $ym >/root/ygkkkca/ca.log #  把acme 申请的域名写入 ca.log  中
     fi
-    rm -rf /etc/ys/vmess/vm_ws_argo.txt /etc/ys/vmess/vm_ws.txt /etc/ys/vmess/vm_ws_tls.txt # 删除vmess ws vmess ws tls vmess ws argo
-    sbdnsip=$(cat /etc/ys/info/sbdnsip.log)                                                 # sbdnsip 存储  dns tls://8.8.8.8/dns-query
-    server_ip=$(cat /etc/ys/info/server_ip.log)                                             # server_ip 存储  vps的物理ip
-    server_ipcl=$(cat /etc/ys/info/server_ipcl.log)                                         # server_ipcl 存储 ip
-    hostname=$(cat /etc/ys/info/hostname.log)
+
+    sbdnsip=$(cat /etc/ys/info/sbdnsip.log 2>/dev/null)                                                 # sbdnsip 存储  dns tls://8.8.8.8/dns-query
+    server_ip=$(cat /etc/ys/info/server_ip.log 2>/dev/null)                                             # server_ip 存储  vps的物理ip
+    server_ipcl=$(cat /etc/ys/info/server_ipcl.log 2>/dev/null)                                         # server_ipcl 存储 ip
+    hostname=$(cat /etc/ys/info/hostname.log 2>/dev/null)
 
     # hysteria2 link需要的配置信息  完成
     #    "hysteria2://$all_password@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
@@ -1341,39 +1287,19 @@ result_vl_vm_hy_tu() {
     # anytls 需要的配置信息
     #"anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
     cl_any_ip=$server_ip
-    port_any=$(cat /etc/ys/anytls/port_any.txt)
+    port_any=$(cat /etc/ys/anytls/port_any.txt 2>/dev/null)
     ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-
-    # vmess 需要的配置信息
-    vmadd_local=$server_ipcl
-    vmadd_are_local=$server_ip
-    argo=$(cat /etc/ys/info/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
-    ws_path=$(cat /etc/ys/vmess/path.txt 2>/dev/null) # 得到path
-    vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
-    vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
 
 }
 
 ###############################################################################################################
 # 显示节点信息  修改完了
 mihomo_read_link() {
-    rm -rf /etc/ys/jhdy.txt /etc/ys/vless/vl_reality.txt /etc/ys/vmess/vm_ws_argols.txt /etc/ys/vmess/vm_ws_argogd.txt /etc/ys/vmess/vm_ws.txt /etc/ys/vmess/vm_ws_tls.txt /etc/ys/hysteria2/hy2.txt /etc/ys/tuic5/tuic5.txt /etc/ys/anytls/anytls.txt
+    rm -rf /etc/ys/jhdy.txt /etc/ys/vless/vl_reality.txt /etc/ys/hysteria2/hy2.txt /etc/ys/tuic5/tuic5.txt /etc/ys/anytls/anytls.txt
     result_vl_vm_hy_tu && reshy2 && restu5 && resvless && resanytls # 读取配置信息  hy2link  tu5link vlesslink anytlslink
-    cat /etc/ys/vless/vl_reality.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    if [ -f '/etc/ys/vmess/vm_ws_argols.txt' ]; then
-        cat /etc/ys/vmess/vm_ws_argols.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    fi
-    if [ -f '/etc/ys/vmess/vm_ws_argogd.txt' ]; then
-        cat /etc/ys/vmess/vm_ws_argogd.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    fi
-    if [ -f '/etc/ys/vmess/vm_ws_argogd.txt' ]; then
-        cat /etc/ys/vmess/vm_ws.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    fi
-    if [ -f '/etc/ys/vmess/vm_ws_argogd.txt' ]; then
-        cat /etc/ys/vmess/vm_ws_tls.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    fi
     cat /etc/ys/hysteria2/hy2.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/tuic5/tuic5.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    cat /etc/ys/vless/vl_reality.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/anytls/anytls.txt 2>/dev/null >>/etc/ys/jhdy.txt
     baseurl=$(base64 -w 0 </etc/ys/jhdy.txt 2>/dev/null)
     v2sub=$(cat /etc/ys/jhdy.txt 2>/dev/null)
