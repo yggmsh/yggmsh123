@@ -743,8 +743,8 @@ anytlsport() {
 socks5port() {
     readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
-    portsocks5=$port
-    echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+    socks5port=$port
+    echo "$socks5port" > /etc/ys/socks5/port_scoks5.txt
     echo "12345" > /etc/ys/socks5_in.txt
 }
 
