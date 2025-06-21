@@ -477,7 +477,7 @@ mieru_port_auto() {
         echo "$xieyi_duo" > /etc/mita/xieyi_duo.txt
         
     else
-        mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo && socks5port
+        mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo && socks5port && name_password
     fi
     echo
     blue "各协议端口确认如下"
@@ -608,7 +608,6 @@ mieru_run() {
     mieru_port_auto # 设置mieru端口
     vps_ip
     mieru_read_peizi                           # 读取端口等信息
-    name_password
     mieru_config                               # 写入 mieru 服务端配置
     mita apply config /etc/mita/config.json # 配置生效命令
     sleep 2
