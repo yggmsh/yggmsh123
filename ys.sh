@@ -2752,7 +2752,7 @@ elif [[ -z $($status_cmd 2>/dev/null | grep -w "$status_pattern") && -f '/etc/ys
 else
     echo -e "mihomo状态：$red未安装$plain"
 fi
-if [ -d "/etc/ys/mieru" ] && [ -f "/etc/mita/config.json" ]; then
+if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
     echo -e "mieru服务端:${blue}已安装$plain"
 else
     echo -e "mieru服务器:${blue}未安装$plain"
