@@ -4446,8 +4446,6 @@ mieru_daoru() {
   vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')
   tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
   vm_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
-  xxxx=$hy2_ports
-  hy2_ports="${xxxx//:/-}"
   if [[ "$tls" = "false" ]]; then
     if [[ -f /etc/s-box/cfymjx.txt ]]; then
       vm_name=$(cat /etc/s-box/cfymjx.txt 2>/dev/null)
@@ -4487,6 +4485,8 @@ mieru_daoru() {
   if [[ -n $hy2_ports ]]; then
     hy2ports=$(echo $hy2_ports | sed 's/:/-/g')
     hyps=$hy2_port,$hy2ports
+    xxxx=$hy2_ports
+    hy2_ports="${xxxx//:/-}"
   else
     hyps=
   fi
