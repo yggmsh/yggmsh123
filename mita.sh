@@ -350,7 +350,7 @@ name_password() {
 socks5port() {
     readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     #chooseport
-    portsocks5=$port
+    socks5port=$port
     echo "$socks5port" >/etc/mita/port_scoks5.txt
 }
 # 自定义单端口
@@ -358,8 +358,8 @@ mieruport() { #配置mieru主端口与协议   已完成
     readp "\n设置mieru主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     # 增加写入txt数据,#还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-    port_mieru=$prot
-    echo "$port_mieru" > /etc/mita/port_mieru.txt
+    port_mieru=$port
+    echo "$port_mieru" >/etc/mita/port_mieru.txt
 }
 
 # 自定义多端口
@@ -485,7 +485,7 @@ mieru_port_auto() {
     blue "Mieru主端口协议：$xieyi_one"
     blue "Mieru多端口：$ports_mieru"
     blue "Mieru多端口协议：$xieyi_duo"
-    blue "Mieru所使用的socks5协议端口："$pocks5port
+    blue "Mieru所使用的socks5协议端口："$socks5port
     # 加入写入/etc/mita/mieru 各个信息
 }
 
