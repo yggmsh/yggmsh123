@@ -368,10 +368,10 @@ anytlsport() {
   echo "$port_anytls" >/etc/s-box/port_anytls.txt
 }
 socks5port() {
-    readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
-    chooseport
-    portsocks5=$port
-    echo "$socks5port" >/etc/s-box/port_scoks5.txt
+  readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
+  chooseport
+  portsocks5=$port
+  echo "$socks5port" >/etc/s-box/port_scoks5.txt
 }
 anytls_port() {                                             #自动生成
   anytls_num=("2053" "2083" "2087" "2096" "8443")           # 建立这几个端口的随机库
@@ -424,7 +424,7 @@ anytls_port() {                                             #自动生成
     if [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$num_tls") ]]; then
       # 如果未被占用，则赋值给 port_anytls 并跳出循环
       port_anytls="$num_tls"
-      echo "$port_anytls" >/etc/s-box/port_scoks5.txt
+      echo "$port_anytls" >/etc/s-box/port_anytls.txt
       break
     else
       # 如果被占用，将这个端口添加到 tried_ports 列表中
@@ -434,12 +434,12 @@ anytls_port() {                                             #自动生成
   done
 }
 name_password() {
-    readp "\n设置全脚本的用户名：" name
-    all_name=$name
-    readp "设置全脚本的密码：" password
-    all_password=$password
-    echo "$all_name" >/etc/s-box/all_name.txt
-    echo "$all_password" >/etc/s-box/all_password.txt
+  readp "\n设置全脚本的用户名：" name
+  all_name=$name
+  readp "设置全脚本的密码：" password
+  all_password=$password
+  echo "$all_name" >/etc/s-box/all_name.txt
+  echo "$all_password" >/etc/s-box/all_password.txt
 }
 insport() {
   red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1207,6 +1207,12 @@ result_vl_vm_hy_tu() {
     ins=0
     tu5_ins=false
   fi
+  # anytls 需要的配置信息
+  # anytls_link="anytls://$all_password@$server_ipcl:$anytls_port/?insecure=1#anytls-$hostname"
+  cl_any_ip=$server_ip
+  port_any=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
+  anytls_port=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
+  all_password=$(cat /etc/s-box/all_password.txt 2>/dev/null)
 }
 
 resvless() {
@@ -1653,7 +1659,7 @@ sb_client() {
             "utls": {
             "enabled": true,
             "fingerprint": "edge" 
-            }
+            },
             "alpn": ["h2", "http/1.1"]
         }
     },
@@ -2247,7 +2253,7 @@ EOF
             "utls": {
             "enabled": true,
             "fingerprint": "edge" 
-            }
+            },
             "alpn": ["h2", "http/1.1"]
         }
     },
@@ -2808,7 +2814,7 @@ EOF
             "utls": {
             "enabled": true,
             "fingerprint": "edge" 
-            }
+            },
             "alpn": ["h2", "http/1.1"]
         }
     },
@@ -3311,7 +3317,7 @@ EOF
             "utls": {
             "enabled": true,
             "fingerprint": "edge" 
-            }
+            },
             "alpn": ["h2", "http/1.1"]
         }
     },
@@ -4413,7 +4419,274 @@ clsbshow() {
   yellow "可以在网页上输入订阅链接查看配置内容，如果无配置内容，请自检Gitlab相关设置并重置"
   echo
 }
+mieru_daoru() {
+  if [[ -f /root/ygkkkca/cert.crt && -f /root/ygkkkca/private.key && -s /root/ygkkkca/cert.crt && -s /root/ygkkkca/private.key ]]; then
+    ym=$(bash ~/.acme.sh/acme.sh --list | tail -1 | awk '{print $1}')
+    echo $ym >/root/ygkkkca/ca.log
+  fi
+  rm -rf /etc/s-box/vm_ws_argo.txt /etc/s-box/vm_ws.txt /etc/s-box/vm_ws_tls.txt
+  sbdnsip=$(cat /etc/s-box/sbdnsip.log)
+  server_ip=$(cat /etc/s-box/server_ip.log)
+  server_ipcl=$(cat /etc/s-box/server_ipcl.log)
+  uuid=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].users[0].uuid')
+  vl_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].listen_port')
+  vl_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].tls.server_name')
+  public_key=$(cat /etc/s-box/public.key)
+  short_id=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[0].tls.reality.short_id[0]')
+  argo=$(cat /etc/s-box/argo.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
+  ws_path=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].transport.path')
+  vm_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].listen_port')
+  tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
+  vm_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
+  if [[ "$tls" = "false" ]]; then
+    if [[ -f /etc/s-box/cfymjx.txt ]]; then
+      vm_name=$(cat /etc/s-box/cfymjx.txt 2>/dev/null)
+    else
+      vm_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
+    fi
+    vmadd_local=$server_ipcl
+    vmadd_are_local=$server_ip
+  else
+    vmadd_local=$vm_name
+    vmadd_are_local=$vm_name
+  fi
+  if [[ -f /etc/s-box/cfvmadd_local.txt ]]; then
+    vmadd_local=$(cat /etc/s-box/cfvmadd_local.txt 2>/dev/null)
+    vmadd_are_local=$(cat /etc/s-box/cfvmadd_local.txt 2>/dev/null)
+  else
+    if [[ "$tls" = "false" ]]; then
+      if [[ -f /etc/s-box/cfymjx.txt ]]; then
+        vm_name=$(cat /etc/s-box/cfymjx.txt 2>/dev/null)
+      else
+        vm_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
+      fi
+      vmadd_local=$server_ipcl
+      vmadd_are_local=$server_ip
+    else
+      vmadd_local=$vm_name
+      vmadd_are_local=$vm_name
+    fi
+  fi
+  if [[ -f /etc/s-box/cfvmadd_argo.txt ]]; then
+    vmadd_argo=$(cat /etc/s-box/cfvmadd_argo.txt 2>/dev/null)
+  else
+    vmadd_argo=www.visa.com.sg
+  fi
+  hy2_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].listen_port')
+  hy2_ports=$(iptables -t nat -nL --line 2>/dev/null | grep -w "$hy2_port" | awk '{print $8}' | sed 's/dpts://; s/dpt://' | tr '\n' ',' | sed 's/,$//')
+  if [[ -n $hy2_ports ]]; then
+    hy2ports=$(echo $hy2_ports | sed 's/:/-/g')
+    hyps=$hy2_port,$hy2ports
+  else
+    hyps=
+  fi
+  ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+  hy2_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[2].tls.key_path')
+  if [[ "$hy2_sniname" = '/etc/s-box/private.key' ]]; then
+    hy2_name=www.bing.com
+    sb_hy2_ip=$server_ip
+    cl_hy2_ip=$server_ipcl
+    ins_hy2=1
+    hy2_ins=true
+  else
+    hy2_name=$ym
+    sb_hy2_ip=$ym
+    cl_hy2_ip=$ym
+    ins_hy2=0
+    hy2_ins=false
+  fi
+  tu5_port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].listen_port')
+  ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+  tu5_sniname=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[3].tls.key_path')
+  if [[ "$tu5_sniname" = '/etc/s-box/private.key' ]]; then
+    tu5_name=www.bing.com
+    sb_tu5_ip=$server_ip
+    cl_tu5_ip=$server_ipcl
+    ins=1
+    tu5_ins=true
+  else
+    tu5_name=$ym
+    sb_tu5_ip=$ym
+    cl_tu5_ip=$ym
+    ins=0
+    tu5_ins=false
+  fi
+  # anytls 需要的配置信息
+  # anytls_link="anytls://$all_password@$server_ipcl:$anytls_port/?insecure=1#anytls-$hostname"
+  cl_any_ip=$server_ip
+  port_any=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
+  anytls_port=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
+  all_password=$(cat /etc/s-box/all_password.txt 2>/dev/null)
 
+  # mieru 配置信息
+  server_ipv4=$(cat /etc/mita/ipv4.txt 2>/dev/null)
+  server_ipv6=$(cat /etc/mita/ipv6.txt 2>/dev/null)
+  port_mieru=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
+  xieyi_one=$(cat /etc/mita/xieyi_one.txt 2>/dev/null)
+  ports_mieru=$(cat /etc/mita/ports_mieru.txt 2>/dev/null)
+  xieyi_duo=$(cat /etc/mita/xieyi_duo.txt 2>/dev/null)
+  all_name=$(cat /etc/mita/all_name.txt 2>/dev/null)
+  all_password=$(cat /etc/mita/all_password.txt 2>/dev/null)
+  socks5port=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
+  cat >/etc/ys/clash_meta_client.yaml <<EOF
+port: 7890
+allow-lan: true
+mode: rule
+log-level: info
+unified-delay: true
+global-client-fingerprint: chrome
+dns:
+  enable: false
+  listen: :53
+  ipv6: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver: 
+    - 223.5.5.5
+    - 8.8.8.8
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  fallback:
+    - https://1.0.0.1/dns-query
+    - tls://dns.google
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    ipcidr:
+      - 240.0.0.0/4
+
+proxies:
+
+- name: hysteria2-$hostname                            
+  type: hysteria2                                      
+  server: $cl_hy2_ip                               
+  #port: $hy2_port 
+  ports: $hy2_ports,$hy2_port                               
+  password: $all_password
+  sni: $hy2_name  
+  alpn:                                 # 支持的应用层协议协商列表，按优先顺序排列。
+    - h3                               
+  skip-cert-verify: $hy2_ins            # 跳过证书验证，仅适用于使用 tls 的协议
+  fast-open: true
+  #fingerprint: xxxx         # 证书指纹，仅适用于使用 tls 的协议，可使用
+  #ca: "./my.ca"
+  #ca-str: "xyz"
+  ###quic-go特殊配置项，不要随意修改除非你知道你在干什么###
+  # initial-stream-receive-window： 8388608
+  # max-stream-receive-window： 8388608
+  # initial-connection-receive-window： 20971520
+  # max-connection-receive-window： 20971520
+
+- name: tuic5-$hostname                            
+  server: $cl_tu5_ip                      
+  port: $tu5_port                                    
+  type: tuic
+  uuid: $uuid       
+  password: $all_password   
+  alpn: [h3]
+  disable-sni: true
+  reduce-rtt: true
+  udp-relay-mode: native
+  congestion-controller: bbr
+  sni: $tu5_name                                
+  skip-cert-verify: $tu5_ins
+
+- name: vless-reality-vision-$hostname               
+  type: vless
+  server: $server_ipcl                           
+  port: $vl_port                                
+  uuid: $uuid   
+  network: tcp
+  udp: true
+  tls: true
+  flow: xtls-rprx-vision
+  servername: $vl_name                 
+  reality-opts: 
+    public-key: $public_key    
+    short-id: $short_id                    
+  client-fingerprint: chrome                  
+
+- name: anytls-$hostname
+  type: anytls
+  server: $cl_any_ip
+  port: $port_any
+  password: "$all_password"
+  client-fingerprint: edge
+  udp: true
+  idle-session-check-interval: 30
+  idle-session-timeout: 30
+  min-idle-session: 0
+  sni: "www.bing.com"
+  alpn:
+    - h2
+    - http/1.1
+  skip-cert-verify: true
+
+- name: mieru-$hostname
+  type: mieru
+  server: $server_ipv4
+  port: $port_mieru
+  transport: TCP
+  username: $all_name
+  password: $all_password
+  multiplexing: MULTIPLEXING_OFF
+
+proxy-groups:
+- name: 负载均衡
+  type: load-balance
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  strategy: round-robin
+  proxies:                              
+    - hysteria2-$hostname
+    - tuic5-$hostname
+    - vless-reality-vision-$hostname
+    - anytls-$hostname
+    - mieru-$hostname
+
+- name: 自动选择
+  type: url-test
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  tolerance: 50
+  proxies:                             
+    - hysteria2-$hostname
+    - tuic5-$hostname
+    - vless-reality-vision-$hostname 
+    - anytls-$hostname
+    - mieru-$hostname
+    
+- name: 🌍选择代理节点
+  type: select
+  proxies:
+    - 负载均衡                                         
+    - 自动选择
+    - DIRECT
+    - hysteria2-$hostname    
+    - tuic5-$hostname
+    - vless-reality-vision-$hostname 
+    - anytls-$hostname
+    - mieru-$hostname
+
+rules:
+  - DOMAIN-SUFFIX,googleapis.cn,🌍选择代理节点
+  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,🌍选择代理节点
+  - DOMAIN-SUFFIX,xn--ngstr-cn-8za9o.com,🌍选择代理节点
+
+  - GEOIP,CN,DIRECT
+  - GEOIP,LAN,DIRECT
+  - IP-CIDR,192.168.0.0/16,DIRECT
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  - IP-CIDR,172.16.0.0/12,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT
+
+  - IP-CIDR,224.0.0.0/3,REJECT
+  - IP-CIDR,ff00::/8,REJECT
+
+  - MATCH,🌍选择代理节点
+EOF
+}
 warpwg() {
   warpcode() {
     reg() {
@@ -5070,6 +5343,9 @@ sbshare() {
   cat /etc/s-box/hy2.txt 2>/dev/null >>/etc/s-box/jhdy.txt
   cat /etc/s-box/tuic5.txt 2>/dev/null >>/etc/s-box/jhdy.txt
   cat /etc/s-box/anytls.txt 2>/dev/null >>/etc/s-box/jhdy.txt
+  if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
+    cat /etc/mita/mieru.txt 2>/dev/null >>/etc/s-box/jhdy.txt
+  fi
   baseurl=$(base64 -w 0 </etc/s-box/jhdy.txt 2>/dev/null)
   v2sub=$(cat /etc/s-box/jhdy.txt 2>/dev/null)
   echo "$v2sub" >/etc/s-box/jh_sub.txt
@@ -5082,6 +5358,9 @@ sbshare() {
   white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   echo
   sb_client
+  if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
+    mieru_daoru
+  fi
 }
 
 clash_sb_share() {
