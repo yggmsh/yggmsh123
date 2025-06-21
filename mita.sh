@@ -511,7 +511,11 @@ mieru_port_auto() {
         echo "$ports_mieru" > /etc/mita/ports_mieru.txt
         socks5port=${ports[2]}
         echo "$socks5port" >/etc/mita/port_scoks5.txt
-      
+        xieyi_one="TCP"
+        echo "$xieyi_one" > /etc/mita/xieyi_one.txt
+        xieyi_duo="UDP"
+        echo "$xieyi_duo" > /etc/mita/xieyi_duo.txt
+        
     else
         mieruport && mieru_xieyi_zhu && mieruports && mieru_xieyi_duo && socks5port
     fi
