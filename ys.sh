@@ -2318,7 +2318,7 @@ mihomo_restart_stop() { # 重启mihomo  关闭mihomo
             systemctl stop ys
             systemctl disable ys
         fi
-        green "mihomo服务已关闭\n" && sleep 3 && sb
+        green "mihomo服务已关闭\n" && sleep 3 && mihomo
     else
         mihomo # 返回本函数
     fi
