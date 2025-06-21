@@ -539,11 +539,11 @@ mihomo_port_auto() { # 配置完成
         done
         echo
         blue "根据Vmess-ws协议是否启用TLS，随机指定支持CDN优选IP的标准端口：$port_vm_ws"
-        echo "$port_vl_re" >/etc/ys/vless/port_vl_re.txt
-        echo "$port_vm_ws" >/etc/ys/vmess/port_vm_ws.txt
-        echo "$port_hy2" >/etc/ys/hysteria2/port_hy2.txt
-        echo "$port_tu" >/etc/ys/tuic5/port_tu.txt
-        echo "$port_any" >/etc/ys/anytls/port_any.txt
+        echo "$port_vl_re" > /etc/ys/vless/port_vl_re.txt
+        echo "$port_vm_ws" > /etc/ys/vmess/port_vm_ws.txt
+        echo "$port_hy2" > /etc/ys/hysteria2/port_hy2.txt
+        echo "$port_tu" > /etc/ys/tuic5/port_tu.txt
+        echo "$port_any" > /etc/ys/anytls/port_any.txt
         echo "$socks5port" > /etc/ys/socks5/port_scoks5.txt
         echo "12345" > /etc/ys/socks5_in.txt
     else
@@ -563,9 +563,9 @@ mihomo_port_auto() { # 配置完成
     uuid=$(uuidgen)
     blue "已确认uuid (密码)：${uuid}"
     blue "已确认Vmess的path路径：${uuid}-vm"
-    echo "$uuid" >/etc/ys/vless/uuid.txt
-    echo "$uuid" >/etc/ys/vmess/uuid.txt
-    echo "${uuid}-vm" >/etc/ys/vmess/path.txt
+    echo "$uuid" > /etc/ys/vless/uuid.txt
+    echo "$uuid" > /etc/ys/vmess/uuid.txt
+    echo "${uuid}-vm" > /etc/ys/vmess/path.txt
 }
 
 ###############################################################################################################
@@ -725,7 +725,7 @@ anytlsport() {
     readp "\n设置Anytls主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     port_any=$port
-    echo "$port_any" >/etc/ys/anytls/port_any.txt
+    echo "$port_any" > /etc/ys/anytls/port_any.txt
 }
 socks5port() {
     readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
@@ -1316,7 +1316,7 @@ result_vl_vm_hy_tu() {
     # anytls 需要的配置信息
     #"anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
     cl_any_ip=$server_ip
-    port_any=(cat /etc/ys/anytls/port_any.txt)
+    port_any=$(cat /etc/ys/anytls/port_any.txt)
     ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
 
     # vmess 需要的配置信息
