@@ -370,7 +370,7 @@ anytlsport() {
 socks5port() {
   readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
   chooseport
-  portsocks5=$port
+  socks5port=$port
   echo "$socks5port" >/etc/s-box/port_scoks5.txt
 }
 anytls_port() {                                             #自动生成
@@ -483,7 +483,7 @@ insport() {
     blue "根据Vmess-ws协议是否启用TLS，随机指定支持CDN优选IP的标准端口：$port_vm_ws"
     anytls_port
   else
-    vlport && vmport && hy2port && tu5port && anytlsport && portsocks5 && name_password
+    vlport && vmport && hy2port && tu5port && anytlsport && socks5port && name_password
   fi
   if [ ! -f /etc/s-box/all_name.txt ] || [ ! -f /etc/s-box/all_password.txt ]; then
     name_password
