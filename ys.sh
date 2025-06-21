@@ -757,7 +757,7 @@ name_password_random() {
     # 生成隨機密碼 (12 位，包含大小寫字母、數字和特殊符號)
     # tr -dc 'a-zA-Z0-9!@#$%^&*()_+-=' 用於選擇允許的字符
     # head -c 12 截取前12個字符
-    all_password=$(head /dev/urandom | tr -dc A-Za-z0-9!@#$%^&*()_+-= | head -c 12)
+    all_password=$(head /dev/urandom | tr -dc 'A-Za-z0-9!@#$%^&*()_+\-=' | head -c 12)
 
     echo "$all_name" >/etc/ys/info/all_name.txt
     echo "$all_password" >/etc/ys/info/all_password.txt
