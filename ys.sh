@@ -920,7 +920,7 @@ listeners:
   port: $port_tu
   listen: 0.0.0.0
   users:
-    $all_name: $all_password
+    $uuid: $all_password
   certificate: $certificatec_tuic
   private-key: $certificatep_tuic
   congestion-controller: bbr
@@ -2656,8 +2656,8 @@ white "协议共存,未来如果能研究明白,在加入Vmess argo,可能就是
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 white "脚本快捷方式：mihomo"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-green " 1. 一键安装 mihomo (测试)"
-green " 2. 删除卸载 mihomo (测试)"
+green " 1. 一键安装 mihomo (完)"
+green " 2. 删除卸载 mihomo (完)"
 white "----------------------------------------------------------------------------------"
 green " 3. mihomo 修改配置菜单(待修改)"
 white "----------------------------------------------------------------------------------"
