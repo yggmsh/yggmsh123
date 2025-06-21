@@ -508,8 +508,6 @@ insport() {
 }
 
 inssbjsonser() {
-server_ip=$(cat /etc/s-box/server_ip.log)
-server_ipcl=$(cat /etc/s-box/server_ipcl.log)
 port_any=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
 anytls_port=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
 all_password=$(cat /etc/s-box/all_password.txt 2>/dev/null)
@@ -3765,7 +3763,6 @@ instsllsingbox() {
   red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   green "五、自动生成warp-wireguard出站账户" && sleep 2
   warpwg
-
   inssbjsonser
   sbservice
   sbactive
