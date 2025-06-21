@@ -1997,16 +1997,16 @@ menu_3() {
             if [ "$numm" == "1" ]; then
                 menu_3_1
             fi
-        elif [$menu == 3]; then
-
-        elif [$menu == 4]; then
-
-        elif [$menu == 5]; then
-
-        elif [$menu == 0]; then
+        elif [ $menu == 3 ]; then
+		echo "还没写"
+        elif [ $menu == 4 ]; then
+		echo "还没写"
+        elif [ $menu == 5 ]; then
+		echo "还没写"
+        elif [ $menu == 0 ]; then
             menu_3_1 #返回上级菜单
         else
-
+		mihomo
         fi
     elif [ $menu == 2 ]; then
         echo "重新设置Tuic5协议"
