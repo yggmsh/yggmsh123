@@ -1186,7 +1186,7 @@ result_vl_vm_hy_tu_anytls() {
     hy2_port=$(cat /etc/ys/hysteria2/port_hy2.txt 2>/dev/null)    # 端口
     hy2_ports=$(cat /etc/ys/hysteria2/hy2_ports.txt 2>/dev/null)  # 多端口
     ins_hy2=1
-
+    hy2_ins="true"
     # tuic5 需要的配置信息  完成
     #    "tuic://$uuid:$all_password@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&allow_insecure=$ins#tu5-$hostname"
     tu5_name=www.bing.com
@@ -1195,7 +1195,7 @@ result_vl_vm_hy_tu_anytls() {
     tu5_port=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
     port_tu=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
     ins=1
-
+    tu5_ins="true"
     # vless 需要的配置信息  完成
     #    vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vl-reality-$hostname"
     uuid=$(cat /etc/ys/vless/uuid.txt 2>/dev/null)               # 读取uuid
@@ -2637,7 +2637,48 @@ udp_port() {
 }
 
 mieru_daoru(){
-result_vl_vm_hy_tu_anytls
+sbdnsip=$(cat /etc/ys/info/sbdnsip.log 2>/dev/null)         # sbdnsip 存储  dns tls://8.8.8.8/dns-query
+server_ip=$(cat /etc/ys/info/server_ip.log 2>/dev/null)     # server_ip 存储  vps的物理ip
+server_ipcl=$(cat /etc/ys/info/server_ipcl.log 2>/dev/null) # server_ipcl 存储 ip
+hostname=$(cat /etc/ys/info/hostname.log 2>/dev/null)
+
+# hysteria2 link需要的配置信息  完成
+#    "hysteria2://$all_password@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
+hy2_name=www.bing.com
+sb_hy2_ip=$server_ip                                          # link ip地址
+cl_hy2_ip=$server_ipcl                                        # 客户端配置文件ip
+all_password=$(cat /etc/ys/info/all_password.txt 2>/dev/null) # 密码
+hy2_port=$(cat /etc/ys/hysteria2/port_hy2.txt 2>/dev/null)    # 端口
+hy2_ports=$(cat /etc/ys/hysteria2/hy2_ports.txt 2>/dev/null)  # 多端口
+ins_hy2=1
+hy2_ins="true"
+
+# tuic5 需要的配置信息  完成
+#    "tuic://$uuid:$all_password@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&allow_insecure=$ins#tu5-$hostname"
+tu5_name=www.bing.com
+sb_tu5_ip=$server_ip
+cl_tu5_ip=$server_ipcl
+tu5_port=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+port_tu=$(cat /etc/ys/tuic5/port_tu.txt 2>/dev/null)
+ins=1
+tu5_ins="true"
+
+# vless 需要的配置信息  完成
+#    vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vl-reality-$hostname"
+uuid=$(cat /etc/ys/vless/uuid.txt 2>/dev/null)               # 读取uuid
+vl_port=$(cat /etc/ys/vless/port_vl_re.txt 2>/dev/null)      # 读取端口
+vl_name=$(cat /etc/ys/vless/server-name.txt 2>/dev/null)     # 读取 www.yahoo.com
+private_key=$(cat /etc/ys/vless/private_key.txt 2>/dev/null) # 读取服务端private_key值
+public_key=$(cat /etc/ys/vless/public_key.txt 2>/dev/null)   # 读取客户端public_key值
+short_id=$(cat /etc/ys/vless/short_id.txt 2>/dev/null)       # 读取 short-id
+
+# anytls 需要的配置信息
+#"anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
+cl_any_ip=$server_ip
+port_any=$(cat /etc/ys/anytls/port_any.txt 2>/dev/null)
+ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+
+# mieru 配置信息
 server_ipv4=$(cat /etc/mita/ipv4.txt 2>/dev/null)
 server_ipv6=$(cat /etc/mita/ipv6.txt 2>/dev/null)
 port_mieru=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
