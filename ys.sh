@@ -2636,6 +2636,175 @@ udp_port() {
     [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
 }
 
+mieru_daoru(){
+server_ipv4=$(cat /etc/mita/ipv4.txt 2>/dev/null)
+server_ipv6=$(cat /etc/mita/ipv6.txt 2>/dev/null)
+port_mieru=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
+xieyi_one=$(cat /etc/mita/xieyi_one.txt 2>/dev/null)
+ports_mieru=$(cat /etc/mita/ports_mieru.txt 2>/dev/null)
+xieyi_duo=$(cat /etc/mita/xieyi_duo.txt 2>/dev/null)
+all_name=$(cat /etc/mita/all_name.txt 2>/dev/null)
+all_password=$(cat /etc/mita/all_password.txt 2>/dev/null)
+socks5port=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
+cat >/etc/ys/clash_meta_client.yaml <<EOF
+port: 7890
+allow-lan: true
+mode: rule
+log-level: info
+unified-delay: true
+global-client-fingerprint: chrome
+dns:
+  enable: false
+  listen: :53
+  ipv6: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver: 
+    - 223.5.5.5
+    - 8.8.8.8
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  fallback:
+    - https://1.0.0.1/dns-query
+    - tls://dns.google
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    ipcidr:
+      - 240.0.0.0/4
+
+proxies:
+
+- name: hysteria2-$hostname                            
+  type: hysteria2                                      
+  server: $cl_hy2_ip                               
+  #port: $hy2_port 
+  ports: $hy2_ports,$hy2_port                               
+  password: $all_password
+  sni: $hy2_name  
+  alpn:                                 # 支持的应用层协议协商列表，按优先顺序排列。
+    - h3                               
+  skip-cert-verify: $hy2_ins            # 跳过证书验证，仅适用于使用 tls 的协议
+  fast-open: true
+  #fingerprint: xxxx         # 证书指纹，仅适用于使用 tls 的协议，可使用
+  #ca: "./my.ca"
+  #ca-str: "xyz"
+  ###quic-go特殊配置项，不要随意修改除非你知道你在干什么###
+  # initial-stream-receive-window： 8388608
+  # max-stream-receive-window： 8388608
+  # initial-connection-receive-window： 20971520
+  # max-connection-receive-window： 20971520
+
+- name: tuic5-$hostname                            
+  server: $cl_tu5_ip                      
+  port: $tu5_port                                    
+  type: tuic
+  uuid: $uuid       
+  password: $all_password   
+  alpn: [h3]
+  disable-sni: true
+  reduce-rtt: true
+  udp-relay-mode: native
+  congestion-controller: bbr
+  sni: $tu5_name                                
+  skip-cert-verify: $tu5_ins
+
+- name: vless-reality-vision-$hostname               
+  type: vless
+  server: $server_ipcl                           
+  port: $vl_port                                
+  uuid: $uuid   
+  network: tcp
+  udp: true
+  tls: true
+  flow: xtls-rprx-vision
+  servername: $vl_name                 
+  reality-opts: 
+    public-key: $public_key    
+    short-id: $short_id                    
+  client-fingerprint: chrome                  
+
+- name: anytls-$hostname
+  type: anytls
+  server: $cl_any_ip
+  port: $port_any
+  password: "$all_password"
+  client-fingerprint: edge
+  udp: true
+  idle-session-check-interval: 30
+  idle-session-timeout: 30
+  min-idle-session: 0
+  sni: "www.bing.com"
+  alpn:
+    - h2
+    - http/1.1
+  skip-cert-verify: true
+
+- name: mieru-$hostname
+  type: mieru
+  server: $server_ipv4
+  port: $port_mieru
+  transport: TCP
+  username: $all_name
+  password: $all_password
+  multiplexing: MULTIPLEXING_OFF
+
+proxy-groups:
+- name: 负载均衡
+  type: load-balance
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  strategy: round-robin
+  proxies:                              
+    - hysteria2-$hostname
+    - tuic5-$hostname
+    - vless-reality-vision-$hostname
+    - anytls-$hostname
+    - mieru-$hostname
+
+- name: 自动选择
+  type: url-test
+  url: https://www.gstatic.com/generate_204
+  interval: 300
+  tolerance: 50
+  proxies:                             
+    - hysteria2-$hostname
+    - tuic5-$hostname
+    - vless-reality-vision-$hostname 
+    - anytls-$hostname
+    - mieru-$hostname
+    
+- name: 🌍选择代理节点
+  type: select
+  proxies:
+    - 负载均衡                                         
+    - 自动选择
+    - DIRECT
+    - hysteria2-$hostname    
+    - tuic5-$hostname
+    - vless-reality-vision-$hostname 
+    - anytls-$hostname
+    - mieru-$hostname
+
+rules:
+  - DOMAIN-SUFFIX,googleapis.cn,🚀 节点选择
+  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,🚀 节点选择
+  - DOMAIN-SUFFIX,xn--ngstr-cn-8za9o.com,🚀 节点选择
+
+  - GEOIP,CN,DIRECT
+  - GEOIP,LAN,DIRECT
+  - IP-CIDR,192.168.0.0/16,DIRECT
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  - IP-CIDR,172.16.0.0/12,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT
+
+  - IP-CIDR,224.0.0.0/3,REJECT
+  - IP-CIDR,ff00::/8,REJECT
+
+  - MATCH,🌍选择代理节点
+EOF
+}
 #################################################################################################################
 #这是脚本的主代码,用来运行脚本菜的的界面
 clear
@@ -2754,6 +2923,8 @@ else
 fi
 if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
     echo -e "mieru服务端:${blue}已安装$plain"
+    cat /etc/mita/mieru.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    mieru_daoru
 else
     echo -e "mieru服务器:${blue}未安装$plain"
 fi
