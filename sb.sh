@@ -1181,6 +1181,8 @@ result_vl_vm_hy_tu() {
   if [[ -n $hy2_ports ]]; then
     hy2ports=$(echo $hy2_ports | sed 's/:/-/g')
     hyps=$hy2_port,$hy2ports
+    xxxx=$hy2_ports
+    hy2_ports="${xxxx//:/-}"
   else
     hyps=
   fi
@@ -1297,7 +1299,7 @@ reshy2() {
   echo
   white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   #hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&mport=$hyps&sni=$hy2_name#hy2-$hostname"
-  hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
+  hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port,$hy2_ports?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
   echo "$hy2_link" >/etc/s-box/hy2.txt
   red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
   echo
@@ -4574,7 +4576,7 @@ proxies:
   server: $cl_hy2_ip                               
   #port: $hy2_port 
   ports: $hy2_ports,$hy2_port                           
-  password: $all_password
+  password: $uuid
   sni: $hy2_name  
   alpn:                                 # 支持的应用层协议协商列表，按优先顺序排列。
     - h3                               
@@ -4594,7 +4596,7 @@ proxies:
   port: $tu5_port                                    
   type: tuic
   uuid: $uuid       
-  password: $all_password   
+  password: $uuid
   alpn: [h3]
   disable-sni: true
   reduce-rtt: true
