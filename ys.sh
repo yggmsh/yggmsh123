@@ -1232,7 +1232,7 @@ result_vl_vm_hy_tu_anytls() {
         echo
         white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         #hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&mport=$hyps&sni=$hy2_name#hy2-$hostname"
-        hy2_link="hysteria2://$all_password@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
+        hy2_link="hysteria2://$all_password@$sb_hy2_ip:$hy2_port,$hy2_ports?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
         echo "$hy2_link" >/etc/ys/hysteria2/hy2.txt
         red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
         echo
@@ -1509,7 +1509,7 @@ mihomo_client() {
             "utls": {
             "enabled": true,
             "fingerprint": "edge" 
-            }
+            },
             "alpn": ["h2", "http/1.1"]
         }
     },
