@@ -561,22 +561,6 @@ mihomo_port_auto() { # 配置完成
         write_array_mihomo # 写入mihomo函数
     else
         vlport && vmport && hy2port && hy2ports && tu5port && tu5ports && anytlsport && socks5port
-        mihomo_array=("$port_vl_re" "$port_vm_ws" "$port_hy2" "$port_tu" "$port_any" "$port_socks5" "$hy2_array")
-        if [ -f "/etc/mita/config.json" ] && [ -f "/etc/ys/mieru/mieru.txt" ] && [ -f "/root/mieru_array.txt" ]; then
-            READ_ARRAY_FILE="/root/mieru_array.txt"
-            read_array_mihomo # 读取 mieru 的端口信息
-            for item1 in "${mieru_array[@]}"; do
-                # 遍历第二个数组的每个元素
-                for item2 in "${mihomo_array[@]}"; do
-                    # 比较元素是否相同
-                    if [[ "$item1" == "$item2" ]]; then
-                        mihomo_port_auto # 返回本函数
-                    fi
-                done
-            done
-        fi
-        WRITE_ARRAY_FILT="/root/mihomo_array.txt"
-        write_array_mihomo # 写入mihomo函数
     fi
     echo
     blue "各协议端口确认如下"
@@ -1845,9 +1829,6 @@ mihomo_reality() { # vless-reality-key short_id
 
 # 主菜单1项 安装 mihomo 一键脚本    修改完了
 mihomo_run() {
-    if [ -f "/etc/ys/config.yaml" ] && [ -f "/etc/ys/ys" ]; then
-        red "已安装mihomo服务，无法再次安装" && exit
-    fi
     mkdir -p /etc/ys
     chmod 777 /etc/ys
     mkdir -p /etc/ys/info
