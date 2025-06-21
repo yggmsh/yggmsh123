@@ -3738,9 +3738,7 @@ cfargo() {
     cfargo_ym
   fi
 }
-duqu_anytls(){
 
-}
 instsllsingbox() {
   if [[ -f '/etc/systemd/system/sing-box.service' ]]; then
     red "已安装Sing-box服务，无法再次安装" && exit
