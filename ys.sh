@@ -2637,6 +2637,7 @@ udp_port() {
 }
 
 mieru_daoru(){
+result_vl_vm_hy_tu_anytls
 server_ipv4=$(cat /etc/mita/ipv4.txt 2>/dev/null)
 server_ipv6=$(cat /etc/mita/ipv6.txt 2>/dev/null)
 port_mieru=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
