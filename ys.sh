@@ -1304,6 +1304,10 @@ mihomo_read_link() {
     cat /etc/ys/tuic5/tuic5.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/vless/vl_reality.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/anytls/anytls.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
+        cat /etc/mita/mieru.txt 2>/dev/null >>/etc/ys/jhdy.txt
+        mieru_daoru
+    fi
     baseurl=$(base64 -w 0 </etc/ys/jhdy.txt 2>/dev/null)
     v2sub=$(cat /etc/ys/jhdy.txt 2>/dev/null)
     echo "$v2sub" >/etc/ys/jh_sub.txt
@@ -2235,6 +2239,7 @@ EOF
 }
 # gitlab更新节点显示        修改完了
 clsbshow() {
+
     green "当前Sing-box节点已更新并推送"
     green "Sing-box订阅链接如下："
     blue "$(cat /etc/ys/sing_box_gitlab.txt 2>/dev/null)"
@@ -2965,8 +2970,6 @@ else
 fi
 if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
     echo -e "mieru服务端:${blue}已安装$plain"
-    cat /etc/mita/mieru.txt 2>/dev/null >>/etc/ys/jhdy.txt
-    mieru_daoru
 else
     echo -e "mieru服务器:${blue}未安装$plain"
 fi
