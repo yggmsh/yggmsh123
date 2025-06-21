@@ -521,7 +521,7 @@ mihomo_port_auto() { # 配置完成
         port_vl_re=${ports[1]}
         port_hy2=${ports[2]}
         port_tu=${ports[3]}
-        port_any=${prots[4]}
+        port_any=${ports[4]}
         socks5port=${ports[5]}
         if [[ $tlsyn == "true" ]]; then
             numbers=("2053" "2083" "2087" "2096" "8443")
