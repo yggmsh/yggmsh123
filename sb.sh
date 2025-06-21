@@ -505,6 +505,13 @@ insport() {
 }
 
 inssbjsonser() {
+server_ip=$(cat /etc/s-box/server_ip.log)
+server_ipcl=$(cat /etc/s-box/server_ipcl.log)
+port_any=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
+anytls_port=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
+all_password=$(cat /etc/s-box/all_password.txt 2>/dev/null)
+certificatec_anytls='/etc/s-box/cert.pem'
+certificatep_anytls='/etc/s-box/private.key'
   cat >/etc/s-box/sb10.json <<EOF
 {
 "log": {
@@ -3731,7 +3738,9 @@ cfargo() {
     cfargo_ym
   fi
 }
+duqu_anytls(){
 
+}
 instsllsingbox() {
   if [[ -f '/etc/systemd/system/sing-box.service' ]]; then
     red "已安装Sing-box服务，无法再次安装" && exit
@@ -3755,6 +3764,7 @@ instsllsingbox() {
   red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   green "五、自动生成warp-wireguard出站账户" && sleep 2
   warpwg
+
   inssbjsonser
   sbservice
   sbactive
