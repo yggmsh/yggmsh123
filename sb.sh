@@ -4640,6 +4640,22 @@ proxies:
   password: $all_password
   multiplexing: MULTIPLEXING_OFF
 
+- name: vmess-ws-$hostname                         
+  type: vmess
+  server: $vmadd_local                        
+  port: $vm_port                                     
+  uuid: $uuid       
+  alterId: 0
+  cipher: auto
+  udp: true
+  tls: $tls
+  network: ws
+  servername: $vm_name                    
+  ws-opts:
+    path: "$ws_path"                             
+    headers:
+      Host: $vm_name  
+
 proxy-groups:
 - name: 负载均衡
   type: load-balance
@@ -4652,6 +4668,7 @@ proxy-groups:
     - vless-reality-vision-$hostname
     - anytls-$hostname
     - mieru-$hostname
+    - vmess-ws-$hostname 
 
 - name: 自动选择
   type: url-test
@@ -4664,6 +4681,7 @@ proxy-groups:
     - vless-reality-vision-$hostname 
     - anytls-$hostname
     - mieru-$hostname
+    - vmess-ws-$hostname 
     
 - name: 🌍选择代理节点
   type: select
@@ -4676,6 +4694,7 @@ proxy-groups:
     - vless-reality-vision-$hostname 
     - anytls-$hostname
     - mieru-$hostname
+    - vmess-ws-$hostname
 
 rules:
   - DOMAIN-SUFFIX,googleapis.cn,🌍选择代理节点
@@ -5343,17 +5362,17 @@ sbactive() {
 sbshare() {
   rm -rf /etc/s-box/jhdy.txt /etc/s-box/vl_reality.txt /etc/s-box/vm_ws_argols.txt /etc/s-box/vm_ws_argogd.txt /etc/s-box/vm_ws.txt /etc/s-box/vm_ws_tls.txt /etc/s-box/hy2.txt /etc/s-box/tuic5.txt
   result_vl_vm_hy_tu && resvless && resvmess && reshy2 && restu5 && resanytls
-  cat /etc/s-box/vl_reality.txt 2>/dev/null >>/etc/s-box/jhdy.txt
-  cat /etc/s-box/vm_ws_argols.txt 2>/dev/null >>/etc/s-box/jhdy.txt
-  cat /etc/s-box/vm_ws_argogd.txt 2>/dev/null >>/etc/s-box/jhdy.txt
-  cat /etc/s-box/vm_ws.txt 2>/dev/null >>/etc/s-box/jhdy.txt
-  cat /etc/s-box/vm_ws_tls.txt 2>/dev/null >>/etc/s-box/jhdy.txt
   cat /etc/s-box/hy2.txt 2>/dev/null >>/etc/s-box/jhdy.txt
   cat /etc/s-box/tuic5.txt 2>/dev/null >>/etc/s-box/jhdy.txt
+  cat /etc/s-box/vl_reality.txt 2>/dev/null >>/etc/s-box/jhdy.txt
   cat /etc/s-box/anytls.txt 2>/dev/null >>/etc/s-box/jhdy.txt
   if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
     cat /etc/mita/mieru.txt 2>/dev/null >>/etc/s-box/jhdy.txt
   fi
+  cat /etc/s-box/vm_ws_tls.txt 2>/dev/null >>/etc/s-box/jhdy.txt
+  cat /etc/s-box/vm_ws_argols.txt 2>/dev/null >>/etc/s-box/jhdy.txt
+  cat /etc/s-box/vm_ws_argogd.txt 2>/dev/null >>/etc/s-box/jhdy.txt
+  cat /etc/s-box/vm_ws.txt 2>/dev/null >>/etc/s-box/jhdy.txt
   baseurl=$(base64 -w 0 </etc/s-box/jhdy.txt 2>/dev/null)
   v2sub=$(cat /etc/s-box/jhdy.txt 2>/dev/null)
   echo "$v2sub" >/etc/s-box/jh_sub.txt
