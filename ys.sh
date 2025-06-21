@@ -546,6 +546,7 @@ mihomo_port_auto() { # 配置完成
         echo "$port_any" > /etc/ys/anytls/port_any.txt
         echo "$socks5port" > /etc/ys/socks5/port_scoks5.txt
         echo "12345" > /etc/ys/socks5_in.txt
+        name_password_random   # 随机生成用户名,密码
     else
         vlport && vmport && hy2port && hy2ports && tu5port && tu5ports && anytlsport && socks5port
     fi
@@ -742,6 +743,30 @@ name_password() {
     all_password=$password
     echo "$all_name" >/etc/ys/info/all_name.txt
     echo "$all_password" >/etc/ys/info/all_password.txt
+}
+
+name_password_random() {
+    green "\n正在自動生成用戶名和密碼..."
+
+    # 生成隨機用戶名 (8 位字母和數字)
+    # tr -dc 'a-zA-Z0-9' 用於選擇允許的字符
+    # head -c 8 截取前8個字符
+    # /dev/urandom 提供高品質的隨機字節
+    all_name=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
+
+    # 生成隨機密碼 (12 位，包含大小寫字母、數字和特殊符號)
+    # tr -dc 'a-zA-Z0-9!@#$%^&*()_+-=' 用於選擇允許的字符
+    # head -c 12 截取前12個字符
+    all_password=$(head /dev/urandom | tr -dc A-Za-z0-9!@#$%^&*()_+-= | head -c 12)
+
+    echo "$all_name" >/etc/ys/info/all_name.txt
+    echo "$all_password" >/etc/ys/info/all_password.txt
+
+    green "========================================"
+    green "已自動生成並保存用戶名和密碼："
+    blue "用戶名 (all_name): $all_name"
+    blue "密碼 (all_password): $all_password"
+    green "========================================"
 }
 
 read_array_mihomo() { # 读取变量 READ_ARRAY_FILE="/root/mieru_array.txt"
@@ -2795,7 +2820,7 @@ fi
 if [[ -n $($status_cmd 2>/dev/null | grep -w "$status_pattern") && -f '/etc/ys/config.yaml' ]]; then
     echo -e "mihomo状态：$blue运行中$plain"
 elif [[ -z $($status_cmd 2>/dev/null | grep -w "$status_pattern") && -f '/etc/ys/config.yaml' ]]; then
-    echo -e "mihomo状态：$yellow未启动，选择10查看日志并反馈，建议切换正式版内核或卸载重装脚本$plain"
+    echo -e "mihomo状态：$yellow未启动，选择4查看日志并反馈，建议切换正式版内核或卸载重装脚本$plain"
 else
     echo -e "mihomo状态：$red未安装$plain"
 fi
