@@ -607,8 +607,8 @@ mieru_run() {
     mieru_setup     # 安装mieru 服务端
     mieru_port_auto # 设置mieru端口
     vps_ip
-
     mieru_read_peizi                           # 读取端口等信息
+    name_password
     mieru_config                               # 写入 mieru 服务端配置
     mita apply config /etc/mita/config.json # 配置生效命令
     sleep 2
