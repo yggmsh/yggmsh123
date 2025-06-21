@@ -223,9 +223,12 @@ inssb() {
   green "使用哪个内核版本？目前：1.10系列正式版内核支持geosite分流，1.10系列之后最新内核不支持geosite分流"
   yellow "1：使用1.10系列正式版内核 (回车默认)"
   yellow "2：使用1.10系列之后最新正式版内核"
-  readp "请选择【1-2】：" menu
+  yellow "3：使用最新测试版"
+  readp "请选择【1-3】：" menu
   if [ -z "$menu" ] || [ "$menu" = "1" ]; then
     sbcore=$(curl -Ls https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box | grep -Eo '"1\.10[0-9\.]*",' | sed -n 1p | tr -d '",')
+  elif [ "$menu" = "3" ]; then
+    upcore=$(curl -Ls https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box | grep -Eo '"[0-9.]*-[^"]*"' | sed -n 1p | tr -d '",')
   else
     sbcore=$(curl -Ls https://data.jsdelivr.com/v1/package/gh/SagerNet/sing-box | grep -Eo '"[0-9.]+",' | sed -n 1p | tr -d '",')
   fi
