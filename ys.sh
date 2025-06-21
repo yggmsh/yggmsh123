@@ -1322,12 +1322,12 @@ result_vl_vm_hy_tu() {
     uuid=$(cat /etc/ys/vless/uuid.txt 2>/dev/null)               # 读取uuid
     vl_port=$(cat /etc/ys/vless/port_vl_re.txt 2>/dev/null)      # 读取端口
     vl_name=$(cat /etc/ys/vless/server-name.txt 2>/dev/null)     # 读取 www.yahoo.com
-    $private_key$(cat /etc/ys/vless/private_key.txt 2>/dev/null) # 读取服务端private_key值
+    $private_key=$(cat /etc/ys/vless/private_key.txt 2>/dev/null) # 读取服务端private_key值
     public_key=$(cat /etc/ys/vless/public_key.txt 2>/dev/null)   # 读取客户端public_key值
     short_id=$(cat /etc/ys/vless/short_id.txt 2>/dev/null)       # 读取 short-id
 
     # anytls 需要的配置信息
-    "anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
+    #"anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
     cl_any_ip=$server_ip
     port_any=(cat /etc/ys/anytls/port_any.txt)
     ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
