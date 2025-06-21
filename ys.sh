@@ -1299,14 +1299,13 @@ result_vl_vm_hy_tu_anytls() {
 # 显示节点信息  修改完了
 mihomo_read_link() {
     rm -rf /etc/ys/jhdy.txt /etc/ys/vless/vl_reality.txt /etc/ys/hysteria2/hy2.txt /etc/ys/tuic5/tuic5.txt /etc/ys/anytls/anytls.txt
-    result_vl_vm_hy_tu_anytls
+    result_vl_vm_hy_tu_anytls 
     cat /etc/ys/hysteria2/hy2.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/tuic5/tuic5.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/vless/vl_reality.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/anytls/anytls.txt 2>/dev/null >>/etc/ys/jhdy.txt
     if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
         cat /etc/mita/mieru.txt 2>/dev/null >>/etc/ys/jhdy.txt
-        mieru_daoru
     fi
     baseurl=$(base64 -w 0 </etc/ys/jhdy.txt 2>/dev/null)
     v2sub=$(cat /etc/ys/jhdy.txt 2>/dev/null)
@@ -1320,6 +1319,9 @@ mihomo_read_link() {
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
     mihomo_client # 创建 sing-box 客户端与 mihomo 客户端配置文件
+    if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
+        mieru_daoru
+    fi
 }
 # 显示节点信息  修改完了
 ###############################################################################################################
