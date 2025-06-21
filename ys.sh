@@ -1839,12 +1839,12 @@ mihomo_run() {
     chmod 777 /etc/ys/vless
     mkdir -p /etc/ys/vmess
     chmod 777 /etc/ys/vmess
-    mkdir -p /etc/ys/Hysteria2
-    chmod 777 /etc/ys/Hysteria2
+    mkdir -p /etc/ys/hysteria2
+    chmod 777 /etc/ys/hysteria2
     mkdir -p /etc/ys/tuic5
     chmod 777 /etc/ys/tuic5
-    mkdir -p /etc/ys/Anytls
-    chmod 777 /etc/ys/Anytls
+    mkdir -p /etc/ys/anytls
+    chmod 777 /etc/ys/anytls
     mkdir -p /etc/ys/socks5
     chmod 777 /etc/ys/socks5
     echo "12345" > /etc/ys/socks5_in.txt
