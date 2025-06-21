@@ -539,26 +539,13 @@ mihomo_port_auto() { # 配置完成
         done
         echo
         blue "根据Vmess-ws协议是否启用TLS，随机指定支持CDN优选IP的标准端口：$port_vm_ws"
-        # 把 mihomo 生成的端口,写入mihomo_array.txt
-        mihomo_array=()
-        for i in {1..6}; do
-            mihomo_array+=("${ports[$i]}")
-        done
-        if [ -f "/etc/mita/config.json" ] && [ -f "/etc/ys/mieru" ] && [ -f "/root/mieru_array.txt" ]; then
-            READ_ARRAY_FILE="/root/mieru_array.txt"
-            read_array_mihomo # 读取 mieru 的端口信息
-            for item1 in "${mieru_array[@]}"; do
-                # 遍历第二个数组的每个元素
-                for item2 in "${mihomo_array[@]}"; do
-                    # 比较元素是否相同
-                    if [[ "$item1" == "$item2" ]]; then
-                        mihomo_port_auto # 返回本函数
-                    fi
-                done
-            done
-        fi
-        WRITE_ARRAY_FILT="/root/mihomo_array.txt"
-        write_array_mihomo # 写入mihomo函数
+        echo "$port_vl_re" >/etc/ys/vless/port_vl_re.txt
+        echo "$port_vm_ws" >/etc/ys/vmess/port_vm_ws.txt
+        echo "$port_hy2" >/etc/ys/hysteria2/port_hy2.txt
+        echo "$port_tu" >/etc/ys/tuic5/port_tu.txt
+        echo "$port_any" >/etc/ys/anytls/port_any.txt
+        echo "$socks5port" > /etc/ys/socks5/port_scoks5.txt
+        echo "12345" > /etc/ys/socks5_in.txt
     else
         vlport && vmport && hy2port && hy2ports && tu5port && tu5ports && anytlsport && socks5port
     fi
