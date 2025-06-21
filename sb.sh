@@ -4447,7 +4447,7 @@ mieru_daoru() {
   tls=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.enabled')
   vm_name=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.inbounds[1].tls.server_name')
   xxxx=$hy2_ports
-  ports_hy2="${xxxx//:/-}"
+  hy2_ports="${xxxx//:/-}"
   if [[ "$tls" = "false" ]]; then
     if [[ -f /etc/s-box/cfymjx.txt ]]; then
       vm_name=$(cat /etc/s-box/cfymjx.txt 2>/dev/null)
@@ -4573,7 +4573,7 @@ proxies:
   type: hysteria2                                      
   server: $cl_hy2_ip                               
   #port: $hy2_port 
-  ports: $hy2_ports,$hy2_port                               
+  ports: $hy2_ports,$hy2_port                           
   password: $all_password
   sni: $hy2_name  
   alpn:                                 # 支持的应用层协议协商列表，按优先顺序排列。
