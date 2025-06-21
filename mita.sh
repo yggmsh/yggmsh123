@@ -321,46 +321,6 @@ udp_port() {
     [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
 }
 
-read_array_mieru() { # 读取变量 READ_ARRAY_FILE="/root/mihomo_array.txt"
-    # 检查文件是否存在
-    READ_ARRAY_FILE="/root/mihomo_array.txt"
-    if [[ ! -f "$READ_ARRAY_FILE" ]]; then
-        echo "错误：文件 $READ_ARRAY_FILE 不存在。退出 read_array() 函数。"
-        return 1 # 返回非零状态码表示失败
-    fi
-
-    # 使用 mapfile (或 readarray) 将文件内容读取到 mihomo_array 数组中
-    # -t 选项去除每行的换行符
-    mapfile -t mihomo_array <"$READ_ARRAY_FILE"
-
-    echo "已从 $READ_ARRAY_FILE 读取数据到 mihomo_array 数组。"
-    return 0 # 返回零状态码表示成功
-}
-
-write_array_mieru() {                  # 写入变量 WRITE_ARRAY_FILT="/root/mieru_array.txt"
-    WRITE_ARRAY_FILT="/root/mieru_array.txt"
-    local arr_name="${1:-mieru_array}" # 默认为 mieru_array
-    local arr_ref                      # 声明一个nameref变量
-
-    # 使用nameref来间接引用数组 (Bash 4.3+ 支持)
-    if declare -n arr_ref="$arr_name" 2>/dev/null; then
-        # 确保文件可写。如果文件不存在，追加写入会创建文件。
-        if [[ -f "$WRITE_ARRAY_FILT" && ! -w "$WRITE_ARRAY_FILT" ]]; then
-            chmod 777 $WRITE_ARRAY_FILT
-        fi
-
-        # 遍历数组并追加写入文件
-        for item in "${arr_ref[@]}"; do
-            echo "$item" >>"$WRITE_ARRAY_FILT" # 使用 >> 进行追加写入
-        done
-
-        echo "已将 ${arr_name} 数组内容追加写入 $WRITE_ARRAY_FILT。"
-        return 0
-    else
-        echo "错误：数组 '${arr_name}' 不存在或不是有效的数组名。"
-        return 1
-    fi
-} 
 
 chooseport() { #  回车生成一个端口,并检查端口是否被占用
     if [[ -z $port ]]; then
@@ -543,6 +503,8 @@ mieru_jieche() {
 }
 # 读取个配置信息
 mieru_read_peizi() { 
+    server_ip=$(cat /etc/mita/ipv4.txt 2>/dev/null)
+    server_ipv6=$(cat /etc/mita/ipv6.txt 2>/dev/null)
     port_mieru=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
     xieyi_one=$(cat /etc/mita/xieyi_one.txt 2>/dev/null)
     ports_mieru=$(cat /etc/mita/ports_mieru.txt 2>/dev/null)
@@ -644,6 +606,8 @@ mieru_run() {
     openyn          # 询问是否开放防火墙
     mieru_setup     # 安装mieru 服务端
     mieru_port_auto # 设置mieru端口
+    vps_ip
+
     mieru_read_peizi                           # 读取端口等信息
     mieru_config                               # 写入 mieru 服务端配置
     mita apply config /etc/mita/config.json # 配置生效命令
@@ -656,6 +620,79 @@ mieru_run() {
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
 }
+
+v4v6() {
+    v4=$(curl -s4m5 icanhazip.com -k)
+    v6=$(curl -s6m5 icanhazip.com -k)
+}
+###############################################################################################################
+
+# 检查当前服务器是否正在使用 Cloudflare Warp 服务。  wgcfv6 变量 wgcfv4 变量  两个变量里是否存储 on 或 plus
+warpcheck() {
+    wgcfv6=$(curl -s6m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
+    wgcfv4=$(curl -s4m5 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
+}
+
+###############################################################################################################
+vps_ip() {    # 获取本地vps的真实ip
+    warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。  wgcfv6 变量 wgcfv4 变量  两个变量里是否存储 on 或 plus
+    if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
+        v4v6
+        vps_ipv4="$v4"
+        vps_ipv6="$v6"
+        echo "$vps_ipv4" > /etc/mita/ipv4.txt
+        echo "$vps_ipv6" > /etc/mita/ipv6.txt 
+    else
+        systemctl stop wg-quick@wgcf >/dev/null 2>&1
+        kill -15 $(pgrep warp-go) >/dev/null 2>&1 && sleep 2
+        v4v6
+        vps_ipv4="$v4"
+        vps_ipv6="$v6"
+        echo "$vps_ipv4" > /etc/mita/ipv4.txt
+        echo "$vps_ipv6" > /etc/mita/ipv6.txt 
+        systemctl start wg-quick@wgcf >/dev/null 2>&1
+        systemctl restart warp-go >/dev/null 2>&1
+        systemctl enable warp-go >/dev/null 2>&1
+        systemctl start warp-go >/dev/null 2>&1
+    fi
+}
+warp_ip() {
+    warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。
+
+    # 如果当前没有使用 Warp，则尝试启动它
+    if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
+        echo "当前未检测到 Cloudflare Warp 服务，尝试启动..."
+        systemctl start wg-quick@wgcf >/dev/null 2>&1
+        systemctl restart warp-go >/dev/null 2>&1
+        systemctl enable warp-go >/dev/null 2>&1
+        systemctl start warp-go >/dev/null 2>&1
+        sleep 5 # 等待Warp服务完全启动并生效
+
+        # 启动后再次检查Warp状态，确保变量已更新
+        warpcheck
+
+        # 只要IPv4或IPv6中有一个Warp服务开启，就认为成功
+        if [[ $wgcfv4 =~ on|plus || $wgcfv6 =~ on|plus ]]; then
+            echo "Cloudflare Warp 服务已成功启动。"
+            v4v6 # 获取Warp后的IP
+            warp_ipv4="$v4"
+            warp_ipv6="$v6"
+        fi
+    else # 如果Warp已经在使用中
+        echo "Cloudflare Warp 服务已在运行中。"
+        # 确保Warp服务状态良好，虽然可能多余，但可以作为兜底
+        systemctl start wg-quick@wgcf >/dev/null 2>&1
+        systemctl restart warp-go >/dev/null 2>&1
+        systemctl enable warp-go >/dev/null 2>&1
+        systemctl start warp-go >/dev/null 2>&1
+        sleep 2 # 稍作等待以确保服务稳定
+
+        v4v6 # 获取Warp后的IP
+        warp_ipv4="$v4"
+        warp_ipv6="$v6"
+    fi
+}
+###############################################################################################################
 
 # 重启mieru
 mieru_restart(){
@@ -692,6 +729,12 @@ green " 8. 更新脚本(完)"
 green " 9. 更新mieru(完)"
 green " 0. 退出脚本"
 echo
+red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+vps_ip # 获取本地vps的真实ip
+echo -e "本地IPV4地址：${blue}${vps_ipv4}$plain    本地IPV6地址：${blue}${vps_ipv6}$plain"
+warp_ip # 获取warp的ip
+echo -e "WARP IPV4地址：${blue}${warp_ipv4}$plain    WARP IPV6地址：${blue}${warp_ipv6}$plain"
+red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 readp "请输入数字【0-9】:" Input
 case "$Input" in
 1) mieru_run ;;
