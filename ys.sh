@@ -1741,9 +1741,9 @@ proxy-groups:
     - anytls-$hostname
 
 rules:
-  - DOMAIN-SUFFIX,googleapis.cn,🚀 节点选择
-  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,🚀 节点选择
-  - DOMAIN-SUFFIX,xn--ngstr-cn-8za9o.com,🚀 节点选择
+  - DOMAIN-SUFFIX,googleapis.cn,🌍选择代理节点
+  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,🌍选择代理节点
+  - DOMAIN-SUFFIX,xn--ngstr-cn-8za9o.com,🌍选择代理节点
 
   - GEOIP,CN,DIRECT
   - GEOIP,LAN,DIRECT
@@ -2837,9 +2837,9 @@ proxy-groups:
     - mieru-$hostname
 
 rules:
-  - DOMAIN-SUFFIX,googleapis.cn,🚀 节点选择
-  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,🚀 节点选择
-  - DOMAIN-SUFFIX,xn--ngstr-cn-8za9o.com,🚀 节点选择
+  - DOMAIN-SUFFIX,googleapis.cn,🌍选择代理节点
+  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com,🌍选择代理节点
+  - DOMAIN-SUFFIX,xn--ngstr-cn-8za9o.com,🌍选择代理节点
 
   - GEOIP,CN,DIRECT
   - GEOIP,LAN,DIRECT
