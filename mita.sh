@@ -349,7 +349,7 @@ name_password() {
 # 输入socks5链接的 sing-box 或 mihomo 端口
 socks5port() {
     readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
-    chooseport
+    #chooseport
     portsocks5=$port
     echo "$socks5port" >/etc/mita/port_scoks5.txt
 }
