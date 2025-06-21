@@ -398,21 +398,6 @@ mieruport() { #配置mieru主端口与协议   已完成
     readp "\n设置mieru主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     # 增加写入txt数据,#还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-    mieru_array=()
-    mieru_array+=$port
-    WRITE_ARRAY_FILT="/root/mieru_array.txt"
-    # 检查文件是否存在
-    read_array_mieru
-    for item1 in "${mihomo_array[@]}"; do
-        # 遍历第二个数组的每个元素
-        for item2 in "${mieru_array[@]}"; do
-            # 比较元素是否相同
-            if [[ "$item1" == "$item2" ]]; then
-                mieruport
-            fi
-        done
-    done
-    write_array_mieru # 写入端口信息
     port_mieru=$prot
     echo "$port_mieru" > /etc/mita/port_mieru.txt
 }
@@ -438,21 +423,6 @@ mieruports() {
             if ! tcp_port "$xport" || ! udp_port "$xport"; then
                 mieruports
             fi
-            mieru_array+=($xport)
-            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-            READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru # 读取 mihomo 占用的端口
-            for item1 in "${mihomo_array[@]}"; do
-                # 遍历第二个数组的每个元素
-                for item2 in "${mieru_array[@]}"; do
-                    # 比较元素是否相同
-                    if [[ "$item1" == "$item2" ]]; then
-                        mieruports
-                    fi
-                done
-            done
-            WRITE_ARRAY_FILT="/root/mieru_array.txt"
-            write_array_mieru #写入 mieru 端口文件
         done
         ports_mieru="$num1-$num2"
         echo "$ports_mieru" > /etc/mita/ports_mieru.txt
@@ -466,20 +436,6 @@ mieruports() {
             if ! tcp_port "$xport" || ! udp_port "$xport"; then
                 mieruports
             fi
-            mieru_array+=($xport)
-            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-            READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru # 读取 mihomo 占用的端口
-            for item1 in "${mihomo_array[@]}"; do
-                # 遍历第二个数组的每个元素
-                for item2 in "${mieru_array[@]}"; do
-                    # 比较元素是否相同
-                    if [[ "$item1" == "$item2" ]]; then
-                        mieruports
-                    fi
-                done
-            done
-            write_array_mieru #写入 mieru 端口文件
         done
         ports_mieru=$ports_x
         echo "$ports_mieru" > /etc/mita/ports_mieru.txt
@@ -548,20 +504,6 @@ mieru_port_auto() {
             if ! tcp_port "$xport" || ! udp_port "$xport"; then
                 mieru_port_auto
             fi
-            mieru_array+=($xport)
-            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端口
-            READ_ARRAY_FILE="/root/mihomo_array.txt"
-            read_array_mieru                      # 读取 mihomo 占用的端口
-            for item1 in "${mihomo_array[@]}"; do # 目的是看看有没有跟mihomo的使用端口重复
-                # 遍历第二个数组的每个元素
-                for item2 in "${mieru_array[@]}"; do
-                    # 比较元素是否相同
-                    if [[ "$item1" == "$item2" ]]; then
-                        mieru_port_auto
-                    fi
-                done
-            done
-            write_array_mieru #写入 mieru 端口文件
         done
         port_mieru=${ports[0]}
         echo "$port_mieru" >/etc/mita/port_mieru.txt
@@ -698,9 +640,6 @@ mieru_run() {
     openyn          # 询问是否开放防火墙
     mieru_setup     # 安装mieru 服务端
     mieru_port_auto # 设置mieru端口
-    if [[ ! -f '/etc/mita/all_name.txt' || ! -f '/etc/mita/all_password.txt' ]]; then
-        name_password
-    fi
     mieru_read_peizi                           # 读取端口等信息
     mieru_config                               # 写入 mieru 服务端配置
     mita apply config /etc/mita/config.json # 配置生效命令
