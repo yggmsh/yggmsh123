@@ -615,7 +615,11 @@ mieru_run() {
     echo
     mieru_link # 显示配置信息
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-
+    mita apply config /etc/mita/config.json
+    mita stop
+    mita start
+    mita reload
+    mita status
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
 }
