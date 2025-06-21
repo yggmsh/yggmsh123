@@ -539,14 +539,14 @@ mihomo_port_auto() { # 配置完成
         done
         echo
         blue "根据Vmess-ws协议是否启用TLS，随机指定支持CDN优选IP的标准端口：$port_vm_ws"
-        echo "$port_vl_re" > /etc/ys/vless/port_vl_re.txt
-        echo "$port_vm_ws" > /etc/ys/vmess/port_vm_ws.txt
-        echo "$port_hy2" > /etc/ys/hysteria2/port_hy2.txt
-        echo "$port_tu" > /etc/ys/tuic5/port_tu.txt
-        echo "$port_any" > /etc/ys/anytls/port_any.txt
-        echo "$socks5port" > /etc/ys/socks5/port_scoks5.txt
-        echo "12345" > /etc/ys/socks5_in.txt
-        name_password_random   # 随机生成用户名,密码
+        echo "$port_vl_re" >/etc/ys/vless/port_vl_re.txt
+        echo "$port_vm_ws" >/etc/ys/vmess/port_vm_ws.txt
+        echo "$port_hy2" >/etc/ys/hysteria2/port_hy2.txt
+        echo "$port_tu" >/etc/ys/tuic5/port_tu.txt
+        echo "$port_any" >/etc/ys/anytls/port_any.txt
+        echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+        echo "12345" >/etc/ys/socks5_in.txt
+        name_password_random # 随机生成用户名,密码
     else
         vlport && vmport && hy2port && hy2ports && tu5port && tu5ports && anytlsport && socks5port
     fi
@@ -564,9 +564,9 @@ mihomo_port_auto() { # 配置完成
     uuid=$(uuidgen)
     blue "已确认uuid (密码)：${uuid}"
     blue "已确认Vmess的path路径：${uuid}-vm"
-    echo "$uuid" > /etc/ys/vless/uuid.txt
-    echo "$uuid" > /etc/ys/vmess/uuid.txt
-    echo "${uuid}-vm" > /etc/ys/vmess/path.txt
+    echo "$uuid" >/etc/ys/vless/uuid.txt
+    echo "$uuid" >/etc/ys/vmess/uuid.txt
+    echo "${uuid}-vm" >/etc/ys/vmess/path.txt
 }
 
 ###############################################################################################################
@@ -726,14 +726,14 @@ anytlsport() {
     readp "\n设置Anytls主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     port_any=$port
-    echo "$port_any" > /etc/ys/anytls/port_any.txt
+    echo "$port_any" >/etc/ys/anytls/port_any.txt
 }
 socks5port() {
     readp "\n设置socks5主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     socks5port=$port
-    echo "$socks5port" > /etc/ys/socks5/port_scoks5.txt
-    echo "12345" > /etc/ys/socks5_in.txt
+    echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
+    echo "12345" >/etc/ys/socks5_in.txt
 }
 
 name_password() {
@@ -1163,97 +1163,18 @@ argopid() {
 ###############################################################################################################
 
 # vless reality vision 客户端配置信息
-resvless() {
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vl-reality-$hostname"
-    echo "$vl_link" >/etc/ys/vless/vl_reality.txt
-    red "🚀【 vless-reality-vision 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$vl_link${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vless/vl_reality.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-}
-
-
-# hysteria2 节点信息
-reshy2() {
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    #hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&mport=$hyps&sni=$hy2_name#hy2-$hostname"
-    hy2_link="hysteria2://$all_password@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
-    echo "$hy2_link" >/etc/ys/hysteria2/hy2.txt
-    red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$hy2_link${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/hysteria2/hy2.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-}
-
-# tuic5 节点信息
-restu5() {
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    tuic5_link="tuic://$uuid:$all_password@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&allow_insecure=$ins#tu5-$hostname"
-    echo "$tuic5_link" >/etc/ys/tuic5/tuic5.txt
-    red "🚀【 Tuic-v5 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$tuic5_link${plain}"
-    echo
-    echo "二维码【v2rayn、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/tuic5/tuic5.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-}
-
-# anytls 节点信息
-resanytls() {
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    anytls_link="anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
-    echo "$anytls_link" >/etc/ys/anytls/anytls.txt
-    red "🚀【 anytls 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、虎兕husi、Exclave、小火箭shadowrocket】"
-    echo -e "${yellow}$anytls_link${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、虎兕husi、Exclave、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/anytls/anytls.txt)"
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-    echo "nekobox分享链接我不会,就手动选择mieru插件,手动填写吧"
-    red "🚀【 mieru 】节点信息如下：" && sleep 2
-    echo "服务器:$address_ip"
-    echo "服务器端口:$mita_port"
-    echo "协议:TCP"
-    echo "用户名:$all_name"
-    echo "密码:$all_password"
-    echo
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo
-}
 
 ###############################################################################################################
 # 函数是用来给 节点信息的各个变量赋值的,用来判断 自签证书还是 acme证书等  修改完了
-result_vl_vm_hy_tu() {
+result_vl_vm_hy_tu_anytls() {
     if [[ -f /root/ygkkkca/cert.crt && -f /root/ygkkkca/private.key && -s /root/ygkkkca/cert.crt && -s /root/ygkkkca/private.key ]]; then
         ym=$(bash ~/.acme.sh/acme.sh --list | tail -1 | awk '{print $1}')
         echo $ym >/root/ygkkkca/ca.log #  把acme 申请的域名写入 ca.log  中
     fi
 
-    sbdnsip=$(cat /etc/ys/info/sbdnsip.log 2>/dev/null)                                                 # sbdnsip 存储  dns tls://8.8.8.8/dns-query
-    server_ip=$(cat /etc/ys/info/server_ip.log 2>/dev/null)                                             # server_ip 存储  vps的物理ip
-    server_ipcl=$(cat /etc/ys/info/server_ipcl.log 2>/dev/null)                                         # server_ipcl 存储 ip
+    sbdnsip=$(cat /etc/ys/info/sbdnsip.log 2>/dev/null)         # sbdnsip 存储  dns tls://8.8.8.8/dns-query
+    server_ip=$(cat /etc/ys/info/server_ip.log 2>/dev/null)     # server_ip 存储  vps的物理ip
+    server_ipcl=$(cat /etc/ys/info/server_ipcl.log 2>/dev/null) # server_ipcl 存储 ip
     hostname=$(cat /etc/ys/info/hostname.log 2>/dev/null)
 
     # hysteria2 link需要的配置信息  完成
@@ -1290,13 +1211,95 @@ result_vl_vm_hy_tu() {
     port_any=$(cat /etc/ys/anytls/port_any.txt 2>/dev/null)
     ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
 
+    resvless() {
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        vl_link="vless://$uuid@$server_ip:$vl_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$vl_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#vl-reality-$hostname"
+        echo "$vl_link" >/etc/ys/vless/vl_reality.txt
+        red "🚀【 vless-reality-vision 】节点信息如下：" && sleep 2
+        echo
+        echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+        echo -e "${yellow}$vl_link${plain}"
+        echo
+        echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vless/vl_reality.txt)"
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        echo
+    }
+
+    # hysteria2 节点信息
+    reshy2() {
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        #hy2_link="hysteria2://$uuid@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&mport=$hyps&sni=$hy2_name#hy2-$hostname"
+        hy2_link="hysteria2://$all_password@$sb_hy2_ip:$hy2_port?security=tls&alpn=h3&insecure=$ins_hy2&sni=$hy2_name#hy2-$hostname"
+        echo "$hy2_link" >/etc/ys/hysteria2/hy2.txt
+        red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
+        echo
+        echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+        echo -e "${yellow}$hy2_link${plain}"
+        echo
+        echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/hysteria2/hy2.txt)"
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        echo
+    }
+
+    # tuic5 节点信息
+    restu5() {
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        tuic5_link="tuic://$uuid:$all_password@$sb_tu5_ip:$tu5_port?congestion_control=bbr&udp_relay_mode=native&alpn=h3&sni=$tu5_name&allow_insecure=$ins#tu5-$hostname"
+        echo "$tuic5_link" >/etc/ys/tuic5/tuic5.txt
+        red "🚀【 Tuic-v5 】节点信息如下：" && sleep 2
+        echo
+        echo "分享链接【v2rayn、nekobox、小火箭shadowrocket】"
+        echo -e "${yellow}$tuic5_link${plain}"
+        echo
+        echo "二维码【v2rayn、nekobox、小火箭shadowrocket】"
+        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/tuic5/tuic5.txt)"
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        echo
+    }
+
+    # anytls 节点信息
+    resanytls() {
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        anytls_link="anytls://$all_password@$cl_any_ip:$port_any/?insecure=1#anytls-$hostname"
+        echo "$anytls_link" >/etc/ys/anytls/anytls.txt
+        red "🚀【 anytls 】节点信息如下：" && sleep 2
+        echo
+        echo "分享链接【v2rayn、v2rayng、nekobox、虎兕husi、Exclave、小火箭shadowrocket】"
+        echo -e "${yellow}$anytls_link${plain}"
+        echo
+        echo "二维码【v2rayn、v2rayng、nekobox、虎兕husi、Exclave、小火箭shadowrocket】"
+        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/anytls/anytls.txt)"
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        echo
+        echo "nekobox分享链接我不会,就手动选择mieru插件,手动填写吧"
+        red "🚀【 mieru 】节点信息如下：" && sleep 2
+        echo "服务器:$address_ip"
+        echo "服务器端口:$mita_port"
+        echo "协议:TCP"
+        echo "用户名:$all_name"
+        echo "密码:$all_password"
+        echo
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        echo
+    }
+    reshy2
+    restu5
+    resvless
+    resanytls
 }
 
 ###############################################################################################################
 # 显示节点信息  修改完了
 mihomo_read_link() {
     rm -rf /etc/ys/jhdy.txt /etc/ys/vless/vl_reality.txt /etc/ys/hysteria2/hy2.txt /etc/ys/tuic5/tuic5.txt /etc/ys/anytls/anytls.txt
-    result_vl_vm_hy_tu && reshy2 && restu5 && resvless && resanytls # 读取配置信息  hy2link  tu5link vlesslink anytlslink
+    result_vl_vm_hy_tu_anytls
     cat /etc/ys/hysteria2/hy2.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/tuic5/tuic5.txt 2>/dev/null >>/etc/ys/jhdy.txt
     cat /etc/ys/vless/vl_reality.txt 2>/dev/null >>/etc/ys/jhdy.txt
@@ -1785,7 +1788,7 @@ mihomo_run() {
     chmod 777 /etc/ys/anytls
     mkdir -p /etc/ys/socks5
     chmod 777 /etc/ys/socks5
-    echo "12345" > /etc/ys/socks5_in.txt
+    echo "12345" >/etc/ys/socks5_in.txt
     v6                  # 核心逻辑部分，根据网络环境（特别是 IPv4 或纯 IPv6）进行配置，并处理 Warp 的状态。
     openyn              # 询问是否开放防火墙
     mihomo_setup        # 选择 mihomo 安装 正式版 或 测试版
@@ -1799,7 +1802,7 @@ mihomo_run() {
     wget -q -O /root/geoip.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db
     wget -q -O /root/geosite.db https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db
     red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    
+
     green "五、自动生成warp-wireguard出站账户" && sleep 2
     warpwg        # 获取 warp 密钥,ipv6 等值
     mihomo_config # 创建 mihomo 服务端配置文件
@@ -1917,15 +1920,15 @@ menu_3() {
                 menu_3_1
             fi
         elif [ "$menu" == "3" ]; then
-		echo "还没写"
+            echo "还没写"
         elif [ "$menu" == "4" ]; then
-		echo "还没写"
+            echo "还没写"
         elif [ "$menu" == "5" ]; then
-		echo "还没写"
+            echo "还没写"
         elif [ "$menu" == "0" ]; then
             menu_3_1 #返回上级菜单
         else
-		mihomo
+            mihomo
         fi
     elif [ $menu == 2 ]; then
         echo "重新设置Tuic5协议"
@@ -2028,7 +2031,7 @@ menu_3() {
     fi
 }
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-menu_8(){
+menu_8() {
     echo "1.节点推送到Telegram"
     echo "2.节点同步到Gitlab"
     echo "0.返回到主菜单"
@@ -2416,7 +2419,6 @@ bbr() {
     fi
 }
 
-
 # 主菜单11 一键原版BBR+FQ加速   不需要修改   ^^^^^
 ###############################################################################################################
 # 主菜单11 管理 Acme 申请域名证书   不需要修改
@@ -2466,10 +2468,10 @@ inssbwpph() {
             until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") && -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
                 [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
             done
-        fi        
+        fi
         oldsocks5_in=$(cat /etc/ys/socks5_in.txt)
         sed -i 's/'"$oldsocks5_in"'/'"$port"'/g' /etc/ys/config.yaml
-        echo "$port" > /etc/ys/socks5_in.txt
+        echo "$port" >/etc/ys/socks5_in.txt
         mihomo_chongqi # 重启ys
     }
     unins() {
