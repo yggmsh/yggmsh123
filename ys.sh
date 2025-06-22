@@ -1276,7 +1276,7 @@ result_vl_vm_hy_tu_anytls() {
 
     }
     resvmess(){
-        vmess_link=vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname
+        vmess_link="vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname"
         echo "$vmess_link" >/etc/ys/vmess/vmess_ws_tls.txt
         white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         red "🚀【 vmess-ws-tls 】节点信息如下：" && sleep 2
