@@ -2847,6 +2847,22 @@ proxies:
   password: $all_password
   multiplexing: MULTIPLEXING_OFF
 
+- name: vmess-ws-$hostname                         
+  type: vmess
+  server: $vmadd_local                        
+  port: $vm_port                                     
+  uuid: $uuid       
+  alterId: 0
+  cipher: auto
+  udp: true
+  tls: true
+  network: ws
+  servername: $vm_name                    
+  ws-opts:
+    path: "$ws_path"                             
+    headers:
+      Host: $vm_name  
+
 proxy-groups:
 - name: 负载均衡
   type: load-balance
@@ -2883,6 +2899,7 @@ proxy-groups:
     - vless-reality-vision-$hostname 
     - anytls-$hostname
     - mieru-$hostname
+    - vmess-ws-$hostname 
 
 rules:
   - DOMAIN-SUFFIX,googleapis.cn,🌍选择代理节点
