@@ -1200,7 +1200,7 @@ result_vl_vm_hy_tu_anytls() {
     # vmess ws
     port_vm_ws=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
     vmadd_local="www.visa.com.sg"
-    vmadd_local_local="www.visa.com.sg"
+    vmadd_are_local="www.visa.com.sg"
     vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
     vm_name=$(cat /root/ygkkkca/ca.log)
     ws_path="$uuid-dx"
