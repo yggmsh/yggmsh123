@@ -2732,8 +2732,7 @@ all_name=$(cat /etc/mita/all_name.txt 2>/dev/null)
 all_password=$(cat /etc/mita/all_password.txt 2>/dev/null)
 socks5port=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
 
-$vmadd_local
-        vmess_link=vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname
+
 # vmess ws tls
 vmadd_local="www.visa.con.sg"
 vmadd_local_local="www.visa.con.sg"
