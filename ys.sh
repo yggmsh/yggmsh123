@@ -2346,7 +2346,7 @@ mihomo_restart_stop() { # 重启mihomo  关闭mihomo
     if [ "$menu" = "1" ]; then
         mihomo_chongqi # 重启mihomo 函数
         sbactive       # 检查 mihomo 配置文件是否存在的 函数
-        green "mihomo服务已重启\n" && sleep 3 && sb
+        green "mihomo服务已重启\n" && sleep 3 && mihomo
     elif [ "$menu" = "2" ]; then
         if [[ x"${release}" == x"alpine" ]]; then
             rc-service ys stop
