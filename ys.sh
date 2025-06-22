@@ -935,21 +935,21 @@ listeners:
    6=500-1000
    7=500-1000
 
-- name: vmess-sb
-  type: vmess
-  port: ${port_vm_ws} # 支持使用ports格式，例如200,302 or 200,204,401-429,501-503
-  listen: 0.0.0.0
-  # rule: sub-rule-name1 # 默认使用 rules，如果未找到 sub-rule 则直接使用 rules
-  # proxy: proxy # 如果不为空则直接将该入站流量交由指定 proxy 处理 (当 proxy 不为空时，这里的 proxy 名称必须合法，否则会出错)
-  users:
-    - username: $all_name
-      uuid: ${uuid}
-      alterId: 0
-  ws-path: "${uuid}-vm" # 如果不为空则开启 websocket 传输层
-  # grpc-service-name: "GunService" # 如果不为空则开启 grpc 传输层
-  # 下面两项如果填写则开启 tls（需要同时填写）
-  certificate: $certificatec_vmess_ws
-  private-key: $certificatep_vmess_ws
+# - name: vmess-sb
+#   type: vmess
+#   port: ${port_vm_ws} # 支持使用ports格式，例如200,302 or 200,204,401-429,501-503
+#   listen: 0.0.0.0
+#   # rule: sub-rule-name1 # 默认使用 rules，如果未找到 sub-rule 则直接使用 rules
+#   # proxy: proxy # 如果不为空则直接将该入站流量交由指定 proxy 处理 (当 proxy 不为空时，这里的 proxy 名称必须合法，否则会出错)
+#   users:
+#     - username: $all_name
+#       uuid: ${uuid}
+#       alterId: 0
+#   ws-path: "${uuid}-vm" # 如果不为空则开启 websocket 传输层
+#   # grpc-service-name: "GunService" # 如果不为空则开启 grpc 传输层
+#   # 下面两项如果填写则开启 tls（需要同时填写）
+#   certificate: $certificatec_vmess_ws
+#   private-key: $certificatep_vmess_ws
 
 proxies:
 - name: "MyWireGuard"
@@ -1275,23 +1275,23 @@ result_vl_vm_hy_tu_anytls() {
         white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
     }
-    resvmess(){
-        vmess_link="vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname"
-        echo "$vmess_link" >/etc/ys/vmess/vmess_ws_tls.txt
-        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        red "🚀【 vmess-ws-tls 】节点信息如下：" && sleep 2
-        echo
-        echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-        echo -e "${yellow}$vmess_link${plain}"
-        echo 
-        echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vmess_ws_tls.txt)"
-    }
+    # resvmess(){
+    #     vmess_link="vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname"
+    #     echo "$vmess_link" >/etc/ys/vmess/vmess_ws_tls.txt
+    #     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    #     red "🚀【 vmess-ws-tls 】节点信息如下：" && sleep 2
+    #     echo
+    #     echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+    #     echo -e "${yellow}$vmess_link${plain}"
+    #     echo 
+    #     echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+    #     qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vmess_ws_tls.txt)"
+    # }
     reshy2
     restu5
     resvless
     resanytls
-    resvmess
+#    resvmess
 }
 
 ###############################################################################################################
@@ -1306,7 +1306,7 @@ mihomo_read_link() {
     if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
         cat /etc/mita/mieru.txt 2>/dev/null >>/etc/ys/jhdy.txt
     fi
-    cat /etc/ys/vmess/vmess_ws_tls.txt 2>/dev/null >>/etc/ys/jhdy.txt
+#    cat /etc/ys/vmess/vmess_ws_tls.txt 2>/dev/null >>/etc/ys/jhdy.txt
     baseurl=$(base64 -w 0 </etc/ys/jhdy.txt 2>/dev/null)
     v2sub=$(cat /etc/ys/jhdy.txt 2>/dev/null)
     echo "$v2sub" >/etc/ys/jh_sub.txt
@@ -1432,7 +1432,6 @@ mihomo_client() {
         "tuic5-$hostname",
         "vless-$hostname",
         "anytls-$hostname",
-        "vmess-$hostname"
       ]
     },
     {
@@ -1515,33 +1514,6 @@ mihomo_client() {
         }
     },
     {
-            "server": "$vmadd_local",
-            "server_port": $vm_port,
-            "tag": "vmess-$hostname",
-            "tls": {
-                "enabled": true,
-                "server_name": "$vm_name",
-                "insecure": false,
-                "utls": {
-                    "enabled": true,
-                    "fingerprint": "chrome"
-                }
-            },
-            "packet_encoding": "packetaddr",
-            "transport": {
-                "headers": {
-                    "Host": [
-                        "$vm_name"
-                    ]
-                },
-                "path": "$ws_path",
-                "type": "ws"
-            },
-            "type": "vmess",
-            "security": "auto",
-            "uuid": "$uuid"
-        },
-    {
       "tag": "direct",
       "type": "direct"
     },
@@ -1553,7 +1525,6 @@ mihomo_client() {
         "tuic5-$hostname",
         "vless-$hostname",
         "anytls-$hostname",
-        "vmess-$hostname"
       ],
       "url": "https://www.gstatic.com/generate_204",
       "interval": "1m",
@@ -2608,8 +2579,8 @@ showprotocol() { # 主界面显示的 信息函数    修改完了
     allports
     echo -e "mihomo 与 mieru 节点关键信息："
     echo -e "🚀【 Vless-reality 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}".
-    echo -e "🚀【 anytls 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}"
-    echo -e "🚀【 mieru 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}"
+    echo -e "🚀【 anytls 】${yellow}端口:$vl_port  ${plain}"
+    echo -e "🚀【 mieru 】${yellow}端口:$vl_port  ${plain}"
     if [[ ! -f "$certificatec_vmess_ws" && ! -f "$certificatep_vmess_ws" ]]; then
         echo -e "🚀【   Vmess-ws    】${yellow}端口:$vm_port   证书形式:$vm_zs   Argo状态:$argoym${plain}"
     else
@@ -2846,21 +2817,21 @@ proxies:
   password: $all_password
   multiplexing: MULTIPLEXING_OFF
 
-- name: vmess-ws-$hostname                         
-  type: vmess
-  server: $vmadd_local                        
-  port: $vm_port                                     
-  uuid: $uuid       
-  alterId: 0
-  cipher: auto
-  udp: true
-  tls: true
-  network: ws
-  servername: $vm_name                    
-  ws-opts:
-    path: "$ws_path"                             
-    headers:
-      Host: $vm_name  
+# - name: vmess-ws-$hostname                         
+#   type: vmess
+#   server: $vmadd_local                        
+#   port: $vm_port                                     
+#   uuid: $uuid       
+#   alterId: 0
+#   cipher: auto
+#   udp: true
+#   tls: true
+#   network: ws
+#   servername: $vm_name                    
+#   ws-opts:
+#     path: "$ws_path"                             
+#     headers:
+#       Host: $vm_name  
 
 proxy-groups:
 - name: 负载均衡
@@ -2874,6 +2845,7 @@ proxy-groups:
     - vless-reality-vision-$hostname
     - anytls-$hostname
     - mieru-$hostname
+    # - vmess-ws-$hostname
 
 - name: 自动选择
   type: url-test
@@ -2886,6 +2858,7 @@ proxy-groups:
     - vless-reality-vision-$hostname 
     - anytls-$hostname
     - mieru-$hostname
+    # - vmess-ws-$hostname
     
 - name: 🌍选择代理节点
   type: select
@@ -2898,7 +2871,7 @@ proxy-groups:
     - vless-reality-vision-$hostname 
     - anytls-$hostname
     - mieru-$hostname
-    - vmess-ws-$hostname 
+    # - vmess-ws-$hostname 
 
 rules:
   - DOMAIN-SUFFIX,googleapis.cn,🌍选择代理节点
