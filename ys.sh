@@ -2322,7 +2322,7 @@ gitlabsubgo() {
 # 所有端口信息函数          修改完了
 allports() {
     vl_port=$(cat /etc/ys/vless/port_vl_re.txt)
-    vm_port=$(cat /etc/ys/vmess/port_vm_ws_vps.txt)
+    vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt)
     hy2_port=$(cat /etc/ys/hysteria2/port_hy2.txt)
     tu5_port=$(cat /etc/ys/tuic5/port_tu.txt)
     port_any=$(cat /etc/ys/anytls/port_any.txt)
