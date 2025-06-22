@@ -1199,8 +1199,8 @@ result_vl_vm_hy_tu_anytls() {
 
     # vmess ws
     port_vm_ws=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
-    vmadd_local="www.visa.con.sg"
-    vmadd_local_local="www.visa.con.sg"
+    vmadd_local="www.visa.com.sg"
+    vmadd_local_local="www.visa.com.sg"
     vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
     vm_name=$(cat /root/ygkkkca/ca.log)
     ws_path="$uuid-dx"
@@ -2713,8 +2713,8 @@ short_id=$(cat /etc/ys/vless/short_id.txt 2>/dev/null)       # 读取 short-id
 cl_any_ip=$server_ip
 port_any=$(cat /etc/ys/anytls/port_any.txt 2>/dev/null)
 ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-vmadd_local="www.visa.con.sg"
-vmadd_local_local="www.visa.con.sg"
+vmadd_local="www.visa.com.sg"
+vmadd_are_local="www.visa.com.sg"
 vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
 vm_name=$(cat /root/ygkkkca/ca.log)
 ws_path="$uuid-vm"
@@ -2734,8 +2734,8 @@ socks5port=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
 
 
 # vmess ws tls
-vmadd_local="www.visa.con.sg"
-vmadd_local_local="www.visa.con.sg"
+vmadd_local="www.visa.com.sg"
+vmadd_are_local="www.visa.com.sg"
 vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
 vm_name=$(cat /root/ygkkkca/ca.log)
 ws_path="$uuid-vm"
