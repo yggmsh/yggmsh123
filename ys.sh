@@ -858,38 +858,8 @@ warpwg() {
 
 ###############################################################################################################
 
-# 各个协议配置文件
-ys_vmess_ws_tls() {
-    cat <<YAML_BLOCK
-- name: vmess-sb-inbound
-  type: vmess
-  port: ${port_vm_ws} # 支持使用ports格式，例如200,302 or 200,204,401-429,501-503
-  listen: 0.0.0.0
-  # rule: sub-rule-name1 # 默认使用 rules，如果未找到 sub-rule 则直接使用 rules
-  # proxy: proxy # 如果不为空则直接将该入站流量交由指定 proxy 处理 (当 proxy 不为空时，这里的 proxy 名称必须合法，否则会出错)
-  users:
-    - username: $all_name
-      uuid: "${uuid}"
-      alterId: 0
-  ws-path: "/${uuid}-vm" # 如果不为空则开启 websocket 传输层
-  # grpc-service-name: "GunService" # 如果不为空则开启 grpc 传输层
-  # 下面两项如果填写则开启 tls（需要同时填写）
-  certificate: $certificatec_vmess_ws
-  private-key: $certificatep_vmess_ws
-  # 如果填写reality-config则开启reality（注意不可与certificate和private-key同时填写）
-  # reality-config:
-  #   dest: test.com:443
-  #   private-key: jNXHt1yRo0vDuchQlIP6Z0ZvjT3KtzVI-T4E7RoLJS0 # 可由 mihomo generate reality-keypair 命令生成
-  #   short-id:
-  #     - 0123456789abcdef
-  #   server-names:
-  #     - test.com
-YAML_BLOCK
-}
-
 ###############################################################################################################
 
-# 创建 mihomo 服务端配置文件
 mihomo_config() {
     cat >/etc/ys/config.yaml <<EOF
 mixed-port: $socks5port    # 混合代理端口 (同时支持 HTTP 和 SOCKS5)
@@ -964,6 +934,22 @@ listeners:
    5=500-1000
    6=500-1000
    7=500-1000
+
+- name: vmess-sb
+  type: vmess
+  port: ${port_vm_ws} # 支持使用ports格式，例如200,302 or 200,204,401-429,501-503
+  listen: 0.0.0.0
+  # rule: sub-rule-name1 # 默认使用 rules，如果未找到 sub-rule 则直接使用 rules
+  # proxy: proxy # 如果不为空则直接将该入站流量交由指定 proxy 处理 (当 proxy 不为空时，这里的 proxy 名称必须合法，否则会出错)
+  users:
+    - username: $all_name
+      uuid: ${uuid}
+      alterId: 0
+  ws-path: "${uuid}-vm" # 如果不为空则开启 websocket 传输层
+  # grpc-service-name: "GunService" # 如果不为空则开启 grpc 传输层
+  # 下面两项如果填写则开启 tls（需要同时填写）
+  certificate: $certificatec_vmess_ws
+  private-key: $certificatep_vmess_ws
 
 proxies:
 - name: "MyWireGuard"
@@ -1211,6 +1197,16 @@ result_vl_vm_hy_tu_anytls() {
     port_any=$(cat /etc/ys/anytls/port_any.txt 2>/dev/null)
     ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
 
+    # vmess ws
+    port_vm_ws=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
+    vmadd_local="www.visa.con.sg"
+    vmadd_local_local="www.visa.con.sg"
+    vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
+    vm_name=$(cat /root/ygkkkca/ca.log)
+    ws_path="$uuid-dx"
+    certificatec_vmess_ws='/root/ygkkkca/cert.crt'
+    certificatep_vmess_ws='/root/ygkkkca/private.key'
+
     resvless() {
         echo
         white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1277,22 +1273,25 @@ result_vl_vm_hy_tu_anytls() {
         qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/anytls/anytls.txt)"
         echo
         white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        echo
-        echo "nekobox分享链接我不会,就手动选择mieru插件,手动填写吧"
-        red "🚀【 mieru 】节点信息如下：" && sleep 2
-        echo "服务器:$address_ip"
-        echo "服务器端口:$mita_port"
-        echo "协议:TCP"
-        echo "用户名:$all_name"
-        echo "密码:$all_password"
-        echo
+
+    }
+    resvmess(){
+        vmess_link=vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname
+        echo "$vmess_link" >/etc/ys/vmess/vmess_ws_tls.txt
         white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        red "🚀【 vmess-ws-tls 】节点信息如下：" && sleep 2
         echo
+        echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+        echo -e "${yellow}$vmess_link${plain}"
+        echo 
+        echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vmess_ws_tls.txt)"
     }
     reshy2
     restu5
     resvless
     resanytls
+    resvmess
 }
 
 ###############################################################################################################
@@ -1307,6 +1306,7 @@ mihomo_read_link() {
     if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
         cat /etc/mita/mieru.txt 2>/dev/null >>/etc/ys/jhdy.txt
     fi
+    cat /etc/ys/vmess/vmess_ws_tls.txt 2>/dev/null >>/etc/ys/jhdy.txt
     baseurl=$(base64 -w 0 </etc/ys/jhdy.txt 2>/dev/null)
     v2sub=$(cat /etc/ys/jhdy.txt 2>/dev/null)
     echo "$v2sub" >/etc/ys/jh_sub.txt
@@ -1431,7 +1431,8 @@ mihomo_client() {
         "hy2-$hostname",
         "tuic5-$hostname",
         "vless-$hostname",
-        "anytls-$hostname"
+        "anytls-$hostname",
+        "vmess-$hostname"
       ]
     },
     {
@@ -1514,6 +1515,33 @@ mihomo_client() {
         }
     },
     {
+            "server": "$vmadd_local",
+            "server_port": $vm_port,
+            "tag": "vmess-$hostname",
+            "tls": {
+                "enabled": true,
+                "server_name": "$vm_name",
+                "insecure": false,
+                "utls": {
+                    "enabled": true,
+                    "fingerprint": "chrome"
+                }
+            },
+            "packet_encoding": "packetaddr",
+            "transport": {
+                "headers": {
+                    "Host": [
+                        "$vm_name"
+                    ]
+                },
+                "path": "$ws_path",
+                "type": "ws"
+            },
+            "type": "vmess",
+            "security": "auto",
+            "uuid": "$uuid"
+        },
+    {
       "tag": "direct",
       "type": "direct"
     },
@@ -1524,7 +1552,8 @@ mihomo_client() {
         "hy2-$hostname",
         "tuic5-$hostname",
         "vless-$hostname",
-        "anytls-$hostname"
+        "anytls-$hostname",
+        "vmess-$hostname"
       ],
       "url": "https://www.gstatic.com/generate_204",
       "interval": "1m",
@@ -2684,6 +2713,13 @@ short_id=$(cat /etc/ys/vless/short_id.txt 2>/dev/null)       # 读取 short-id
 cl_any_ip=$server_ip
 port_any=$(cat /etc/ys/anytls/port_any.txt 2>/dev/null)
 ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+vmadd_local="www.visa.con.sg"
+vmadd_local_local="www.visa.con.sg"
+vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
+vm_name=$(cat /root/ygkkkca/ca.log)
+ws_path="$uuid-vm"
+certificatec_vmess_ws='/root/ygkkkca/cert.crt'
+certificatep_vmess_ws='/root/ygkkkca/private.key'
 
 # mieru 配置信息
 server_ipv4=$(cat /etc/mita/ipv4.txt 2>/dev/null)
@@ -2695,6 +2731,18 @@ xieyi_duo=$(cat /etc/mita/xieyi_duo.txt 2>/dev/null)
 all_name=$(cat /etc/mita/all_name.txt 2>/dev/null)
 all_password=$(cat /etc/mita/all_password.txt 2>/dev/null)
 socks5port=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
+
+$vmadd_local
+        vmess_link=vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname
+# vmess ws tls
+vmadd_local="www.visa.con.sg"
+vmadd_local_local="www.visa.con.sg"
+vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
+vm_name=$(cat /root/ygkkkca/ca.log)
+ws_path="$uuid-vm"
+certificatec_vmess_ws='/root/ygkkkca/cert.crt'
+certificatep_vmess_ws='/root/ygkkkca/private.key'
+
 cat >/etc/ys/clash_meta_client.yaml <<EOF
 port: 7890
 allow-lan: true
