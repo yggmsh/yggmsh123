@@ -424,8 +424,8 @@ mihomo_cert_private() {
         echo
         blue "Vless-reality的SNI域名默认为 www.yahoo.com"
         ym_vm_ws=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-        certificatec_vmess_ws='/root/ygkkkca/cert.crt'
-        certificatep_vmess_ws='/root/ygkkkca/private.key'
+        certificatec_vmess_ws='/etc/ys/ygkkkca/cert.crt'
+        certificatep_vmess_ws='/etc/ys/ygkkkca/private.key'
         certificatec_hy2='/root/ygkkkca/cert.crt'
         certificatep_hy2='/root/ygkkkca/private.key'
         certificatec_tuic='/root/ygkkkca/cert.crt'
@@ -546,7 +546,9 @@ mihomo_port_auto() { # 配置完成
         echo "$port_any" >/etc/ys/anytls/port_any.txt
         echo "$socks5port" >/etc/ys/socks5/port_scoks5.txt
         echo "12345" >/etc/ys/socks5_in.txt
+        echo "/etc/ys" >/etc/ys/vmess/ws_path.txt
         name_password_random # 随机生成用户名,密码
+        ws_path=$(cat /etc/ys/ws_path.txt 2>/dev/null)
     else
         vlport && vmport && hy2port && hy2ports && tu5port && tu5ports && anytlsport && socks5port
     fi
@@ -598,6 +600,8 @@ vmport() {
     chooseport
     port_vm_ws=$port
     echo "$port_vm_ws" >/etc/ys/vmess/port_vm_ws.txt
+    readp "\n设置vmess的websocket路径(建议设置成/etc/ys):" lujing
+    echo "$lujing" >/etc/ys/vmess/ws_path.txt
 }
 hy2port() {
     readp "\n设置Hysteria2主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
@@ -935,21 +939,17 @@ listeners:
    6=500-1000
    7=500-1000
 
-# - name: vmess-sb
-#   type: vmess
-#   port: ${port_vm_ws} # 支持使用ports格式，例如200,302 or 200,204,401-429,501-503
-#   listen: 0.0.0.0
-#   # rule: sub-rule-name1 # 默认使用 rules，如果未找到 sub-rule 则直接使用 rules
-#   # proxy: proxy # 如果不为空则直接将该入站流量交由指定 proxy 处理 (当 proxy 不为空时，这里的 proxy 名称必须合法，否则会出错)
-#   users:
-#     - username: $all_name
-#       uuid: ${uuid}
-#       alterId: 0
-#   ws-path: "${uuid}-vm" # 如果不为空则开启 websocket 传输层
-#   # grpc-service-name: "GunService" # 如果不为空则开启 grpc 传输层
-#   # 下面两项如果填写则开启 tls（需要同时填写）
-#   certificate: $certificatec_vmess_ws
-#   private-key: $certificatep_vmess_ws
+- name: vmess-sb
+  type: vmess
+  port: ${port_vm_ws}
+  listen: 0.0.0.0
+  users:
+    - username: $all_name
+      uuid: ${uuid}
+      alterId: 1
+  ws-path: "$ws_path"
+  certificate: $certificatec_vmess_ws
+  private-key: $certificatec_vmess_ws
 
 proxies:
 - name: "MyWireGuard"
@@ -1202,8 +1202,8 @@ result_vl_vm_hy_tu_anytls() {
     vmadd_local="www.visa.com.sg"
     vmadd_are_local="www.visa.com.sg"
     vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
-    vm_name=$(cat /root/ygkkkca/ca.log)
-    ws_path="$uuid-dx"
+    vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+    ws_path=$(cat /etc/ys/ws_path.txt 2>/dev/null)
     certificatec_vmess_ws='/root/ygkkkca/cert.crt'
     certificatep_vmess_ws='/root/ygkkkca/private.key'
 
@@ -1275,18 +1275,18 @@ result_vl_vm_hy_tu_anytls() {
         white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
     }
-    # resvmess(){
-    #     vmess_link="vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname"
-    #     echo "$vmess_link" >/etc/ys/vmess/vmess_ws_tls.txt
-    #     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    #     red "🚀【 vmess-ws-tls 】节点信息如下：" && sleep 2
-    #     echo
-    #     echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    #     echo -e "${yellow}$vmess_link${plain}"
-    #     echo 
-    #     echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    #     qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vmess_ws_tls.txt)"
-    # }
+    resvmess(){
+        vmess_link="vmess://$uuid@$vmadd_are_local:$vm_port?encryption=auto&host=$vm_name&path=$ws_path&security=tls&sni=$vm_name&type=ws#vm-ws-tls-$hostname"
+        echo "$vmess_link" >/etc/ys/vmess/vmess_ws_tls.txt
+        white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        red "🚀【 vmess-ws-tls 】节点信息如下：" && sleep 2
+        echo
+        echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+        echo -e "${yellow}$vmess_link${plain}"
+        echo 
+        echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
+        qrencode -o - -t ANSIUTF8 "$(cat /etc/ys/vmess/vmess_ws_tls.txt)"
+    }
     reshy2
     restu5
     resvless
@@ -1432,6 +1432,7 @@ mihomo_client() {
         "tuic5-$hostname",
         "vless-$hostname",
         "anytls-$hostname",
+        "vmess-ws-$hostname"
       ]
     },
     {
@@ -1514,6 +1515,33 @@ mihomo_client() {
         }
     },
     {
+            "server": "$vmadd_local",
+            "server_port": $vm_port,
+            "tag": "vmess-ws-$hostname",
+            "tls": {
+                "enabled": true,
+                "server_name": "$vm_name",
+                "insecure": false,
+                "utls": {
+                    "enabled": true,
+                    "fingerprint": "chrome"
+                }
+            },
+            "packet_encoding": "packetaddr",
+            "transport": {
+                "headers": {
+                    "Host": [
+                        "$vm_name"
+                    ]
+                },
+                "path": "$ws_path",
+                "type": "ws"
+            },
+            "type": "vmess",
+            "security": "auto",
+            "uuid": "$uuid"
+        },
+    {
       "tag": "direct",
       "type": "direct"
     },
@@ -1525,6 +1553,7 @@ mihomo_client() {
         "tuic5-$hostname",
         "vless-$hostname",
         "anytls-$hostname",
+        "vmess-ws-$hostname"
       ],
       "url": "https://www.gstatic.com/generate_204",
       "interval": "1m",
@@ -1706,6 +1735,22 @@ proxies:
     - http/1.1
   skip-cert-verify: true
 
+- name: vmess-ws-$hostname                         
+  type: vmess
+  server: $vmadd_local                        
+  port: $vm_port                                     
+  uuid: $uuid       
+  alterId: 0
+  cipher: auto
+  udp: true
+  tls: true
+  network: ws
+  servername: $vm_name                    
+  ws-opts:
+    path: "$ws_path"                             
+    headers:
+      Host: $vm_name  
+
 proxy-groups:
 - name: 负载均衡
   type: load-balance
@@ -1717,6 +1762,7 @@ proxy-groups:
     - tuic5-$hostname
     - vless-reality-vision-$hostname
     - anytls-$hostname
+    - vmess-ws-$hostname
 
 - name: 自动选择
   type: url-test
@@ -1728,6 +1774,7 @@ proxy-groups:
     - tuic5-$hostname
     - vless-reality-vision-$hostname 
     - anytls-$hostname
+    - vmess-ws-$hostname
     
 - name: 🌍选择代理节点
   type: select
@@ -1739,6 +1786,7 @@ proxy-groups:
     - tuic5-$hostname
     - vless-reality-vision-$hostname 
     - anytls-$hostname
+    - vmess-ws-$hostname
 
 rules:
   - DOMAIN-SUFFIX,googleapis.cn,🌍选择代理节点
@@ -2687,8 +2735,8 @@ ym=$(cat /root/ygkkkca/ca.log 2>/dev/null)
 vmadd_local="www.visa.com.sg"
 vmadd_are_local="www.visa.com.sg"
 vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
-vm_name=$(cat /root/ygkkkca/ca.log)
-ws_path="$uuid-vm"
+vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+ws_path=$(cat /etc/ys/ws_path.txt 2>/dev/null)
 certificatec_vmess_ws='/root/ygkkkca/cert.crt'
 certificatep_vmess_ws='/root/ygkkkca/private.key'
 
@@ -2708,8 +2756,8 @@ socks5port=$(cat /etc/mita/port_scoks5.txt 2>/dev/null)
 vmadd_local="www.visa.com.sg"
 vmadd_are_local="www.visa.com.sg"
 vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
-vm_name=$(cat /root/ygkkkca/ca.log)
-ws_path="$uuid-vm"
+vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+ws_path=$(cat /etc/ys/ws_path.txt 2>/dev/null)
 certificatec_vmess_ws='/root/ygkkkca/cert.crt'
 certificatep_vmess_ws='/root/ygkkkca/private.key'
 
@@ -2750,9 +2798,9 @@ proxies:
   ports: $hy2_ports,$hy2_port                               
   password: $all_password
   sni: $hy2_name  
-  alpn:                                 # 支持的应用层协议协商列表，按优先顺序排列。
+  alpn:
     - h3                               
-  skip-cert-verify: $hy2_ins            # 跳过证书验证，仅适用于使用 tls 的协议
+  skip-cert-verify: $hy2_ins
   fast-open: true
   #fingerprint: xxxx         # 证书指纹，仅适用于使用 tls 的协议，可使用
   #ca: "./my.ca"
@@ -2817,21 +2865,21 @@ proxies:
   password: $all_password
   multiplexing: MULTIPLEXING_OFF
 
-# - name: vmess-ws-$hostname                         
-#   type: vmess
-#   server: $vmadd_local                        
-#   port: $vm_port                                     
-#   uuid: $uuid       
-#   alterId: 0
-#   cipher: auto
-#   udp: true
-#   tls: true
-#   network: ws
-#   servername: $vm_name                    
-#   ws-opts:
-#     path: "$ws_path"                             
-#     headers:
-#       Host: $vm_name  
+- name: vmess-ws-$hostname                         
+  type: vmess
+  server: $vmadd_local                        
+  port: $vm_port                                     
+  uuid: $uuid       
+  alterId: 0
+  cipher: auto
+  udp: true
+  tls: true
+  network: ws
+  servername: $vm_name                    
+  ws-opts:
+    path: "$ws_path"                             
+    headers:
+      Host: $vm_name  
 
 proxy-groups:
 - name: 负载均衡
@@ -2845,7 +2893,7 @@ proxy-groups:
     - vless-reality-vision-$hostname
     - anytls-$hostname
     - mieru-$hostname
-    # - vmess-ws-$hostname
+    - vmess-ws-$hostname
 
 - name: 自动选择
   type: url-test
@@ -2858,7 +2906,7 @@ proxy-groups:
     - vless-reality-vision-$hostname 
     - anytls-$hostname
     - mieru-$hostname
-    # - vmess-ws-$hostname
+    - vmess-ws-$hostname
     
 - name: 🌍选择代理节点
   type: select
@@ -2871,7 +2919,7 @@ proxy-groups:
     - vless-reality-vision-$hostname 
     - anytls-$hostname
     - mieru-$hostname
-    # - vmess-ws-$hostname 
+    - vmess-ws-$hostname 
 
 rules:
   - DOMAIN-SUFFIX,googleapis.cn,🌍选择代理节点
