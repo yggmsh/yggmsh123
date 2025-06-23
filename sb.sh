@@ -508,11 +508,11 @@ insport() {
 }
 
 inssbjsonser() {
-port_any=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
-anytls_port=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
-all_password=$(cat /etc/s-box/all_password.txt 2>/dev/null)
-certificatec_anytls='/etc/s-box/cert.pem'
-certificatep_anytls='/etc/s-box/private.key'
+  port_any=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
+  anytls_port=$(cat /etc/s-box/port_anytls.txt 2>/dev/null)
+  all_password=$(cat /etc/s-box/all_password.txt 2>/dev/null)
+  certificatec_anytls='/etc/s-box/cert.pem'
+  certificatep_anytls='/etc/s-box/private.key'
   cat >/etc/s-box/sb10.json <<EOF
 {
 "log": {
@@ -4718,7 +4718,7 @@ rules:
 
   - MATCH,🌍选择代理节点
 EOF
-cat >/etc/s-box/sing_box_client.json <<EOF
+  cat >/etc/s-box/sing_box_client.json <<EOF
 {
   "log": {
     "disabled": false,
@@ -5715,6 +5715,9 @@ clash_sb_share() {
     sbshare
   elif [ "$menu" = "2" ]; then
     green "请稍等……"
+    if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
+      mieru_daoru
+    fi
     sbshare >/dev/null 2>&1
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     red "Gitlab订阅链接如下："
