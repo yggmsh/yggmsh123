@@ -4718,6 +4718,313 @@ rules:
 
   - MATCH,🌍选择代理节点
 EOF
+cat >/etc/s-box/sing_box_client.json <<EOF
+{
+  "log": {
+    "disabled": false,
+    "level": "info",
+    "timestamp": true
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "external_ui": "ui",
+      "external_ui_download_url": "",
+      "external_ui_download_detour": "",
+      "secret": "",
+      "default_mode": "Rule"
+    },
+    "cache_file": {
+      "enabled": true,
+      "path": "cache.db",
+      "store_fakeip": true
+    }
+  },
+  "dns": {
+    "servers": [
+        {
+        "tag": "proxydns",
+        "server": "8.8.8.8",
+        "type": "tls",
+        "detour": "select"
+        },
+        {
+        "tag": "localdns",
+        "server": "223.5.5.5",
+        "type": "h3",
+        "detour": "direct"
+        },
+      {
+        "type": "fakeip",
+        "tag": "fakeip",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
+      }
+    ],
+    "rules": [
+      {
+        "clash_mode": "Global",
+        "server": "proxydns"
+      },
+      {
+        "clash_mode": "Direct",
+        "server": "localdns"
+      },
+      {
+        "rule_set": "geosite-cn",
+        "server": "localdns"
+      },
+      {
+        "rule_set": "geosite-geolocation-!cn",
+        "server": "proxydns"
+      },
+      {
+        "rule_set": "geosite-geolocation-!cn",
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "server": "fakeip"
+      }
+    ],
+    "independent_cache": true,
+    "final": "proxydns"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "tun-in",
+      "address": [
+        "172.19.0.1/30",
+        "fd00::1/126"
+      ],
+      "auto_route": true,
+      "strict_route": true,
+      "sniff": true,
+      "sniff_override_destination": true,
+      "domain_strategy": "prefer_ipv4"
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "select",
+      "type": "selector",
+      "default": "auto",
+      "outbounds": [
+        "auto",
+        "hy2-$hostname",
+        "tuic5-$hostname",
+        "vless-$hostname",
+        "anytls-$hostname",
+        "vmess-$hostname"
+      ]
+    },
+    {
+      "type": "vless",
+      "tag": "vless-$hostname",
+      "server": "$server_ipcl",
+      "server_port": $vl_port,
+      "uuid": "$uuid",
+      "packet_encoding": "xudp",
+      "flow": "xtls-rprx-vision",
+      "tls": {
+        "enabled": true,
+        "server_name": "$vl_name",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+      "reality": {
+          "enabled": true,
+          "public_key": "$public_key",
+          "short_id": "$short_id"
+        }
+      }
+    },
+{
+            "server": "$vmadd_local",
+            "server_port": $vm_port,
+            "tag": "vmess-$hostname",
+            "tls": {
+                "enabled": $tls,
+                "server_name": "$vm_name",
+                "insecure": false,
+                "utls": {
+                    "enabled": true,
+                    "fingerprint": "chrome"
+                }
+            },
+            "packet_encoding": "packetaddr",
+            "transport": {
+                "headers": {
+                    "Host": [
+                        "$vm_name"
+                    ]
+                },
+                "path": "$ws_path",
+                "type": "ws"
+            },
+            "type": "vmess",
+            "security": "auto",
+            "uuid": "$uuid"
+        },
+
+    {
+        "type": "hysteria2",
+        "tag": "hy2-$hostname",
+        "server": "$cl_hy2_ip",
+        "server_port": $hy2_port,
+        "password": "$uuid",
+        "tls": {
+            "enabled": true,
+            "server_name": "$hy2_name",
+            "insecure": $hy2_ins,
+            "alpn": [
+                "h3"
+            ]
+        }
+    },
+        {
+            "type":"tuic",
+            "tag": "tuic5-$hostname",
+            "server": "$cl_tu5_ip",
+            "server_port": $tu5_port,
+            "uuid": "$uuid",
+            "password": "$uuid",
+            "congestion_control": "bbr",
+            "udp_relay_mode": "native",
+            "udp_over_stream": false,
+            "zero_rtt_handshake": false,
+            "heartbeat": "10s",
+            "tls":{
+                "enabled": true,
+                "server_name": "$tu5_name",
+                "insecure": $tu5_ins,
+                "alpn": [
+                    "h3"
+                ]
+            }
+        },
+      {
+        "type": "anytls",
+        "tag": "anytls-$hostname",
+
+        "server": "$server_ipcl",
+        "server_port": $anytls_port,
+        "password": "$all_password",
+        "idle_session_check_interval": "30s",
+        "idle_session_timeout": "30s",
+        "min_idle_session": 5,
+        "tls": {
+            "enabled": true,
+            "server_name": "www.bing.com",
+            "insecure": true,
+            "utls": {
+            "enabled": true,
+            "fingerprint": "edge" 
+            },
+            "alpn": ["h2", "http/1.1"]
+        }
+    },
+    {
+      "tag": "direct",
+      "type": "direct"
+    },
+    {
+      "tag": "auto",
+      "type": "urltest",
+      "outbounds": [
+        "hy2-$hostname",
+        "tuic5-$hostname",
+        "vless-$hostname",
+        "anytls-$hostname",
+        "vmess-$hostname"
+      ],
+      "url": "https://www.gstatic.com/generate_204",
+      "interval": "1m",
+      "tolerance": 50,
+      "interrupt_exist_connections": false
+    }
+  ],
+  "route": {
+    "rule_set": [
+      {
+        "tag": "geosite-geolocation-!cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-!cn.srs",
+        "download_detour": "select",
+        "update_interval": "1d"
+      },
+      {
+        "tag": "geosite-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-cn.srs",
+        "download_detour": "select",
+        "update_interval": "1d"
+      },
+      {
+        "tag": "geoip-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
+        "download_detour": "select",
+        "update_interval": "1d"
+      }
+    ],
+    "auto_detect_interface": true,
+    "final": "select",
+    "default_domain_resolver": "proxydns",
+    "rules": [
+      {
+        "inbound": "tun-in",
+        "action": "sniff"
+      },
+      {
+        "protocol": "dns",
+        "action": "hijack-dns"
+      },
+      {
+        "port": 443,
+        "network": "udp",
+        "action": "reject"
+      },
+      {
+        "clash_mode": "Direct",
+        "outbound": "direct"
+      },
+      {
+        "clash_mode": "Global",
+        "outbound": "select"
+      },
+      {
+        "rule_set": "geoip-cn",
+        "outbound": "direct"
+      },
+      {
+        "rule_set": "geosite-cn",
+        "outbound": "direct"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "direct"
+      },
+      {
+        "rule_set": "geosite-geolocation-!cn",
+        "outbound": "select"
+      }
+    ]
+  },
+  "ntp": {
+    "enabled": true,
+    "server": "time.apple.com",
+    "server_port": 123,
+    "interval": "30m",
+    "detour": "direct"
+  }
+}
+EOF
 }
 warpwg() {
   warpcode() {
