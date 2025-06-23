@@ -1306,7 +1306,7 @@ mihomo_read_link() {
     if [ -d "/etc/mita" ] && [ -f "/etc/mita/config.json" ]; then
         cat /etc/mita/mieru.txt 2>/dev/null >>/etc/ys/jhdy.txt
     fi
-#    cat /etc/ys/vmess/vmess_ws_tls.txt 2>/dev/null >>/etc/ys/jhdy.txt
+    cat /etc/ys/vmess/vmess_ws_tls.txt 2>/dev/null >>/etc/ys/jhdy.txt
     baseurl=$(base64 -w 0 </etc/ys/jhdy.txt 2>/dev/null)
     v2sub=$(cat /etc/ys/jhdy.txt 2>/dev/null)
     echo "$v2sub" >/etc/ys/jh_sub.txt
