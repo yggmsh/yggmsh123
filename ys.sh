@@ -548,7 +548,7 @@ mihomo_port_auto() { # 配置完成
         echo "12345" >/etc/ys/socks5_in.txt
         echo "/etc/ys" >/etc/ys/vmess/ws_path.txt
         name_password_random # 随机生成用户名,密码
-        ws_path=$(cat /etc/ys/ws_path.txt 2>/dev/null)
+        ws_path=$(cat /etc/ys/vmess/ws_path.txt 2>/dev/null)
     else
         vlport && vmport && hy2port && hy2ports && tu5port && tu5ports && anytlsport && socks5port
     fi
@@ -1203,7 +1203,7 @@ result_vl_vm_hy_tu_anytls() {
     vmadd_are_local="www.visa.com.sg"
     vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
     vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-    ws_path=$(cat /etc/ys/ws_path.txt 2>/dev/null)
+    ws_path=$(cat /etc/ys/vmess/ws_path.txt 2>/dev/null)
     certificatec_vmess_ws='/root/ygkkkca/cert.crt'
     certificatep_vmess_ws='/root/ygkkkca/private.key'
 
@@ -2736,7 +2736,7 @@ vmadd_local="www.visa.com.sg"
 vmadd_are_local="www.visa.com.sg"
 vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
 vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-ws_path=$(cat /etc/ys/ws_path.txt 2>/dev/null)
+ws_path=$(cat /etc/ys/vmess/ws_path.txt 2>/dev/null)
 certificatec_vmess_ws='/root/ygkkkca/cert.crt'
 certificatep_vmess_ws='/root/ygkkkca/private.key'
 
@@ -2757,7 +2757,7 @@ vmadd_local="www.visa.com.sg"
 vmadd_are_local="www.visa.com.sg"
 vm_port=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
 vm_name=$(cat /root/ygkkkca/ca.log 2>/dev/null)
-ws_path=$(cat /etc/ys/ws_path.txt 2>/dev/null)
+ws_path=$(cat /etc/ys/vmess/ws_path.txt 2>/dev/null)
 certificatec_vmess_ws='/root/ygkkkca/cert.crt'
 certificatep_vmess_ws='/root/ygkkkca/private.key'
 
