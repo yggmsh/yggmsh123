@@ -1556,47 +1556,48 @@ mihomo_client() {
     }
   ],
   "route": {
-      "rule_set": [
-            {
-                "tag": "geosite-geolocation-!cn",
-                "type": "remote",
-                "format": "binary",
-                "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-!cn.srs",
-                "download_detour": "select",
-                "update_interval": "1d"
-            },
-            {
-                "tag": "geosite-cn",
-                "type": "remote",
-                "format": "binary",
-                "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-cn.srs",
-                "download_detour": "select",
-                "update_interval": "1d"
-            },
-            {
-                "tag": "geoip-cn",
-                "type": "remote",
-                "format": "binary",
-                "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
-                "download_detour": "select",
-                "update_interval": "1d"
-            }
-        ],
+    "rule_set": [
+      {
+        "tag": "geosite-geolocation-!cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-!cn.srs",
+        "download_detour": "select",
+        "update_interval": "1d"
+      },
+      {
+        "tag": "geosite-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/geolocation-cn.srs",
+        "download_detour": "select",
+        "update_interval": "1d"
+      },
+      {
+        "tag": "geoip-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
+        "download_detour": "select",
+        "update_interval": "1d"
+      }
+    ],
     "auto_detect_interface": true,
     "final": "select",
+    "default_domain_resolver": "proxydns",
     "rules": [
       {
-      "inbound": "tun-in",
-      "action": "sniff"
+        "inbound": "tun-in",
+        "action": "sniff"
       },
       {
-      "protocol": "dns",
-      "action": "hijack-dns"
+        "protocol": "dns",
+        "action": "hijack-dns"
       },
       {
-      "port": 443,
-      "network": "udp",
-      "action": "reject"
+        "port": 443,
+        "network": "udp",
+        "action": "reject"
       },
       {
         "clash_mode": "Direct",
@@ -1615,8 +1616,8 @@ mihomo_client() {
         "outbound": "direct"
       },
       {
-      "ip_is_private": true,
-      "outbound": "direct"
+        "ip_is_private": true,
+        "outbound": "direct"
       },
       {
         "rule_set": "geosite-geolocation-!cn",
@@ -1624,7 +1625,7 @@ mihomo_client() {
       }
     ]
   },
-    "ntp": {
+  "ntp": {
     "enabled": true,
     "server": "time.apple.com",
     "server_port": 123,
