@@ -1352,67 +1352,61 @@ mihomo_client() {
     },
     "dns": {
         "servers": [
-            {
-                "tag": "proxydns",
-                "address": "$sbdnsip",
-                "detour": "select"
-            },
-            {
-                "tag": "localdns",
-                "address": "h3://223.5.5.5/dns-query",
-                "detour": "direct"
-            },
-            {
-                "tag": "dns_fakeip",
-                "address": "fakeip"
-            }
-        ],
-        "rules": [
-            {
-                "outbound": "any",
-                "server": "localdns",
-                "disable_cache": true
-            },
-            {
-                "clash_mode": "Global",
-                "server": "proxydns"
-            },
-            {
-                "clash_mode": "Direct",
-                "server": "localdns"
-            },
-            {
-                "rule_set": "geosite-cn",
-                "server": "localdns"
-            },
-            {
-                 "rule_set": "geosite-geolocation-!cn",
-                 "server": "proxydns"
-            },
-             {
-                "rule_set": "geosite-geolocation-!cn",         
-                "query_type": [
-                    "A",
-                    "AAAA"
-                ],
-                "server": "dns_fakeip"
-            }
-          ],
-           "fakeip": {
-           "enabled": true,
-           "inet4_range": "198.18.0.0/15",
-           "inet6_range": "fc00::/18"
-         },
-          "independent_cache": true,
-          "final": "proxydns"
+        {
+        "tag": "proxydns",
+        "server": "8.8.8.8",
+        "type": "tls",
+        "detour": "select"
         },
-      "inbounds": [
+        {
+        "tag": "localdns",
+        "server": "223.5.5.5",
+        "type": "h3",
+        "detour": "direct"
+        },
+      {
+        "type": "fakeip",
+        "tag": "fakeip",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18"
+      }
+        ],
+    "rules": [
+      {
+        "clash_mode": "Global",
+        "server": "proxydns"
+      },
+      {
+        "clash_mode": "Direct",
+        "server": "localdns"
+      },
+      {
+        "rule_set": "geosite-cn",
+        "server": "localdns"
+      },
+      {
+        "rule_set": "geosite-geolocation-!cn",
+        "server": "proxydns"
+      },
+      {
+        "rule_set": "geosite-geolocation-!cn",
+        "query_type": [
+          "A",
+          "AAAA"
+        ],
+        "server": "fakeip"
+      }
+    ],
+    "independent_cache": true,
+    "final": "proxydns"
+    },
+    "inbounds": [
     {
       "type": "tun",
-     "tag": "tun-in",
-	  "address": [
-      "172.19.0.1/30",
-	  "fd00::1/126"
+      "tag": "tun-in",
+      "address": [
+        "172.19.0.1/30",
+        "fd00::1/126"
       ],
       "auto_route": true,
       "strict_route": true,
@@ -1420,7 +1414,7 @@ mihomo_client() {
       "sniff_override_destination": true,
       "domain_strategy": "prefer_ipv4"
     }
-  ],
+    ],
   "outbounds": [
     {
       "tag": "select",
