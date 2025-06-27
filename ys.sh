@@ -2934,6 +2934,36 @@ rules:
   - MATCH,🌍选择代理节点
 EOF
 }
+hysteria2_port(){
+    readp "\n设置Hysteria2主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
+    chooseport
+    hysteria2_port=$port
+    echo "$hysteria2_port" >/etc/hysteria/hysteria2_port.txt
+}
+hysteria2_yuan(){
+    bash <(curl -fsSL https://get.hy2.sh/)
+    sudo -i
+    openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
+    openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
+    chmod 777 /etc/hysteria/cert.crt
+    chmod 777 /etc/hysteria/private.key
+    chmod 777 /etc/hysteria/config.yaml
+    hysteria2_port
+    readp "设置密码:" all_password
+    echo "$all_password" >/etc/hysteria/all_password.txt
+    
+cat >/etc/hysteria/config.yaml <<EOF
+listen: :$hysteria2_port
+tls:
+  cert: /etc/hysteria/cert.crt
+  key: /etc/hysteria/private.key
+
+auth:
+  type: password
+  password: $all_password
+ignoreClientBandwidth: false
+EOF
+}
 #################################################################################################################
 #这是脚本的主代码,用来运行脚本菜的的界面
 clear
@@ -2970,7 +3000,7 @@ white "-------------------------------------------------------------------------
 green "10. bbr加速菜单(完)"
 green "11. 勇哥管理 Acme 申请域名证书(完)"
 green "12. 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况(完)"
-green "13. 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】(待修改)"
+green "13. hy2原版一键脚本"
 white "----------------------------------------------------------------------------------"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -3076,6 +3106,6 @@ case "$Input" in
 10) bbr ;;                # 勇哥一键原版BBR+FQ加速 完
 11) acme ;;               # 勇哥管理 Acme 申请域名证书 完
 12) cfwarp ;;             # 勇哥管理 Warp 查看Netflix/ChatGPT解锁情况 完
-13) inssbwpph ;;          # 勇哥添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】待修改
+13) hysteria2_yuan ;;     # hy2原版一键脚本
 *) exit ;;
 esac
