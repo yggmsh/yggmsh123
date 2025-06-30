@@ -2943,6 +2943,7 @@ hysteria2_port(){
 hysteria2_yuan(){
     bash <(curl -fsSL https://get.hy2.sh/)
     sudo -i
+    chmod 777 /etc/hysteria/
     openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key
     openssl req -new -x509 -days 36500 -key /etc/hysteria/private.key -out /etc/hysteria/cert.crt -subj "/CN=www.bing.com"
     chmod 777 /etc/hysteria/cert.crt
