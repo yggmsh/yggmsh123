@@ -2941,7 +2941,7 @@ hysteria2_port(){
     echo "$hysteria2_port" >/etc/hysteria/hysteria2_port.txt
 }
 hysteria2_yuan(){
-    if [ ! -d '/etc/hysteria' ] then
+    if [ ! -d '/etc/hysteria' ]; then
         bash <(curl -fsSL https://get.hy2.sh/)
     fi
     $(sudo -i)
