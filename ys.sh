@@ -2941,7 +2941,9 @@ hysteria2_port(){
     echo "$hysteria2_port" >/etc/hysteria/hysteria2_port.txt
 }
 hysteria2_yuan(){
-    bash <(curl -fsSL https://get.hy2.sh/)
+    if [ ! -d '/etc/hysteria' ] then
+        bash <(curl -fsSL https://get.hy2.sh/)
+    fi
     $(sudo -i)
     $(chmod 777 /etc/hysteria/)
     $(openssl ecparam -genkey -name prime256v1 -out /etc/hysteria/private.key)
