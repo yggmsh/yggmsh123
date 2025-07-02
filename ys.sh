@@ -865,6 +865,11 @@ warpwg() {
 ###############################################################################################################
 
 mihomo_config() {
+certificatec_vmess_ws="/etc/ys/ygkkkca/cert.crt"
+certificatep_vmess_ws="/etc/ys/ygkkkca/private.key"
+ws_path=$(cat /etc/ys/vmess/ws_path.txt 2>/dev/null)
+port_vm_ws=$(cat /etc/ys/vmess/port_vm_ws.txt 2>/dev/null)
+
     cat >/etc/ys/config.yaml <<EOF
 mixed-port: $socks5port    # 混合代理端口 (同时支持 HTTP 和 SOCKS5)
 authentication:   # 认证设置，仅作用于 HTTP/SOCKS 代理端口
@@ -949,7 +954,7 @@ listeners:
       alterId: 1
   ws-path: "$ws_path"
   certificate: $certificatec_vmess_ws
-  private-key: $certificatec_vmess_ws
+  private-key: $certificatep_vmess_ws
 
 proxies:
 - name: "MyWireGuard"
