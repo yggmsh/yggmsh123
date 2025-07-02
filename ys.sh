@@ -2474,6 +2474,14 @@ bbr() {
 # 主菜单11 管理 Acme 申请域名证书   不需要修改
 acme() {
     bash <(curl -Ls https://gitlab.com/rwkgyg/acme-script/raw/main/acme.sh)
+if [ -f '/root/ygkkkca/private.key' ] && [ -f '/root/ygkkkca/cert.crt' ]; then
+mkdir /etc/ys/ygkkkca
+chmod 777 /etc/ys/ygkkkca
+cp /root/ygkkkca/* /etc/ys/ygkkkca
+chmod 777 /etc/ys/ygkkkca/private.key
+chmod 777 /etc/ys/ygkkkca/cert.crt
+chmod 777 /etc/ys/ygkkkca/ca.log
+fi
 }
 # 主菜单11 管理 Acme 申请域名证书   不需要修改
 ###############################################################################################################
