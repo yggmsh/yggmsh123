@@ -3047,7 +3047,7 @@ if [ -f '/etc/ys/config.yaml' ]; then
         else
             echo
             echo -e "当前 mihomo 已安装正式版内核：${bblue}${inscore}${plain}"
-            echo -e "检测到最新 mihomo 正式版内核：${yellow}${latcore}${plain} (可选择8进行更新)"
+            echo -e "检测到最新 mihomo 正式版内核：${yellow}${latcore}${plain} (可选择7进行更新)"
             echo
             echo -e "当前 mihomo 最新测试版内核：${bblue}${precore}${plain} (可切换)"
         fi
@@ -3060,7 +3060,7 @@ if [ -f '/etc/ys/config.yaml' ]; then
         else
             echo
             echo -e "当前 mihomo 已安装测试版内核：${bblue}${inscore}${plain}"
-            echo -e "检测到最新 mihomo 测试版内核：${yellow}${precore}${plain} (可选择8进行更新)"
+            echo -e "检测到最新 mihomo 测试版内核：${yellow}${precore}${plain} (可选择7进行更新)"
             echo
             echo -e "当前 mihomo 最新正式版内核：${bblue}${latcore}${plain} (可切换)"
         fi
