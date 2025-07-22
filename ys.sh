@@ -3036,7 +3036,11 @@ else
     yellow "未安装 mihomo 脚本！请先选择 1 安装"
 fi
 
-lapre # 获取版本号函数,在进入菜单时候,显示
+precore=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | grep '"name":' | sed -n '5p' | sed 's/\.gz",//' | awk -F'-' '{print $NF}')
+# 获取 mihomo 正式版 版本号
+latcore=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | grep '"tag_name":' | sed -n '2p' | awk -F'"' '{print $(NF-1)}')
+# 获取当前安装的版本号
+inscore=$(/etc/ys/ys -v 2>/dev/null | awk '/Mihomo Meta/{print $1, $2, $3}')
 if [ -f '/etc/ys/config.yaml' ]; then
     yslocal=$(echo "$inscore" | sed 's/^.*\(v[0-9.]*\)/\1/')
     ysnet=$(echo "$latcore" | sed 's/^.*\(v[0-9.]*\)/\1/')
