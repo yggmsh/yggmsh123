@@ -3045,7 +3045,7 @@ if [ -f '/etc/ys/config.yaml' ]; then
     yslocal=$(echo "$inscore" | sed 's/^.*\(v[0-9.]\+\).*$/\1/' | sed 's/^.*-\([^-]\+\)$/\1/')
     ysnet=$(echo "$latcore" | sed 's/^.*\(v[0-9.]\+\).*$/\1/' | sed 's/^.*-\([^-]\+\)$/\1/')
     ystest=$(echo "$precore" | sed 's/^.*\(v[0-9.]\+\).*$/\1/' | sed 's/^.*-\([^-]\+\)$/\1/')
-    if [[ "${yslocal}" =~ "^v[0-9.]+$" ]]; then
+    if [[ "${yslocal}" =~ ^v[0-9.]+$ ]]; then
         if [ "${yslocal}" == "${ysnet}" ]; then
             echo
             echo -e "当前 mihomo 最新正式版内核：${bblue}${inscore}${plain} (已安装)"
