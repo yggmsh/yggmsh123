@@ -2634,9 +2634,16 @@ inssbwpph() {
 showprotocol() { # 主界面显示的 信息函数    修改完了
     allports
     echo -e "mihomo 与 mieru 节点关键信息："
-    echo -e "🚀【 Vless-reality 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}".
-    echo -e "🚀【 anytls 】${yellow}端口:$vl_port  ${plain}"
-    echo -e "🚀【 mieru 】${yellow}端口:$vl_port  ${plain}"
+    echo -e "🚀【 Vless-reality 】${yellow}端口:$vl_port  Reality域名证书伪装地址：$(cat /etc/ys/vless/server-name.txt)${plain}"
+    echo -e "🚀【 anytls 】${yellow}端口:$port_any  ${plain}"
+    if [ -d "/etc/mita" ]; then
+        port_mieru=$(cat /etc/mita/port_mieru.txt 2>/dev/null)
+        xieyi_one=$(cat /etc/mita/xieyi_one.txt 2>/dev/null)
+        ports_mieru=$(cat /etc/mita/ports_mieru.txt 2>/dev/null)
+        xieyi_duo=$(cat /etc/mita/xieyi_duo.txt 2>/dev/null)
+        echo -e "🚀【 mieru 】${yellow}单端口:$port_mieru       转发协议:$xieyi_one${plain}"
+        echo -e "🚀【 mieru 】${yellow}多端口: $ports_mieru     转发协议:$xieyi_duo${plain}"
+    fi
     if [[ ! -f "$certificatec_vmess_ws" && ! -f "$certificatep_vmess_ws" ]]; then
         echo -e "🚀【   Vmess-ws    】${yellow}端口:$vm_port   证书形式:$vm_zs   Argo状态:$argoym${plain}"
     else
@@ -3035,7 +3042,7 @@ else
     echo -e "当前 mihomo 脚本版本号：${bblue}${latestV}${plain}"
     yellow "未安装 mihomo 脚本！请先选择 1 安装"
 fi
-
+# 获取 mihomo 测试版 版本号
 precore=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | grep '"name":' | sed -n '5p' | sed 's/\.gz",//' | awk -F'-' '{print $NF}')
 # 获取 mihomo 正式版 版本号
 latcore=$(curl -s https://api.github.com/repos/MetaCubeX/mihomo/releases | grep '"tag_name":' | sed -n '2p' | awk -F'"' '{print $(NF-1)}')
@@ -3046,7 +3053,7 @@ if [ -f '/etc/ys/config.yaml' ]; then
     ysnet=$(echo "$latcore" | sed 's/^.*\(v[0-9.]\+\).*$/\1/' | sed 's/^.*-\([^-]\+\)$/\1/')
     ystest=$(echo "$precore" | sed 's/^.*\(v[0-9.]\+\).*$/\1/' | sed 's/^.*-\([^-]\+\)$/\1/')
     if [[ "${yslocal}" =~ ^v[0-9.]+$ ]]; then
-        if [ "${yslocal}" == "${ysnet}" ]; then
+        if [ "${yslocal}" = "${ysnet}" ]; then
             echo
             echo -e "当前 mihomo 最新正式版内核：${bblue}${inscore}${plain} (已安装)"
             echo
