@@ -1463,6 +1463,56 @@ xray_hy2_link() {
     curl -L -o /usr/bin/xray-hy2 -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh
     chmod +x /usr/bin/xray-hy2
 }
+# 查看xray运行状态
+xray_zhuangtai(){
+    green "1.查看xray服务是否启动,按ctrl+c结束运行"
+    green "2.查看xray启动详细信息,按ctrl+c结束运行"
+    green "3.重启xray服务"
+    green "0.返回主菜单"
+    readp "请选择【0-3】：" menu
+    if [ -z "$menu" ] || [ "$menu" = "1" ]; then
+        systemctl status xray
+    elif [ -z "$menu" ] || [ "$menu" = "2" ]; then    
+        journalctl --no-pager -e -u xray
+    elif [ -z "$menu" ] || [ "$menu" = "3" ]; then
+        systemctl restart xray
+        xray_zhuangtai
+    else
+        xray-hy2
+    fi
+}
+# 查看和ysteria2运行状态
+hy2_zhuangtai(){
+    green "1.查看hy2服务是否启动,按ctrl+c结束运行"
+    green "2.查看hy2启动详细信息,按ctrl+c结束运行"
+    green "3.重启hy2服务"
+    green "0.返回主菜单"
+    readp "请选择【0-3】：" menu
+    if [ -z "$menu" ] || [ "$menu" = "1" ]; then
+        systemctl status hysteria-server.service
+    elif [ -z "$menu" ] || [ "$menu" = "2" ]; then    
+        journalctl --no-pager -e -u hysteria-server.service
+    elif [ -z "$menu" ] || [ "$menu" = "3" ]; then
+        systemctl restart hysteria-server.service
+        hy2_zhuangtai
+    else
+        xray-hy2
+    fi
+}
+# 开启bbr
+bbr_jiaoben() {
+    if [[ $vi =~ lxc|openvz ]]; then
+        yellow "当前VPS的架构为 $vi，不支持开启原版BBR加速" && sleep 2 && exit
+    else
+        green "点击任意键，即可开启BBR加速，ctrl+c退出"
+        bash <(curl -Ls https://raw.githubusercontent.com/teddysun/across/master/bbr.sh)
+    fi
+}
+# 安装cf-warp
+cfwarp() {
+    #bash <(curl -Ls https://gitlab.com/rwkgyg/CFwarp/raw/main/CFwarp.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/warp-yg/main/CFwarp.sh)
+}
 # 设置gitlab功能
 gitlabsub() {
     echo
@@ -1572,6 +1622,7 @@ gitlabsubgo() {
     fi
     cd
 }
+# gitlab菜单
 gitlab_menu(){
     green "1.设置Gitlab订阅"
     green "2.同步Gitlab订阅"
@@ -1586,6 +1637,138 @@ gitlab_menu(){
     fi
 }
 
+inssbwpph() {
+  ins() {
+    if [ ! -e /usr/local/etc/xray/sbwpph ]; then
+      case $(uname -m) in
+      aarch64) cpu=arm64 ;;
+      x86_64) cpu=amd64 ;;
+      esac
+      curl -L -o /usr/local/etc/xray/sbwpph -# --retry 2 --insecure https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sbwpph_$cpu
+      chmod +x /usr/local/etc/xray/sbwpph
+    fi
+    if [[ -n $(ps -e | grep sbwpph) ]]; then
+      kill -15 $(cat /usr/local/etc/xray/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
+    fi
+    v4v6
+    if [[ -n $v4 ]]; then
+      sw46=4
+    else
+      red "IPV4不存在，确保安装过WARP-IPV4模式"
+      sw46=6
+    fi
+    echo
+    readp "设置WARP-plus-Socks5端口（回车跳过端口默认40000）：" port
+    if [[ -z $port ]]; then
+      port=40000
+      until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") && -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
+        [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
+      done
+    else
+      until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") && -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
+        [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
+      done
+    fi
+    s5port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "socks") | .server_port')
+    [[ "$sbnh" == "1.10" ]] && num=10 || num=11
+    sed -i "127s/$s5port/$port/g" /etc/s-box/sb10.json
+    sed -i "150s/$s5port/$port/g" /etc/s-box/sb11.json
+    rm -rf /etc/s-box/sb.json
+    cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
+    restartsb
+  }
+  unins() {
+    kill -15 $(cat /etc/s-box/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
+    rm -rf /etc/s-box/sbwpph.log /etc/s-box/sbwpphid.log
+    crontab -l >/tmp/crontab.tmp
+    sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
+    crontab /tmp/crontab.tmp
+    rm /tmp/crontab.tmp
+  }
+  echo
+  yellow "1：重置启用WARP-plus-Socks5本地Warp代理模式"
+  yellow "2：重置启用WARP-plus-Socks5多地区Psiphon代理模式"
+  yellow "3：停止WARP-plus-Socks5代理模式"
+  yellow "0：返回上层"
+  readp "请选择【0-3】：" menu
+  if [ "$menu" = "1" ]; then
+    ins
+    nohup setsid /etc/s-box/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1 &
+    echo "$!" >/etc/s-box/sbwpphid.log
+    green "申请IP中……请稍等……" && sleep 20
+    resv1=$(curl -s --socks5 localhost:$port icanhazip.com)
+    resv2=$(curl -sx socks5h://localhost:$port icanhazip.com)
+    if [[ -z $resv1 && -z $resv2 ]]; then
+      red "WARP-plus-Socks5的IP获取失败" && unins && exit
+    else
+      echo "/etc/s-box/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1" >/etc/s-box/sbwpph.log
+      crontab -l >/tmp/crontab.tmp
+      sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
+      echo '@reboot /bin/bash -c "nohup setsid $(cat /etc/s-box/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /etc/s-box/sbwpphid.log"' >>/tmp/crontab.tmp
+      crontab /tmp/crontab.tmp
+      rm /tmp/crontab.tmp
+      green "WARP-plus-Socks5的IP获取成功，可进行Socks5代理分流"
+    fi
+  elif [ "$menu" = "2" ]; then
+    ins
+    echo '
+奥地利（AT）
+澳大利亚（AU）
+比利时（BE）
+保加利亚（BG）
+加拿大（CA）
+瑞士（CH）
+捷克 (CZ)
+德国（DE）
+丹麦（DK）
+爱沙尼亚（EE）
+西班牙（ES）
+芬兰（FI）
+法国（FR）
+英国（GB）
+克罗地亚（HR）
+匈牙利 (HU)
+爱尔兰（IE）
+印度（IN）
+意大利 (IT)
+日本（JP）
+立陶宛（LT）
+拉脱维亚（LV）
+荷兰（NL）
+挪威 (NO)
+波兰（PL）
+葡萄牙（PT）
+罗马尼亚 (RO)
+塞尔维亚（RS）
+瑞典（SE）
+新加坡 (SG)
+斯洛伐克（SK）
+美国（US）
+'
+    readp "可选择国家地区（输入末尾两个大写字母，如美国，则输入US）：" guojia
+    nohup setsid /etc/s-box/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1 &
+    echo "$!" >/etc/s-box/sbwpphid.log
+    green "申请IP中……请稍等……" && sleep 20
+    resv1=$(curl -s --socks5 localhost:$port icanhazip.com)
+    resv2=$(curl -sx socks5h://localhost:$port icanhazip.com)
+    if [[ -z $resv1 && -z $resv2 ]]; then
+      red "WARP-plus-Socks5的IP获取失败，尝试换个国家地区吧" && unins && exit
+    else
+      echo "/etc/s-box/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1" >/etc/s-box/sbwpph.log
+      crontab -l >/tmp/crontab.tmp
+      sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
+      echo '@reboot /bin/bash -c "nohup setsid $(cat /etc/s-box/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /etc/s-box/sbwpphid.log"' >>/tmp/crontab.tmp
+      crontab /tmp/crontab.tmp
+      rm /tmp/crontab.tmp
+      green "WARP-plus-Socks5的IP获取成功，可进行Socks5代理分流"
+    fi
+  elif [ "$menu" = "3" ]; then
+    unins && green "已停止WARP-plus-Socks5代理功能"
+  else
+    sb
+  fi
+}
+
 echo ""
 echo ""
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1598,24 +1781,20 @@ green " 4. 更新xray与hy2联合脚本"
 white "----------------------------------------------------------------------------------"
 green " 5. 显示xray与hy2配置link信息"
 green " 6. Gitlab订阅设置与推送"
-green " 7. 更新hysteria2版本"
-green " 8. 删除卸载 hysteria2"
 white "----------------------------------------------------------------------------------"
-green " 9. 显示xray配置链接"   
-green " 8. 三通道域名分流"
-green " 7. 更新 Sing-box-yg 脚本"
-green " 8. 更新/切换/指定 Sing-box 内核版本"
+green " 7. 查看xray运行状态"
+green " 8. 查看hysteria2运行状态"
+white "----------------------------------------------------------------------------------" 
+green " 9. 一键BBR+加速"
 white "----------------------------------------------------------------------------------"
-green " 9. 刷新并查看节点 【Clash-Meta/SFA+SFI+SFW三合一配置/订阅链接/推送TG通知】"
-green "10. 查看 Sing-box 运行日志"
-green "11. 一键原版BBR+FQ加速"
-green "12. 管理 Acme 申请域名证书"
-green "13. 管理 Warp 查看Netflix/ChatGPT解锁情况"
-green "14. 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】"
-green "15. 双栈VPS切换IPV4/IPV6配置输出"
+green "10. 管理 Warp 查看Netflix/ChatGPT解锁情况"
+green "11. 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】没弄明白,还不能用"
 white "----------------------------------------------------------------------------------"
-green "16. Sing-box-yg脚本使用说明书"
 white "----------------------------------------------------------------------------------"
+white "----------------------------------------------------------------------------------"
+white "----------------------------------------------------------------------------------"
+green "20. 删除xray脚本"
+green "30. 删除hysteria2脚本"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 white "快捷启动为:xray-hy2"
@@ -1643,8 +1822,12 @@ case "$Input" in
  4 ) bash_up;;                          # 更新xray与hy2联合脚本
  5 ) xray_hy2_link;;                    # 显示xray与hy2配置link信息
  6 ) gitlab_menu;;                      # Gitlab订阅设置与推送
- 7 ) hysteria2_up;;
- 8 ) hysteria2_del;;
- 9 ) xray_link;;
+ 7 ) xray_zhuangtai;;                   # 查看xray运行状态
+ 8 ) hy2_zhuangtai;;                    # 查看hysteria2运行状态
+ 9 ) bbr_jiaoben;;                      # 一键BBR+加速
+ 10) cfwarp;;                           # 管理 Warp 查看Netflix/ChatGPT解锁情况
+ 11) inssbwpph;;                        # 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】没弄明白,还不能用
+ 20) xray_del;;                         # 删除xray脚本
+ 30) hysteria2_del;;                    # 删除hysteria2脚本
  * ) exit 
 esac
