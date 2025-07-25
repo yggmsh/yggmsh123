@@ -1,4 +1,11 @@
 # yggmsh123
+xray-hy2
+
+bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)
+
+bash <(curl -Ls https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)
+
+
 mihomo
 
 bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/ys.sh)
