@@ -1769,7 +1769,7 @@ inssbwpph() {
   fi
 }
 
-echo ""
+echo "bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)"
 echo ""
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 green " 1. xray与hy2官方联合脚本" 
