@@ -1197,7 +1197,7 @@ cat >/usr/local/etc/xray/sing_box_client.json <<EOF
         "tls": {
             "enabled": true,
             "server_name": "www.bing.com",
-            "insecure": false,
+            "insecure": true,
             "alpn": [
                 "h3"
             ]
@@ -1377,7 +1377,7 @@ proxies:
     short-id: $xray_shortIds                  
   client-fingerprint: chrome
 
-proxy-groups
+proxy-groups:
     
 - name: 🌍选择代理节点
   type: select
