@@ -369,8 +369,8 @@ hysteria2_port(){
     echo "$hysteria2_port" >/etc/hysteria/hysteria2_port.txt
 }
 # 输入url
-relity_url(){
-    readp "写入偷取证书的域名:" xray_reality_url    # 写入url地址
+reality_url(){
+    readp "写入偷取证书的域名:" reality_url    # 写入url地址
     if [ -z "${reality_url}" ]; then
         reality_url="www.yahoo.com"
     fi
@@ -414,7 +414,7 @@ xray_hy2_setup(){
     acme  # 调用acme勇哥脚本
     fi
     vless_xtls_relity_port && xhttp_tcp_reality_port && xhttp_tcp_tls_port && xhttp_udp_tls_port && xhttp_huiyuan_cf_port && hysteria2_port && socks5_port              # 写入端口
-    relity_url
+    reality_url
     readp "设置密码:" all_password
     echo "$all_password" >/etc/hysteria/all_password.txt
     warpwg                      # 注册wireguard信息
@@ -491,9 +491,9 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "network": "tcp",
         "security": "reality",
         "realitySettings": {
-        "dest": "$xray_reality_url:443",
+        "dest": "$reality_url:443",
         "serverNames": [
-        "$xray_reality_url"
+        "$reality_url"
         ],
         "privateKey": "$private_key",
         "shortIds": [
@@ -531,10 +531,10 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "realitySettings": {
         "show": false,
         "fingerprint": "chrome",
-        "dest": "$xray_reality_url:443",
+        "dest": "$reality_url:443",
         "xver": 0,
         "serverNames": [
-        "$xray_reality_url"
+        "$reality_url"
         ],
         "privateKey": "$private_key",
         "publicKey": "$public_key",
@@ -927,7 +927,7 @@ xray_hy2_link(){
     read_info       # 读取配置信息
     link_vless_xtls_relity() {
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_vless_xtls_relity="vless://$xray_uudi@$vps_ipv4:$vless_xtls_relity_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$xray_reality_url&fp=chrome&pbk=$public_key&sid=$xray_shortIds&type=tcp#vless_xtls_relity-$hostname"
+    link_vless_xtls_relity="vless://$xray_uudi@$vps_ipv4:$vless_xtls_relity_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reality_url&fp=chrome&pbk=$public_key&sid=$xray_shortIds&type=tcp#vless_xtls_relity-$hostname"
     echo "$link_vless_xtls_relity" >/usr/local/etc/xray/link_vless_xtls_relity.txt
     red "🚀【 vless_xtls_relity 】节点信息如下：" && sleep 2
     echo
@@ -940,7 +940,7 @@ xray_hy2_link(){
     }
     link_xhttp_tcp_reality(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_tcp_reality="vless://$xray_uudi@$vps_ipv4:$xhttp_tcp_reality_port?mode=auto&path=$link_path&security=reality&encryption=none&pbk=$public_key&fp=chrome&type=xhttp&sni=$xray_reality_url&sid=$xray_shortIds#xhttp_tcp_reality-$hostname"
+    link_xhttp_tcp_reality="vless://$xray_uudi@$vps_ipv4:$xhttp_tcp_reality_port?mode=auto&path=$link_path&security=reality&encryption=none&pbk=$public_key&fp=chrome&type=xhttp&sni=$reality_url&sid=$xray_shortIds#xhttp_tcp_reality-$hostname"
     echo "$link_xhttp_tcp_reality" >/usr/local/etc/xray/link_xhttp_tcp_reality.txt
     red "🚀【 xhttp_tcp_reality 】节点信息如下：" && sleep 2
     echo
