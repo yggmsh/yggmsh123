@@ -436,7 +436,7 @@ xray_hy2_setup(){
     $(chmod 777 /etc/hysteria/cert.crt)
     $(chmod 777 /etc/hysteria/private.key)
     $(chmod 777 /etc/hysteria/config.yaml)
-    if [ -f "/usr/local/etc/xray/cert.crt" ] && [ -f "/usr/local/etc/xray/private.key" ]; then
+    if [ ! -f "/usr/local/etc/xray/cert.crt" ] || [ ! -f "/usr/local/etc/xray/private.key" ]; then
     acme_url                    # 注册域名
     fi
     acme_auto_xuqi              # acme证书自动续期 每月2号自动续期
@@ -951,7 +951,7 @@ xray_hy2_link(){
     read_info       # 读取配置信息
     link_vless_xtls_relity() {
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_vless_xtls_relity="vless://$xray_uudi@$vps_ipv4:$xray_vless_reality_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$xray_reality_url&fp=chrome&pbk=$public_key&sid=$xray_shortIds&type=tcp#vless_xtls_relity-$hostname"
+    link_vless_xtls_relity="vless://$xray_uudi@$vps_ipv4:$vless_xtls_relity_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$xray_reality_url&fp=chrome&pbk=$public_key&sid=$xray_shortIds&type=tcp#vless_xtls_relity-$hostname"
     echo "$link_vless_xtls_relity" >/usr/local/etc/xray/link_vless_xtls_relity.txt
     red "🚀【 vless_xtls_relity 】节点信息如下：" && sleep 2
     echo
