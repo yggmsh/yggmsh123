@@ -497,7 +497,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
     {
         "tag": "vless-xtls-reality",
         "listen": "0.0.0.0",
-        "port": $xray_vless_reality_port,
+        "port": $vless_xtls_relity_port,
         "protocol": "vless",
         "settings": {
         "clients": [
@@ -1054,7 +1054,7 @@ xray_hy2_link(){
     link_hysteria2() {
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     link_hysteria2="hysteria2://$all_password@$vps_ipv4:$hysteria2_port?security=tls&alpn=h3&insecure=1&sni=www.bing.com#hy2-$hostname"
-    echo "$link_hysteria2" >/etc/hysteria/hy2.txt
+    echo "$link_hysteria2" >/etc/hysteria/link_hysteria2.txt
     red "🚀【 Hysteria-2 】节点信息如下：" && sleep 2
     echo
     echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
@@ -1098,7 +1098,7 @@ xray_hy2_link(){
     echo -e "${yellow}$baseurl${plain}"
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo
-    if [-f "/usr/local/etc/xray/good_gitlab.yes" ]; then
+    if [ -f "/usr/local/etc/xray/good_gitlab.yes" ]; then
         gitlabsubgo     # 同步gitlab
         clsbshow        # 显示gitlab的link
     fi
@@ -1458,7 +1458,7 @@ bash_up() {
 }
 # 生成快捷方式
 xray_hy2_kuaijie() {
-    rm -rf /usr/bin/xray-hy2
+    $(rm -rf /usr/bin/xray-hy2)
     curl -L -o /usr/bin/xray-hy2 -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh
     chmod +x /usr/bin/xray-hy2
 }
