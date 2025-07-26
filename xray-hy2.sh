@@ -346,7 +346,7 @@ xhttp_udp_tls_port(){
 xhttp_huiyuan_cf_port(){
     # 
     echo "回源端口需要在cf网站设置,规则设置Origin Rules端口_域名,SSL/TLS 加密:设置灵活"
-    echo "网络开启:gRPC,并且创建acme证书,选择第二种"
+    echo "网络开启:gRPC,并且创建acme证书,选择第二种:DNS API模式"
     readp "\n设置xhttp cf回源 端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     xhttp_huiyuan_cf_port=$port
