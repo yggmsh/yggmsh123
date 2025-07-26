@@ -1027,7 +1027,7 @@ xray_hy2_link(){
     }
     link_xhttp_tcp_cdn_80(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_tcp_cdn_80=vless://$xray_uudi@172.67.134.88:8880?encryption=none&host=$acme_url&mode=auto&path=%2Fxuexi&security=none&type=xhttp#xhttp_tcp_cdn_80-$hostname
+    link_xhttp_tcp_cdn_80="vless://$xray_uudi@172.67.134.88:8880?encryption=none&host=$acme_url&mode=auto&path=%2Fxuexi&security=none&type=xhttp#xhttp_tcp_cdn_80-$hostname"
     echo "$link_xhttp_tcp_cdn_80" >/usr/local/etc/xray/link_xhttp_tcp_cdn_80.txt
     red "🚀【 xhttp_tcp_cdn_80 】节点信息如下：" && sleep 2
     echo
