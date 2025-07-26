@@ -390,13 +390,13 @@ xray_hy2_setup(){
         sudo -i
         echo "进入root模式"
     fi
-    vps_ip
-    echo $vps_ipv4 >/usr/local/etc/xray/vps_ipv4.txt
-    echo $vps_ipv6 >/usr/local/etc/xray/vps_ipv6.txt
     openyn      #询问是否开放端口
     # 官方安装脚本
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u root
     bash <(curl -fsSL https://get.hy2.sh/)
+    vps_ip
+    echo $vps_ipv4 >/usr/local/etc/xray/vps_ipv4.txt
+    echo $vps_ipv6 >/usr/local/etc/xray/vps_ipv6.txt
     xray_uudi=$(xray uuid)
     echo "$xray_uudi" >/usr/local/etc/xray/xray_uudi.txt
     xray_reality=$(xray x25519)
