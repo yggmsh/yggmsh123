@@ -1504,7 +1504,7 @@ gitlabsub() {
     yellow "0：返回上层"
     readp "请选择【0-1】：" menu
     if [ "$menu" = "1" ]; then
-        cd /etc/ys
+        cd /usr/local/etc/xray/
         readp "输入登录邮箱: " email
         readp "输入访问令牌: " token
         readp "输入用户名: " userid
