@@ -379,6 +379,7 @@ relity_url(){
 
 acme_url(){
     readp "请入输入解析过的二级域名:" acme_url
+    cd /root/
     wget -O -  https://get.acme.sh | sh
     . .bashrc
     acme.sh --upgrade --auto-upgrade
