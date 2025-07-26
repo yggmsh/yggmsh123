@@ -379,7 +379,6 @@ relity_url(){
 
 acme_url(){
     readp "请入输入解析过的二级域名:" acme_url
-    sudo -i
     wget -O -  https://get.acme.sh | sh
     . .bashrc
     acme.sh --upgrade --auto-upgrade
@@ -1675,6 +1674,7 @@ echo -e "虚拟化:$blue$vi$plain  \c"
 echo -e "BBR算法:$blue$bbr$plain"
 vps_ip # 获取本地vps的真实ip
 echo -e "本地IPV4地址：${blue}${vps_ipv4}$plain    本地IPV6地址：${blue}${vps_ipv6}$plain"
+
 echo $vps_ipv4 >/usr/local/etc/xray/vps_ipv4.txt
 echo $vps_ipv6 >/usr/local/etc/xray/vps_ipv6.txt
 warp_ip # 获取warp的ip
