@@ -377,36 +377,10 @@ relity_url(){
     echo "$reality_url" >/usr/local/etc/xray/reality_url.txt
 }
 
-acme_url(){
-    readp "请入输入解析过的二级域名:" acme_url
-    cd /root/
-    wget -O -  https://get.acme.sh | sh
-    . .bashrc
-    acme.sh --upgrade --auto-upgrade
-    acme.sh --set-default-ca --server letsencrypt
-    acme.sh --issue -d $acme_url -w /usr/local/etc/xray/ --keylength ec-256 --force
-    acme.sh --install-cert -d $acme_url --ecc --fullchain-file /usr/local/etc/xray/cert.crt --key-file /usr/local/etc/xray/private.key
-    chmod +r /usr/local/etc/xray/cert.crt
-    chmod +r /usr/local/etc/xray/private.key
-    echo "$acme_url" >/usr/local/etc/xray/acme_url.txt
+acme(){
+bash <(curl -Ls https://gitlab.com/rwkgyg/acme-script/raw/main/acme.sh)
 }
 
-acme_auto_xuqi() {
-cat >/usr/local/etc/xray/auto-xuqi.sh <<EOF
-#!/bin/bash
-/root/.acme.sh/acme.sh --install-cert -d xuexi.yggmsh.edu.kg --ecc --fullchain-file /usr/local/etc/xray/cert.crt --key-file /usr/local/etc/xray/private.key
-
-chmod +r /usr/local/etc/xray/cert.crt
-
-chmod +r /usr/local/etc/xray/private.key
-
-sudo systemctl restart xray
-EOF
-    crontab -l >/tmp/crontab.tmp
-    echo "30 1 2 * *   bash /usr/local/etc/xray/auto-xuqi.sh" >>/tmp/crontab.tmp
-    crontab /tmp/crontab.tmp
-    rm /tmp/crontab.tmp
-}
 # 安装xray
 xray_hy2_setup(){
     xitong_name=$(whoami)
@@ -436,10 +410,9 @@ xray_hy2_setup(){
     $(chmod 777 /etc/hysteria/cert.crt)
     $(chmod 777 /etc/hysteria/private.key)
     $(chmod 777 /etc/hysteria/config.yaml)
-    if [ ! -f "/usr/local/etc/xray/cert.crt" ] || [ ! -f "/usr/local/etc/xray/private.key" ]; then
-    acme_url                    # 注册域名
+    if [ ! -f "/root/ygkkkca/private.key" ] || [ ! -f "/root/ygkkkca/cert.crt" ]; then
+    acme  # 调用acme勇哥脚本
     fi
-    acme_auto_xuqi              # acme证书自动续期 每月2号自动续期
     vless_xtls_relity_port && xhttp_tcp_reality_port && xhttp_tcp_tls_port && xhttp_udp_tls_port && xhttp_huiyuan_cf_port && hysteria2_port && socks5_port              # 写入端口
     relity_url
     readp "设置密码:" all_password
@@ -476,7 +449,9 @@ read_info(){
         # socks 
         socks5_port=$(cat /usr/local/etc/xray/socks5_port.txt 2>/dev/null)
         #acme_url
-        acme_url=$(cat /usr/local/etc/xray/acme_url.txt 2>/dev/null)
+        acme_url=$(cat /root/ygkkkca/ca.log 2>/dev/null)
+        acme_cert="/root/ygkkkca/cert.crt"
+        acme_private="/root/ygkkkca/private.key"
     fi
     if [ -d "/etc/hysteria/" ]; then
         all_password=$(cat /etc/hysteria/all_password.txt 2>/dev/null)
@@ -616,8 +591,8 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "certificates": [
         {
         "ocspStapling": 3600,
-        "certificateFile": "/usr/local/etc/xray/cert.crt",
-        "keyFile": "/usr/local/etc/xray/private.key"
+        "certificateFile": "$acme_cert",
+        "keyFile": "$acme_private"
         }
         ],
         "alpn": [
@@ -679,8 +654,8 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "certificates": [
         {
         "ocspStapling": 3600,
-        "certificateFile": "/usr/local/etc/xray/cert.crt",
-        "keyFile": "/usr/local/etc/xray/private.key"
+        "certificateFile": "$acme_cert",
+        "keyFile": "$acme_private"
         }
         ],
         "alpn": [
@@ -779,8 +754,8 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "certificates": [
         {
         "ocspStapling": 3600,
-        "certificateFile": "/usr/local/etc/xray/cert.crt",
-        "keyFile": "/usr/local/etc/xray/private.key"
+        "certificateFile": "$acme_cert",
+        "keyFile": "$acme_private"
         }
         ],
         "alpn": [
@@ -1661,7 +1636,7 @@ white "-------------------------------------------------------------------------
 green " 9. 一键BBR+加速"
 white "----------------------------------------------------------------------------------"
 green "10. 管理 Warp 查看Netflix/ChatGPT解锁情况"
-green "11. 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】没弄明白,还不能用"
+green "11. 管理 Acme 申请域名证书"
 white "----------------------------------------------------------------------------------"
 white "----------------------------------------------------------------------------------"
 white "----------------------------------------------------------------------------------"
@@ -1700,7 +1675,7 @@ case "$Input" in
  8 ) hy2_zhuangtai;;                    # 查看hysteria2运行状态
  9 ) bbr_jiaoben;;                      # 一键BBR+加速
  10) cfwarp;;                           # 管理 Warp 查看Netflix/ChatGPT解锁情况
- 11) inssbwpph;;                        # 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】没弄明白,还不能用
+ 11) acme;;                             # 管理 Acme 申请域名证书
  20) xray_del;;                         # 删除xray脚本
  30) hysteria2_del;;                    # 删除hysteria2脚本
  * ) exit 
