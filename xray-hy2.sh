@@ -1650,7 +1650,6 @@ red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rm -rf /usr/bin/xray-hy2
 curl -L -o /usr/bin/xray-hy2 -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh
 chmod +x /usr/bin/xray-hy2
-xray-hy2
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo -e "VPS状态如下："
 echo -e "系统:$blue$op$plain  \c"
