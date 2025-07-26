@@ -436,7 +436,9 @@ xray_hy2_setup(){
     $(chmod 777 /etc/hysteria/cert.crt)
     $(chmod 777 /etc/hysteria/private.key)
     $(chmod 777 /etc/hysteria/config.yaml)
+    if [ -f "/usr/local/etc/xray/cert.crt" ] && [ -f "/usr/local/etc/xray/private.key" ]; then
     acme_url                    # 注册域名
+    fi
     acme_auto_xuqi              # acme证书自动续期 每月2号自动续期
     vless_xtls_relity_port && xhttp_tcp_reality_port && xhttp_tcp_tls_port && xhttp_udp_tls_port && xhttp_huiyuan_cf_port && hysteria2_port && socks5_port              # 写入端口
     relity_url
@@ -1078,6 +1080,9 @@ xray_hy2_link(){
     link_xhttp_tcp_cdn_80
     link_xhttp_udp_tls_cdn_443
     fi
+    rm -rf /usr/local/etc/xray/jhdy.txt
+    rm -rf /usr/local/etc/xray/sing_box_client.json
+    rm -rf /usr/local/etc/xray/clash_meta_client.yaml
     sing_box_clash_meta         # sing-box订阅 与 clash_meta订阅
     cat /etc/hysteria/link_hysteria2.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
     cat /usr/local/etc/xray/link_xhttp_tcp_reality.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
