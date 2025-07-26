@@ -1359,7 +1359,7 @@ proxies:
   sni: www.bing.com
   alpn:
     - h3                               
-  skip-cert-verify: false
+  skip-cert-verify: true
   fast-open: true
 
 - name: vless-reality-vision-$hostname               
