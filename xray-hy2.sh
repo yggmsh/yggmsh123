@@ -452,6 +452,7 @@ read_info(){
         acme_url=$(cat /root/ygkkkca/ca.log 2>/dev/null)
         acme_cert="/root/ygkkkca/cert.crt"
         acme_private="/root/ygkkkca/private.key"
+        link_path="/etc"
     fi
     if [ -d "/etc/hysteria/" ]; then
         all_password=$(cat /etc/hysteria/all_password.txt 2>/dev/null)
@@ -545,7 +546,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
         ]
         },
         "xhttpSettings": {
-        "path": "/xuexi",
+        "path": "$link_path",
         "host": "",
         "headers": {},
         "scMaxBufferedPosts": 30,
@@ -608,7 +609,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
         ]
         },
         "xhttpSettings": {
-        "path": "/xuexi",
+        "path": "$link_path",
         "host": "",
         "headers": {},
         "scMaxBufferedPosts": 30,
@@ -670,7 +671,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
         ]
         },
         "xhttpSettings": {
-        "path": "/xuexi",
+        "path": "$link_path",
         "host": "",
         "headers": {},
         "scMaxBufferedPosts": 30,
@@ -708,7 +709,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "network": "xhttp",
         "security": "none",
         "xhttpSettings": {
-        "path": "/xuexi",
+        "path": "$link_path",
         "host": "",
         "headers": {},
         "scMaxBufferedPosts": 30,
@@ -771,7 +772,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
         ]
         },
         "xhttpSettings": {
-        "path": "/xuexi",
+        "path": "$link_path",
         "host": "$acme_url",
         "headers": {},
         "scMaxBufferedPosts": 30,
@@ -809,7 +810,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "network": "xhttp",
         "security": "none",
         "xhttpSettings": {
-        "path": "/xuexi",
+        "path": "$link_path",
         "host": "$acme_url",
         "headers": {},
         "scMaxBufferedPosts": 30,
@@ -861,7 +862,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "endpoint": "$endip:2408"
         }
         ],
-        "reserved": [$res],
+        "reserved": $res,
         "mtu": 1280
         },
         "tag": "wireguard-out"
@@ -881,7 +882,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
             "auth0.com"
             ],
             "outboundTag": "wireguard-out",
-            "inboundTag": ["socks-hy2-lai"]
+            "inboundTag": "socks-hy2-lai"
             },
             {
             "type": "field",
@@ -939,7 +940,7 @@ xray_hy2_link(){
     }
     link_xhttp_tcp_reality(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_tcp_reality="vless://$xray_uudi@$vps_ipv4:$xhttp_tcp_reality_port?mode=auto&path=%2Fxuexi&security=reality&encryption=none&pbk=$public_key&fp=chrome&type=xhttp&sni=$xray_reality_url&sid=$xray_shortIds#xhttp_tcp_reality-$hostname"
+    link_xhttp_tcp_reality="vless://$xray_uudi@$vps_ipv4:$xhttp_tcp_reality_port?mode=auto&path=$link_path&security=reality&encryption=none&pbk=$public_key&fp=chrome&type=xhttp&sni=$xray_reality_url&sid=$xray_shortIds#xhttp_tcp_reality-$hostname"
     echo "$link_xhttp_tcp_reality" >/usr/local/etc/xray/link_xhttp_tcp_reality.txt
     red "🚀【 xhttp_tcp_reality 】节点信息如下：" && sleep 2
     echo
@@ -952,7 +953,7 @@ xray_hy2_link(){
     }
     link_xhttp_tcp_tls(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_tcp_tls="vless://$xray_uudi@$acme_url:$xhttp_tcp_tls_port?mode=auto&path=%2Fxuexi&security=tls&alpn=h2%2Chttp%2F1.1&encryption=none&type=xhttp#xhttp_tcp_tls-$hostname"
+    link_xhttp_tcp_tls="vless://$xray_uudi@$acme_url:$xhttp_tcp_tls_port?mode=auto&path=$link_path&security=tls&alpn=h2%2Chttp%2F1.1&encryption=none&type=xhttp#xhttp_tcp_tls-$hostname"
     echo "$link_xhttp_tcp_tls" >/usr/local/etc/xray/link_xhttp_tcp_tls.txt
     red "🚀【 xhttp_tcp_tls 】节点信息如下：" && sleep 2
     echo
@@ -965,7 +966,7 @@ xray_hy2_link(){
     }
     link_xhttp_udp_tls(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_udp_tls="vless://$xray_uudi@$acme_url:$xhttp_udp_tls_port?mode=auto&path=%2Fxuexi&security=tls&alpn=h3&encryption=none&type=xhttp#xhttp-udp-tls-$hostname"
+    link_xhttp_udp_tls="vless://$xray_uudi@$acme_url:$xhttp_udp_tls_port?mode=auto&path=$link_path&security=tls&alpn=h3&encryption=none&type=xhttp#xhttp-udp-tls-$hostname"
     echo "$link_xhttp_udp_tls" >/usr/local/etc/xray/link_xhttp_udp_tls.txt
     red "🚀【 xhttp_udp_tls 】节点信息如下：" && sleep 2
     echo
@@ -978,7 +979,7 @@ xray_hy2_link(){
     }
     link_xhttp_huiyuan_cf_80(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_huiyuan_cf_80="vless://$xray_uudi@172.64.90.8:8880?encryption=none&host=beishong.yggmsh.edu.kg&mode=auto&path=%2Fxuexi&security=none&type=xhttp#xhttp_huiyuan_cf_80-$hostname"
+    link_xhttp_huiyuan_cf_80="vless://$xray_uudi@172.64.90.8:8880?encryption=none&host=beishong.yggmsh.edu.kg&mode=auto&path=$link_path&security=none&type=xhttp#xhttp_huiyuan_cf_80-$hostname"
     echo "$link_xhttp_huiyuan_cf_80" >/usr/local/etc/xray/link_xhttp_huiyuan_cf_80.txt
     red "🚀【 xhttp_huiyuan_cf_80 】节点信息如下：" && sleep 2
     echo
@@ -991,7 +992,7 @@ xray_hy2_link(){
     }
     link_xhttp_huiyuan_cf_443(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_huiyuan_cf_443="vless://$xray_uudi@172.64.90.8:443?mode=auto&path=%2Fxuexi&security=tls&encryption=none&host=beishong.yggmsh.edu.kg&type=xhttp#xhttp_huiyuan_cf_443-$hostname"
+    link_xhttp_huiyuan_cf_443="vless://$xray_uudi@172.64.90.8:443?mode=auto&path=$link_path&security=tls&encryption=none&host=beishong.yggmsh.edu.kg&type=xhttp#xhttp_huiyuan_cf_443-$hostname"
     echo "$link_xhttp_huiyuan_cf_443" >/usr/local/etc/xray/link_xhttp_huiyuan_cf_443.txt
     red "🚀【 xhttp_huiyuan_cf_443 】节点信息如下：" && sleep 2
     echo
@@ -1004,7 +1005,7 @@ xray_hy2_link(){
     }
     link_xhttp_tcp_cdn_80(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_tcp_cdn_80="vless://$xray_uudi@172.67.134.88:8880?encryption=none&host=$acme_url&mode=auto&path=%2Fxuexi&security=none&type=xhttp#xhttp_tcp_cdn_80-$hostname"
+    link_xhttp_tcp_cdn_80="vless://$xray_uudi@172.67.134.88:8880?encryption=none&host=$acme_url&mode=auto&path=$link_path&security=none&type=xhttp#xhttp_tcp_cdn_80-$hostname"
     echo "$link_xhttp_tcp_cdn_80" >/usr/local/etc/xray/link_xhttp_tcp_cdn_80.txt
     red "🚀【 xhttp_tcp_cdn_80 】节点信息如下：" && sleep 2
     echo
@@ -1017,7 +1018,7 @@ xray_hy2_link(){
     }
     link_xhttp_udp_tls_cdn_443(){
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_udp_tls_cdn_443="vless://$xray_uudi@172.64.90.8:8443?mode=auto&path=%2Fxuexi&security=tls&alpn=h3&encryption=none&host=$acme_url&type=xhttp&sni=$acme_url#xhttp_udp_tls_cdn_443-$hostname"
+    link_xhttp_udp_tls_cdn_443="vless://$xray_uudi@172.64.90.8:8443?mode=auto&path=$link_path&security=tls&alpn=h3&encryption=none&host=$acme_url&type=xhttp&sni=$acme_url#xhttp_udp_tls_cdn_443-$hostname"
     echo "$link_xhttp_udp_tls_cdn_443" >/usr/local/etc/xray/link_xhttp_udp_tls_cdn_443.txt
     red "🚀【 xhttp_udp_tls_cdn_443 】节点信息如下：" && sleep 2
     echo
