@@ -351,7 +351,7 @@ xhttp_huiyuan_cf_port(){
     echo "$xhttp_huiyuan_cf_port" >/usr/local/etc/xray/xhttp_huiyuan_cf_port.txt    
 }
 socks5_port(){
-    readp "\n设置Hysteria2主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
+    readp "\n设置socks5_port主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
     socks5_port=$port
     if [ -d "/etc/hysteria/" ]; then
@@ -1452,12 +1452,12 @@ hysteria2_up(){
 }
 # 更新脚本
 bash_up() {
-    xray_hy2_link # 更新菜单
+    xray_hy2_kuaijie_ # 更新菜单
     curl -sL https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray_hy2_v | awk -F "更新内容" '{print $1}' | head -n 1 >/root/v
     green " mihomo 安装脚本升级成功" && sleep 5 && xray-hy2
 }
 # 生成快捷方式
-xray_hy2_link() {
+xray_hy2_kuaijie() {
     rm -rf /usr/bin/xray-hy2
     curl -L -o /usr/bin/xray-hy2 -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh
     chmod +x /usr/bin/xray-hy2
@@ -1680,7 +1680,7 @@ echo $vps_ipv6 >/usr/local/etc/xray/vps_ipv6.txt
 warp_ip # 获取warp的ip
 echo -e "WARP IPV4地址：${blue}${warp_ipv4}$plain    WARP IPV6地址：${blue}${warp_ipv6}$plain"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-xray_hy2_link       #创建快捷方式
+xray_hy2_kuaijie       #创建快捷方式
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 readp "请输入数字【0-30】:" Input
 case "$Input" in  
