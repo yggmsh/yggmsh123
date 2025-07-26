@@ -1636,7 +1636,7 @@ gitlab_menu(){
         xray-hy2
     fi
 }
-
+# 赛风vpn 分流,目前还没弄明白
 inssbwpph() {
   ins() {
     if [ ! -e /usr/local/etc/xray/sbwpph ]; then
@@ -1658,9 +1658,9 @@ inssbwpph() {
       sw46=6
     fi
     echo
-    readp "设置WARP-plus-Socks5端口（回车跳过端口默认40000）：" port
+    readp "设置WARP-plus-Socks5端口（回车跳过端口默认9998）：" port
     if [[ -z $port ]]; then
-      port=40000
+      port=9998
       until [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") && -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]]; do
         [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
       done
@@ -1669,17 +1669,14 @@ inssbwpph() {
         [[ -n $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") || -n $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$port") ]] && yellow "\n端口被占用，请重新输入端口" && readp "自定义端口:" port
       done
     fi
-    s5port=$(sed 's://.*::g' /etc/s-box/sb.json | jq -r '.outbounds[] | select(.type == "socks") | .server_port')
+    s5port=$(sed 's://.*::g' /usr/local/etc/xray/config.json | jq -r '.outbounds[] | select(.protocol == "socks") | .port')
     [[ "$sbnh" == "1.10" ]] && num=10 || num=11
-    sed -i "127s/$s5port/$port/g" /etc/s-box/sb10.json
-    sed -i "150s/$s5port/$port/g" /etc/s-box/sb11.json
-    rm -rf /etc/s-box/sb.json
-    cp /etc/s-box/sb${num}.json /etc/s-box/sb.json
-    restartsb
+    jq --arg old_port "$s5port" --arg new_port "$port" '(.outbounds[] | select(.protocol == "socks").port) = ($new_port | tonumber)' /usr/local/etc/xray/config.json > /tmp/config.json && mv /tmp/config.json /usr/local/etc/xray/config.json
+    systemctl restart xray
   }
   unins() {
-    kill -15 $(cat /etc/s-box/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
-    rm -rf /etc/s-box/sbwpph.log /etc/s-box/sbwpphid.log
+    kill -15 $(cat /usr/local/etc/xray/sbwpphid.log 2>/dev/null) >/dev/null 2>&1
+    rm -rf /usr/local/etc/xray/sbwpph.log /usr/local/etc/xray/sbwpphid.log
     crontab -l >/tmp/crontab.tmp
     sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
     crontab /tmp/crontab.tmp
@@ -1693,18 +1690,18 @@ inssbwpph() {
   readp "请选择【0-3】：" menu
   if [ "$menu" = "1" ]; then
     ins
-    nohup setsid /etc/s-box/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1 &
-    echo "$!" >/etc/s-box/sbwpphid.log
+    nohup setsid /usr/local/etc/xray/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1 &
+    echo "$!" >/usr/local/etc/xray/sbwpphid.log
     green "申请IP中……请稍等……" && sleep 20
     resv1=$(curl -s --socks5 localhost:$port icanhazip.com)
     resv2=$(curl -sx socks5h://localhost:$port icanhazip.com)
     if [[ -z $resv1 && -z $resv2 ]]; then
       red "WARP-plus-Socks5的IP获取失败" && unins && exit
     else
-      echo "/etc/s-box/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1" >/etc/s-box/sbwpph.log
+      echo "/usr/local/etc/xray/sbwpph -b 127.0.0.1:$port --gool -$sw46 >/dev/null 2>&1" >/usr/local/etc/xray/sbwpph.log
       crontab -l >/tmp/crontab.tmp
       sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
-      echo '@reboot /bin/bash -c "nohup setsid $(cat /etc/s-box/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /etc/s-box/sbwpphid.log"' >>/tmp/crontab.tmp
+      echo '@reboot /bin/bash -c "nohup setsid $(cat /usr/local/etc/xray/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /usr/local/etc/xray/sbwpphid.log"' >>/tmp/crontab.tmp
       crontab /tmp/crontab.tmp
       rm /tmp/crontab.tmp
       green "WARP-plus-Socks5的IP获取成功，可进行Socks5代理分流"
@@ -1746,18 +1743,18 @@ inssbwpph() {
 美国（US）
 '
     readp "可选择国家地区（输入末尾两个大写字母，如美国，则输入US）：" guojia
-    nohup setsid /etc/s-box/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1 &
-    echo "$!" >/etc/s-box/sbwpphid.log
+    nohup setsid /usr/local/etc/xray/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1 &
+    echo "$!" >/usr/local/etc/xray/sbwpphid.log
     green "申请IP中……请稍等……" && sleep 20
     resv1=$(curl -s --socks5 localhost:$port icanhazip.com)
     resv2=$(curl -sx socks5h://localhost:$port icanhazip.com)
     if [[ -z $resv1 && -z $resv2 ]]; then
       red "WARP-plus-Socks5的IP获取失败，尝试换个国家地区吧" && unins && exit
     else
-      echo "/etc/s-box/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1" >/etc/s-box/sbwpph.log
+      echo "/usr/local/etc/xray/sbwpph -b 127.0.0.1:$port --cfon --country $guojia -$sw46 >/dev/null 2>&1" >/usr/local/etc/xray/sbwpph.log
       crontab -l >/tmp/crontab.tmp
       sed -i '/sbwpphid.log/d' /tmp/crontab.tmp
-      echo '@reboot /bin/bash -c "nohup setsid $(cat /etc/s-box/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /etc/s-box/sbwpphid.log"' >>/tmp/crontab.tmp
+      echo '@reboot /bin/bash -c "nohup setsid $(cat /usr/local/etc/xray/sbwpph.log 2>/dev/null) & pid=\$! && echo \$pid > /usr/local/etc/xray/sbwpphid.log"' >>/tmp/crontab.tmp
       crontab /tmp/crontab.tmp
       rm /tmp/crontab.tmp
       green "WARP-plus-Socks5的IP获取成功，可进行Socks5代理分流"
@@ -1765,7 +1762,7 @@ inssbwpph() {
   elif [ "$menu" = "3" ]; then
     unins && green "已停止WARP-plus-Socks5代理功能"
   else
-    sb
+    xray-hy2
   fi
 }
 
