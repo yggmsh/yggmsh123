@@ -1455,7 +1455,7 @@ hysteria2_up(){
 bash_up() {
     xray_hy2_kuaijie # 更新菜单
     curl -sL https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray_hy2_v | awk -F "更新内容" '{print $1}' | head -n 1 >/root/v
-    green " mihomo 安装脚本升级成功" && sleep 5 && xray-hy2
+    green " xray-hy2 安装脚本升级成功" && sleep 5 && xray-hy2
 }
 # 生成快捷方式
 xray_hy2_kuaijie() {
