@@ -423,7 +423,7 @@ xray_hy2_setup(){
     write_config                # 写入配置文件
     xray_hy2_link                  # 显示配置链接
     $(systemctl restart xray)   # 重启xray
-    
+    $(systemctl restart hysteria-server.service)   # 重启hysteria2
 }
 # 读取全部配置信息
 read_info(){
@@ -1417,11 +1417,8 @@ EOF
 
 
 # 卸载xray
-xray_del(){
+xray_hy2_del(){
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
-}
-# 卸载hy2
-hysteria2_del(){
     bash <(curl -fsSL https://get.hy2.sh/) --remove
 }
 # 更新xray
@@ -1644,8 +1641,7 @@ white "-------------------------------------------------------------------------
 white "----------------------------------------------------------------------------------"
 white "----------------------------------------------------------------------------------"
 white "----------------------------------------------------------------------------------"
-green "20. 删除xray脚本"
-green "30. 删除hysteria2脚本"
+green "20. 删除xray与hy2脚本"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 white "快捷启动为:xray-hy2"
@@ -1678,7 +1674,6 @@ case "$Input" in
  9 ) bbr_jiaoben;;                      # 一键BBR+加速
  10) cfwarp;;                           # 管理 Warp 查看Netflix/ChatGPT解锁情况
  11) acme;;                             # 管理 Acme 申请域名证书
- 20) xray_del;;                         # 删除xray脚本
- 30) hysteria2_del;;                    # 删除hysteria2脚本
+ 20) xray_hy2_del;;                     # 删除xray与hy2脚本
  * ) exit 
 esac
