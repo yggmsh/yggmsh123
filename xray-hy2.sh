@@ -1617,6 +1617,97 @@ gitlab_menu(){
         xray-hy2
     fi
 }
+# hy2端口跳跃
+hy2ports_jump(){
+    green "1.设置hy2的多端口"
+    green "2.删除hy2的多端口"
+    green "0.返回主菜单"
+    readp "请选择[0-2]:" menu
+    if [ -z "$menu" ] || [ "$menu" = "1" ]; then
+        if [ -f "/etc/hysteria/hy2_ports.txt" ] && [ -f "/etc/hysteria/hysteria2_port.txt" ]; then
+            # 读取文件内容
+            hy2_port=$(cat /etc/hysteria/hysteria2_port.txt 2>/dev/null)
+            hy2_ports=$(cat /etc/hysteria/hy2_ports.txt 2>/dev/null)
+            xxxx=$hy2_ports
+            ports_hy2="${xxxx//-/:}"
+            $(iptables -t nat -D PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+            $(ip6tables -t nat -D PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+            $(netfilter-persistent save)
+        fi
+        hy2ports        # 输入多端口并配置
+        hy2ports_jump
+    elif [ -z "$menu" ] || [ "$menu" = "2" ]; then
+        if [ -f "/etc/hysteria/hy2_ports.txt" ] && [ -f "/etc/hysteria/hysteria2_port.txt" ]; then
+            # 读取文件内容
+            hy2_port=$(cat /etc/hysteria/hysteria2_port.txt 2>/dev/null)
+            hy2_ports=$(cat /etc/hysteria/hy2_ports.txt 2>/dev/null)
+            xxxx=$hy2_ports
+            ports_hy2="${xxxx//-/:}"
+            $(iptables -t nat -D PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+            $(ip6tables -t nat -D PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+            $(netfilter-persistent save)
+            hy2ports_jump
+        fi
+    else
+        hy2ports_jump
+    fi
+}
+hy2ports() {
+    blue "设置Hysteria2多端口 格式为[10000-10010],如果不输入直接回车,则随机产生一个"
+    blue "10000-65525之间的随机端口,并在这个端口连续往后增加10个端口"
+    readp "设置Hysteria2多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口)" port
+    chooseport
+    # 如果 port小于65525 并且 不是一个 xxxx数-yyyy数 则执行 num1=$port  num2=$port+10   ports_mieru="$num1-$num2"
+    # 判断如果是这个形式的数 xxxx数-yyyy数 则执行pors_mieru=$port 否则返回mieruports
+    PORT_RANGE_REGEX="^[0-9]+-[0-9]+$"
+    # 第一部分判断：port小于65525 并且 不是一个 xxxx数-yyyy数
+    if [[ "$port" -lt 65525 && ! "$port" =~ $PORT_RANGE_REGEX ]]; then
+        echo "port ($port) 小于 65525 并且不是 'xxxx数-yyyy数' 格式"
+        num1=$port
+        num2=$((port + 10)) # 使用 $((...)) 进行算术运
+        hy2_array=()
+        #hy2_array+=$num1
+        for xport in $(seq "$num1" "$num2"); do
+            # 加入if语句判断端口是否被占用,占用就执行else mieruports
+            if ! tcp_port "$xport" || ! udp_port "$xport"; then
+                hy2ports
+            fi
+            hy2_array+=($xport)
+        done
+        hy2_ports="$num1-$num2"
+        hy2_port=$(cat /etc/hysteria/hysteria2_port.txt 2>/dev/null)
+        xxxx=$hy2_ports
+        ports_hy2="${xxxx//-/:}"
+        $(iptables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+        $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+        $(netfilter-persistent save)
+        echo "$hy2_ports" >/etc/hysteria/hy2_ports.txt
+    # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
+    elif [[ "$port" =~ $PORT_RANGE_REGEX ]]; then
+        echo "port ($port) 是 'xxxx数-yyyy数' 格式"
+        ports_x="$port"
+        hy2_array=()
+        IFS='-' read -r start_num end_num <<<"$ports_x"
+        for xport in $(seq "$start_num" "$end_num"); do
+            if ! tcp_port "$xport" || ! udp_port "$xport"; then
+                hy2ports
+            fi
+            hy2_array+=($xport)
+            #还要加入写入txt文本来保存数组,用来mihomo读取这个数组,来判断是否被定义过了的端
+        done
+        hy2_ports=$ports_x
+        hy2_port=$(cat /etc/hysteria/hysteria2_port.txt 2>/dev/null)
+        xxxx=$hy2_ports
+        ports_hy2="${xxxx//-/:}"
+        $(iptables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+        $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
+        $(netfilter-persistent save)
+        echo "$hy2_ports" >/etc/hysteria/hy2_ports.txt
+        # 其他情况
+    else
+        hy2ports
+    fi
+}
 
 echo "bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)"
 echo "bash <(curl -Ls https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)"
@@ -1639,6 +1730,7 @@ white "-------------------------------------------------------------------------
 green "10. 管理 Warp 查看Netflix/ChatGPT解锁情况"
 green "11. 管理 Acme 申请域名证书"
 white "----------------------------------------------------------------------------------"
+green "12. 设置hysteria2端口跳跃"
 white "----------------------------------------------------------------------------------"
 white "----------------------------------------------------------------------------------"
 white "----------------------------------------------------------------------------------"
@@ -1675,6 +1767,7 @@ case "$Input" in
  9 ) bbr_jiaoben;;                      # 一键BBR+加速
  10) cfwarp;;                           # 管理 Warp 查看Netflix/ChatGPT解锁情况
  11) acme;;                             # 管理 Acme 申请域名证书
+ 12) hy2ports_jump;;                    #设置hysteria2端口跳跃
  20) xray_hy2_del;;                     # 删除xray与hy2脚本
  * ) exit 
 esac
