@@ -1617,6 +1617,14 @@ gitlab_menu(){
         xray-hy2
     fi
 }
+# 检查tcp端口是否被占用                 编写完了
+tcp_port() {
+    [[ -z $(ss -tunlp | grep -w tcp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
+}
+# 检查udp端口是否被占用
+udp_port() {
+    [[ -z $(ss -tunlp | grep -w udp | awk '{print $5}' | sed 's/.*://g' | grep -w "$1") ]]
+}
 # hy2端口跳跃
 hy2ports_jump(){
     green "1.设置hy2的多端口"
