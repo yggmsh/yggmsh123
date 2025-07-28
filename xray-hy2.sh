@@ -265,7 +265,6 @@ vps_ip() {    # 获取本地vps的真实ip
 
 warp_ip() {
     warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。
-
     # 如果当前没有使用 Warp，则尝试启动它
     if [[ ! $wgcfv4 =~ on|plus && ! $wgcfv6 =~ on|plus ]]; then
         echo "当前未检测到 Cloudflare Warp 服务，尝试启动..."
@@ -460,6 +459,7 @@ read_info(){
     if [ -d "/etc/hysteria/" ]; then
         all_password=$(cat /etc/hysteria/all_password.txt 2>/dev/null)
         hysteria2_port=$(cat /etc/hysteria/hysteria2_port.txt 2>/dev/null)
+        hy2_ports=$(cat /etc/hysteria/hy2_ports.txt 2>/dev/null)
         socks5_port=$(cat /etc/hysteria/socks5_port.txt 2>/dev/null)
         
     fi
@@ -1724,6 +1724,13 @@ hy2ports() {
     fi
 }
 
+show_message(){
+    read_info
+    if [ -f "/etc/hysteria/hy2_ports.txt" ]; then
+    echo -e "[ hysteria2 ]${yellow}主端口:$hysteria2_port  跳跃端口: $hy2_ports${plain}"
+    fi
+}
+
 echo "bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)"
 echo "bash <(curl -Ls https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1766,9 +1773,14 @@ echo -e "虚拟化:$blue$vi$plain  \c"
 echo -e "BBR算法:$blue$bbr$plain"
 vps_ip # 获取本地vps的真实ip
 echo -e "本地IPV4地址：${blue}${vps_ipv4}$plain    本地IPV6地址：${blue}${vps_ipv6}$plain"
+warpcheck # 检查当前服务器是否正在使用 Cloudflare Warp 服务。
+if [[ $wgcfv4 =~ on|plus || $wgcfv6 =~ on|plus ]]; then
 warp_ip # 获取warp的ip
 echo -e "WARP IPV4地址：${blue}${warp_ipv4}$plain    WARP IPV6地址：${blue}${warp_ipv6}$plain"
-red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+fi
+white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+show_message
+white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 readp "请输入数字【0-30】:" Input
 case "$Input" in  
  1 ) xray_hy2_setup;;                   # xray与hy2官方安装脚本      
