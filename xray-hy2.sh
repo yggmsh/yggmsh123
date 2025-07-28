@@ -1641,6 +1641,8 @@ hy2ports_jump(){
             $(iptables -t nat -D PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
             $(ip6tables -t nat -D PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
             $(netfilter-persistent save)
+            rm -rf /etc/hysteria/hy2_ports.txt
+            yellow "删除旧的端口"
         fi
         hy2ports        # 输入多端口并配置
         yellow "主端口为:$hy2_port"
