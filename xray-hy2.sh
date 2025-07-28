@@ -394,6 +394,7 @@ xray_hy2_setup(){
     # 官方安装脚本
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u root
     bash <(curl -fsSL https://get.hy2.sh/)
+    $(systemctl enable --now hysteria-server.service)
     vps_ip
     echo $vps_ipv4 >/usr/local/etc/xray/vps_ipv4.txt
     echo $vps_ipv6 >/usr/local/etc/xray/vps_ipv6.txt
