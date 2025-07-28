@@ -1643,6 +1643,8 @@ hy2ports_jump(){
             $(netfilter-persistent save)
         fi
         hy2ports        # 输入多端口并配置
+        echo "主端口为:$hy2_port"
+        echo "跳跃端口为:$hy2_ports"
         hy2ports_jump
     elif [ -z "$menu" ] || [ "$menu" = "2" ]; then
         if [ -f "/etc/hysteria/hy2_ports.txt" ] && [ -f "/etc/hysteria/hysteria2_port.txt" ]; then
@@ -1654,23 +1656,25 @@ hy2ports_jump(){
             $(iptables -t nat -D PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
             $(ip6tables -t nat -D PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
             $(netfilter-persistent save)
+            rm -rf /etc/hysteria/hy2_ports.txt
+            echo "已删除跳跃端口"
             hy2ports_jump
         fi
     else
-        hy2ports_jump
+        xray-hy2
     fi
 }
 hy2ports() {
     blue "设置Hysteria2多端口 格式为[10000-10010],如果不输入直接回车,则随机产生一个"
     blue "10000-65525之间的随机端口,并在这个端口连续往后增加10个端口"
-    readp "设置Hysteria2多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口)" port
+    readp "设置Hysteria2多端口实例[10000-10010] (回车跳过为10000-65525之间的随机端口):" port
     chooseport
     # 如果 port小于65525 并且 不是一个 xxxx数-yyyy数 则执行 num1=$port  num2=$port+10   ports_mieru="$num1-$num2"
     # 判断如果是这个形式的数 xxxx数-yyyy数 则执行pors_mieru=$port 否则返回mieruports
     PORT_RANGE_REGEX="^[0-9]+-[0-9]+$"
     # 第一部分判断：port小于65525 并且 不是一个 xxxx数-yyyy数
     if [[ "$port" -lt 65525 && ! "$port" =~ $PORT_RANGE_REGEX ]]; then
-        echo "port ($port) 小于 65525 并且不是 'xxxx数-yyyy数' 格式"
+        echo "port ($port) 小于 65525 并且不是 'xxxx数-yyyy数' 格式,自动往后延续10个端口"
         num1=$port
         num2=$((port + 10)) # 使用 $((...)) 进行算术运
         hy2_array=()
@@ -1690,6 +1694,7 @@ hy2ports() {
         $(ip6tables -t nat -A PREROUTING -p udp --dport $ports_hy2 -j DNAT --to-destination :$hy2_port)
         $(netfilter-persistent save)
         echo "$hy2_ports" >/etc/hysteria/hy2_ports.txt
+        
     # 第二部分判断：如果是这个形式的数 xxxx数-yyyy数
     elif [[ "$port" =~ $PORT_RANGE_REGEX ]]; then
         echo "port ($port) 是 'xxxx数-yyyy数' 格式"
