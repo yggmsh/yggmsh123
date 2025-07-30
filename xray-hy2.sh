@@ -328,29 +328,6 @@ xhttp_tcp_reality_port(){
     xhttp_tcp_reality_port=$port
     echo "$xhttp_tcp_reality_port" >/usr/local/etc/xray/xhttp_tcp_reality_port.txt
 }
-xhttp_tcp_tls_port(){
-    # 
-    readp "\n设置xhttp tcp tls端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
-    chooseport
-    xhttp_tcp_tls_port=$port
-    echo "$xhttp_tcp_tls_port" >/usr/local/etc/xray/xhttp_tcp_tls_port.txt
-}
-xhttp_udp_tls_port(){
-    # 
-    readp "\n设置xhttp udp tls端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
-    chooseport
-    xhttp_udp_tls_port=$port
-    echo "$xhttp_udp_tls_port" >/usr/local/etc/xray/xhttp_udp_tls_port.txt    
-}
-xhttp_huiyuan_cf_port(){
-    # 
-    echo "回源端口需要在cf网站设置,规则设置Origin Rules端口_域名,SSL/TLS 加密:设置灵活"
-    echo "网络开启:gRPC,并且创建acme证书,选择第二种:DNS API模式,会用到cf api口令,注册账号等"
-    readp "\n设置xhttp cf回源 端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
-    chooseport
-    xhttp_huiyuan_cf_port=$port
-    echo "$xhttp_huiyuan_cf_port" >/usr/local/etc/xray/xhttp_huiyuan_cf_port.txt    
-}
 socks5_port(){
     readp "\n设置socks5_port主端口[1-65535] (回车跳过为10000-65535之间的随机端口)：" port
     chooseport
@@ -415,7 +392,7 @@ xray_hy2_setup(){
     if [ ! -f "/root/ygkkkca/private.key" ] || [ ! -f "/root/ygkkkca/cert.crt" ]; then
     acme  # 调用acme勇哥脚本
     fi
-    vless_xtls_relity_port && xhttp_tcp_reality_port && xhttp_tcp_tls_port && xhttp_udp_tls_port && xhttp_huiyuan_cf_port && hysteria2_port && socks5_port              # 写入端口
+    vless_xtls_relity_port && xhttp_tcp_reality_port && hysteria2_port && socks5_port              # 写入端口
     reality_url
     readp "设置密码:" all_password
     echo "$all_password" >/etc/hysteria/all_password.txt
@@ -439,14 +416,6 @@ read_info(){
         reality_url=$(cat /usr/local/etc/xray/reality_url.txt 2>/dev/null)
         vless_xtls_relity_port=$(cat /usr/local/etc/xray/vless_xtls_relity_port.txt 2>/dev/null)
         # xhttp tcp reality
-        xhttp_tcp_reality_port=$(cat /usr/local/etc/xray/xhttp_tcp_reality_port.txt 2>/dev/null)
-
-        xhttp_tcp_tls_port=$(cat /usr/local/etc/xray/xhttp_tcp_tls_port.txt 2>/dev/null)
-
-        xhttp_udp_tls_port=$(cat /usr/local/etc/xray/xhttp_udp_tls_port.txt 2>/dev/null)
-
-        xhttp_huiyuan_cf_port=$(cat /usr/local/etc/xray/xhttp_huiyuan_cf_port.txt 2>/dev/null)
-
         xhttp_tcp_reality_port=$(cat /usr/local/etc/xray/xhttp_tcp_reality_port.txt 2>/dev/null)
         # socks 
         socks5_port=$(cat /usr/local/etc/xray/socks5_port.txt 2>/dev/null)
@@ -567,280 +536,7 @@ cat >/usr/local/etc/xray/config.json <<EOF
         "quic"
         ]
         }
-        },
-        {
-        "tag": "xhttp-tcp-tls-zhilian",
-        "listen": "0.0.0.0",
-        "port": $xhttp_tcp_tls_port,
-        "protocol": "vless",
-        "settings": {
-        "clients": [
-        {
-        "id": "$xray_uudi",
-        "flow": ""
         }
-        ],
-        "decryption": "none",
-        "fallbacks": []
-        },
-        "streamSettings": {
-        "network": "xhttp",
-        "security": "tls",
-        "tlsSettings": {
-        "serverName": "$acme_url",
-        "rejectUnknownSni": false,
-        "minVersion": "1.2",
-        "maxVersion": "1.3",
-        "cipherSuites": "",
-        "certificates": [
-        {
-        "ocspStapling": 3600,
-        "certificateFile": "$acme_cert",
-        "keyFile": "$acme_private"
-        }
-        ],
-        "alpn": [
-        "h2",
-        "http/1.1"
-        ],
-        "settings": [
-        {
-        "allowInsecure": false,
-        "fingerprint": "",
-        "serverName": ""
-        }
-        ]
-        },
-        "xhttpSettings": {
-        "path": "$link_path",
-        "host": "",
-        "headers": {},
-        "scMaxBufferedPosts": 30,
-        "scMaxEachPostBytes": "1000000",
-        "noSSEHeader": false,
-        "xPaddingBytes": "100-1000",
-        "mode": "auto"
-        }
-        },
-        "sniffing": {
-        "enabled": true,
-        "destOverride": [
-        "http",
-        "tls",
-        "quic"
-        ]
-        }
-        },
-        {
-        "tag": "xhttp-udp-tls",
-        "listen": "0.0.0.0",
-        "port": $xhttp_udp_tls_port,
-        "protocol": "vless",
-        "settings": {
-        "clients": [
-        {
-        "id": "$xray_uudi",
-        "flow": ""
-        }
-        ],
-        "decryption": "none",
-        "fallbacks": []
-        },
-        "streamSettings": {
-        "network": "xhttp",
-        "security": "tls",
-        "tlsSettings": {
-        "serverName": "$acme_url",
-        "rejectUnknownSni": false,
-        "minVersion": "1.2",
-        "maxVersion": "1.3",
-        "cipherSuites": "",
-        "certificates": [
-        {
-        "ocspStapling": 3600,
-        "certificateFile": "$acme_cert",
-        "keyFile": "$acme_private"
-        }
-        ],
-        "alpn": [
-        "h3"
-        ],
-        "settings": [
-        {
-        "allowInsecure": false,
-        "fingerprint": "",
-        "serverName": ""
-        }
-        ]
-        },
-        "xhttpSettings": {
-        "path": "$link_path",
-        "host": "",
-        "headers": {},
-        "scMaxBufferedPosts": 30,
-        "scMaxEachPostBytes": "1000000",
-        "noSSEHeader": false,
-        "xPaddingBytes": "100-1000",
-        "mode": "auto"
-        }
-        },
-        "sniffing": {
-        "enabled": true,
-        "destOverride": [
-        "http",
-        "tls",
-        "quic"
-        ]
-        }
-        },
-        {
-        "tag": "xhttp-huiyuan-tcp/udp-cdn-80-443",
-        "listen": "0.0.0.0",
-        "port": $xhttp_huiyuan_cf_port,
-        "protocol": "vless",
-        "settings": {
-        "clients": [
-        {
-        "id": "$xray_uudi",
-        "flow": ""
-        }
-        ],
-        "decryption": "none",
-        "fallbacks": []
-        },
-        "streamSettings": {
-        "network": "xhttp",
-        "security": "none",
-        "xhttpSettings": {
-        "path": "$link_path",
-        "host": "",
-        "headers": {},
-        "scMaxBufferedPosts": 30,
-        "scMaxEachPostBytes": "1000000",
-        "noSSEHeader": false,
-        "xPaddingBytes": "100-1000",
-        "mode": "auto"
-        }
-        },
-        "sniffing": {
-        "enabled": true,
-        "destOverride": [
-        "http",
-        "tls",
-        "quic"
-        ]
-        }
-        },
-        {
-        "tag": "xhttp-tcp-tls-cdn",
-        "listen": "0.0.0.0",
-        "port": 8443,
-        "protocol": "vless",
-        "settings": {
-        "clients": [
-        {
-        "id": "$xray_uudi",
-        "flow": ""
-        }
-        ],
-        "decryption": "none",
-        "fallbacks": []
-        },
-        "streamSettings": {
-        "network": "xhttp",
-        "security": "tls",
-        "tlsSettings": {
-        "serverName": "$acme_url",
-        "rejectUnknownSni": false,
-        "minVersion": "1.2",
-        "maxVersion": "1.3",
-        "cipherSuites": "",
-        "certificates": [
-        {
-        "ocspStapling": 3600,
-        "certificateFile": "$acme_cert",
-        "keyFile": "$acme_private"
-        }
-        ],
-        "alpn": [
-        "h2",
-        "http/1.1"
-        ],
-        "settings": [
-        {
-        "allowInsecure": false,
-        "fingerprint": "",
-        "serverName": ""
-        }
-        ]
-        },
-        "xhttpSettings": {
-        "path": "$link_path",
-        "host": "$acme_url",
-        "headers": {},
-        "scMaxBufferedPosts": 30,
-        "scMaxEachPostBytes": "1000000",
-        "noSSEHeader": false,
-        "xPaddingBytes": "100-1000",
-        "mode": "auto"
-        }
-        },
-        "sniffing": {
-        "enabled": true,
-        "destOverride": [
-        "http",
-        "tls",
-        "quic"
-        ]
-        }
-        },
-        {
-        "tag": "xhttp-80-tcp-cdn",
-        "listen": "0.0.0.0",
-        "port": 8880,
-        "protocol": "vless",
-        "settings": {
-        "clients": [
-        {
-        "id": "$xray_uudi",
-        "flow": ""
-        }
-        ],
-        "decryption": "none",
-        "fallbacks": []
-        },
-        "streamSettings": {
-        "network": "xhttp",
-        "security": "none",
-        "xhttpSettings": {
-        "path": "$link_path",
-        "host": "$acme_url",
-        "headers": {},
-        "scMaxBufferedPosts": 30,
-        "scMaxEachPostBytes": "1000000",
-        "noSSEHeader": false,
-        "xPaddingBytes": "100-1000",
-        "mode": "auto"
-        }
-        },
-        "sniffing": {
-        "enabled": true,
-        "destOverride": [
-        "http",
-        "tls",
-        "quic"
-        ]
-        }
-        },
-        {
-        "tag": "socks-hy2-lai",
-        "port": $socks5_port,
-        "protocol": "socks",
-        "auth": "noauth",
-        "udp": true,
-        "ip": "127.0.0.1",
-        "userLevel": 0
-        }   
     ],
     "outbounds": [
         {
@@ -954,83 +650,6 @@ xray_hy2_link(){
     qrencode -o - -t ANSIUTF8 "$(cat /usr/local/etc/xray/link_xhttp_tcp_reality.txt)"
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     }
-    link_xhttp_tcp_tls(){
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_tcp_tls="vless://$xray_uudi@$acme_url:$xhttp_tcp_tls_port?mode=auto&path=$link_path&security=tls&alpn=h2%2Chttp%2F1.1&encryption=none&type=xhttp#xhttp_tcp_tls-$hostname"
-    echo "$link_xhttp_tcp_tls" >/usr/local/etc/xray/link_xhttp_tcp_tls.txt
-    red "🚀【 xhttp_tcp_tls 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$link_xhttp_tcp_tls${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /usr/local/etc/xray/link_xhttp_tcp_tls.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    }
-    link_xhttp_udp_tls(){
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_udp_tls="vless://$xray_uudi@$acme_url:$xhttp_udp_tls_port?mode=auto&path=$link_path&security=tls&alpn=h3&encryption=none&type=xhttp#xhttp-udp-tls-$hostname"
-    echo "$link_xhttp_udp_tls" >/usr/local/etc/xray/link_xhttp_udp_tls.txt
-    red "🚀【 xhttp_udp_tls 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$link_xhttp_udp_tls${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /usr/local/etc/xray/link_xhttp_udp_tls.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    }
-    link_xhttp_huiyuan_cf_80(){
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_huiyuan_cf_80="vless://$xray_uudi@172.64.90.8:8880?encryption=none&host=beishong.yggmsh.edu.kg&mode=auto&path=$link_path&security=none&type=xhttp#xhttp_huiyuan_cf_80-$hostname"
-    echo "$link_xhttp_huiyuan_cf_80" >/usr/local/etc/xray/link_xhttp_huiyuan_cf_80.txt
-    red "🚀【 xhttp_huiyuan_cf_80 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$link_xhttp_huiyuan_cf_80${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /usr/local/etc/xray/link_xhttp_huiyuan_cf_80.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    }
-    link_xhttp_huiyuan_cf_443(){
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_huiyuan_cf_443="vless://$xray_uudi@172.64.90.8:443?mode=auto&path=$link_path&security=tls&encryption=none&host=beishong.yggmsh.edu.kg&type=xhttp#xhttp_huiyuan_cf_443-$hostname"
-    echo "$link_xhttp_huiyuan_cf_443" >/usr/local/etc/xray/link_xhttp_huiyuan_cf_443.txt
-    red "🚀【 xhttp_huiyuan_cf_443 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$link_xhttp_huiyuan_cf_443${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /usr/local/etc/xray/link_xhttp_huiyuan_cf_443.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    }
-    link_xhttp_tcp_cdn_80(){
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_tcp_cdn_80="vless://$xray_uudi@172.67.134.88:8880?encryption=none&host=$acme_url&mode=auto&path=$link_path&security=none&type=xhttp#xhttp_tcp_cdn_80-$hostname"
-    echo "$link_xhttp_tcp_cdn_80" >/usr/local/etc/xray/link_xhttp_tcp_cdn_80.txt
-    red "🚀【 xhttp_tcp_cdn_80 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$link_xhttp_tcp_cdn_80${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /usr/local/etc/xray/link_xhttp_tcp_cdn_80.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    }
-    link_xhttp_udp_tls_cdn_443(){
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    link_xhttp_udp_tls_cdn_443="vless://$xray_uudi@172.64.90.8:8443?mode=auto&path=$link_path&security=tls&alpn=h3&encryption=none&host=$acme_url&type=xhttp&sni=$acme_url#xhttp_udp_tls_cdn_443-$hostname"
-    echo "$link_xhttp_udp_tls_cdn_443" >/usr/local/etc/xray/link_xhttp_udp_tls_cdn_443.txt
-    red "🚀【 xhttp_udp_tls_cdn_443 】节点信息如下：" && sleep 2
-    echo
-    echo "分享链接【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    echo -e "${yellow}$link_xhttp_udp_tls_cdn_443${plain}"
-    echo
-    echo "二维码【v2rayn、v2rayng、nekobox、小火箭shadowrocket】"
-    qrencode -o - -t ANSIUTF8 "$(cat /usr/local/etc/xray/link_xhttp_udp_tls_cdn_443.txt)"
-    white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"        
     }
     # hysteria2 节点信息
     link_hysteria2() {
@@ -1052,12 +671,6 @@ xray_hy2_link(){
     if [ -d "/usr/local/etc/xray/" ]; then
     link_xhttp_tcp_reality
     link_vless_xtls_relity
-    link_xhttp_tcp_tls
-    link_xhttp_udp_tls
-    link_xhttp_huiyuan_cf_80
-    link_xhttp_huiyuan_cf_443
-    link_xhttp_tcp_cdn_80
-    link_xhttp_udp_tls_cdn_443
     fi
     rm -rf /usr/local/etc/xray/jhdy.txt
     rm -rf /usr/local/etc/xray/sing_box_client.json
@@ -1066,18 +679,12 @@ xray_hy2_link(){
     cat /etc/hysteria/link_hysteria2.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
     cat /usr/local/etc/xray/link_xhttp_tcp_reality.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
     cat /usr/local/etc/xray/link_vless_xtls_relity.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
-    cat /usr/local/etc/xray/link_xhttp_tcp_tls.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
-    cat /usr/local/etc/xray/link_xhttp_udp_tls.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
-    cat /usr/local/etc/xray/link_xhttp_huiyuan_cf_80.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
-    cat /usr/local/etc/xray/link_xhttp_huiyuan_cf_443.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
-    cat /usr/local/etc/xray/link_xhttp_tcp_cdn_80.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
-    cat /usr/local/etc/xray/link_xhttp_udp_tls_cdn_443.txt 2>/dev/null >>/usr/local/etc/xray/jhdy.txt
     baseurl=$(base64 -w 0 </usr/local/etc/xray/jhdy.txt 2>/dev/null)
     v2sub=$(cat /usr/local/etc/xray/jhdy.txt 2>/dev/null)
     echo "$v2sub" >/usr/local/etc/xray/jh_sub.txt
     echo
     white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    red "🚀【 四合一聚合订阅 】节点信息如下：" && sleep 2
+    red "🚀【 三合一聚合订阅 】节点信息如下：" && sleep 2
     echo
     echo "分享链接【v2rayn、v2rayng、nekobox、Karing】"
     echo -e "${yellow}$baseurl${plain}"
@@ -1730,7 +1337,9 @@ show_message(){
     echo -e "[ hysteria2 ]${yellow}主端口:$hysteria2_port  跳跃端口: $hy2_ports${plain}"
     fi
 }
-
+rm -rf /usr/bin/xray-hy2
+curl -L -o /usr/bin/xray-hy2 -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh
+chmod +x /usr/bin/xray-hy2
 echo "bash <(wget -qO- https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)"
 echo "bash <(curl -Ls https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh)"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -1761,9 +1370,6 @@ green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 white "快捷启动为:xray-hy2"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-rm -rf /usr/bin/xray-hy2
-curl -L -o /usr/bin/xray-hy2 -# --retry 2 --insecure https://raw.githubusercontent.com/yggmsh/yggmsh123/main/xray-hy2.sh
-chmod +x /usr/bin/xray-hy2
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo -e "VPS状态如下："
 echo -e "系统:$blue$op$plain  \c"
@@ -1779,7 +1385,7 @@ warp_ip # 获取warp的ip
 echo -e "WARP IPV4地址：${blue}${warp_ipv4}$plain    WARP IPV6地址：${blue}${warp_ipv6}$plain"
 fi
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-show_message
+show_message        # 显示各种配置信息,目前只显示在有hy2的跳跃端口时才显示
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 readp "请输入数字【0-30】:" Input
 case "$Input" in  
@@ -1794,7 +1400,7 @@ case "$Input" in
  9 ) bbr_jiaoben;;                      # 一键BBR+加速
  10) cfwarp;;                           # 管理 Warp 查看Netflix/ChatGPT解锁情况
  11) acme;;                             # 管理 Acme 申请域名证书
- 12) hy2ports_jump;;                    #设置hysteria2端口跳跃
+ 12) hy2ports_jump;;                    # 设置hysteria2端口跳跃
  20) xray_hy2_del;;                     # 删除xray与hy2脚本
  * ) exit 
 esac
